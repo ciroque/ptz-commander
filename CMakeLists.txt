@@ -15,4 +15,6 @@ add_executable(ptz_command main.cpp
         commands/SelectCommand.cpp
         commands/SelectCommand.h
         commands/CommandHandler.cpp
-        commands/CommandHandler.h)
+        commands/CommandHandler.h
+        Runner.cpp
+        Runner.h)
