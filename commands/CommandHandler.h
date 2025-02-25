@@ -1,7 +1,3 @@
-//
-// Created by steve on 2/24/2025.
-//
-
 #ifndef COMMANDHANDLER_H
 #define COMMANDHANDLER_H
 #include <iostream>
@@ -10,6 +6,7 @@
 
 #include "Command.h"
 #include "ListCommand.h"
+#include "MoveCommand.h"
 #include "SelectCommand.h"
 #include "ShowCommand.h"
 
@@ -22,6 +19,7 @@ public:
         addCommand(std::make_unique<ListCommand>());
         addCommand(std::make_unique<ShowCommand>());
         addCommand(std::make_unique<SelectCommand>());
+        addCommand(std::make_unique<MoveCommand>());
     }
 
     void addCommand(std::unique_ptr<Command> cmd) {

@@ -1,7 +1,3 @@
-//
-// Created by steve on 2/24/2025.
-//
-
 #ifndef LISTCOMMAND_H
 #define LISTCOMMAND_H
 #include "Command.h"

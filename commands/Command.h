@@ -1,7 +1,3 @@
-//
-// Created by steve on 2/24/2025.
-//
-
 #ifndef COMMAND_H
 #define COMMAND_H
 #include <string>

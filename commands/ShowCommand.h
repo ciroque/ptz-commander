@@ -1,7 +1,3 @@
-//
-// Created by steve on 2/24/2025.
-//
-
 #ifndef SHOWCOMMAND_H
 #define SHOWCOMMAND_H
 #include "Command.h"
