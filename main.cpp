@@ -1,7 +1,9 @@
-#include "Runner.h"
+#include "core/Application.h"
 
 int main() {
-    Runner runner;
-    runner.start();
+    core::Application application;
+    
+    application.start();
+    
     return 0;
 }

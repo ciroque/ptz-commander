@@ -1,34 +1,20 @@
-//
-// Created by steve on 2/24/2025.
-//
+#ifndef DATA_CONTEXT_H
+#define DATA_CONTEXT_H
 
-#ifndef CONTEXT_H
-#define CONTEXT_H
-#include <windows.h>
+#include "../cameras/CameraManager.h"
 
 namespace data {
+    class Context {
+    public:
+        static constexpr int noCameraSelected = -1;
+        
+        cameras::CameraManager& cameraMgr;  // Reference to CameraManager from Application
+        
+        int selectedDevice = noCameraSelected;
 
-class Context {
-public:
-    HMODULE dllHandle = nullptr;
-    int selectedDevice = -1; // -1 means no device selected
+        Context(cameras::CameraManager& mgr)
+            : cameraMgr(mgr), selectedDevice(-1) {}
+    };
+}
 
-    Context() {
-        // Load the DLL at startup
-        dllHandle = nullptr; // LoadLibrary(TEXT("DeviceLib.dll"));
-        // if (!dllHandle) {
-        //     std::cerr << "Failed to load DeviceLib.dll\n";
-        // }
-    }
-
-    ~Context() {
-        if (dllHandle) {
-            FreeLibrary(dllHandle);
-        }
-    }
-
-};
-
-} // data
-
-#endif //CONTEXT_H
+#endif // DATA_CONTEXT_H

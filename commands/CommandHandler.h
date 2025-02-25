@@ -13,9 +13,6 @@
 #include "SelectCommand.h"
 #include "ShowCommand.h"
 
-
-class Context;
-
 namespace commands {
 
 class CommandHandler {
@@ -44,7 +41,7 @@ public:
         if (it != commands.end()) {
             it->second->execute(ctx, args);
         } else {
-            std::cout << "Unknown command: " << cmdName << "\n";
+            std::cout << "Unknown command: " << cmdName << std::endl;
         }
     }
 };
