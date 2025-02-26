@@ -13,7 +13,7 @@ namespace cameras::obsbot {
 
     std::string ObsbotCamera::getName() const 
     {
-        return device_ ? device_->devName() : "Unknown";
+        return device_ ? device_->devModelCode() : "Unknown";
     }
 
     bool ObsbotCamera::setPosition(float pan, float pitch, float zoom) const

@@ -17,9 +17,9 @@ namespace cameras::obsbot {
         if (!running_) {
             running_ = true;
 
-            devices_.setDevChangedCallback(onDeviceChanged, this);
-
             ObsbotCameraAdapter::findDevices();
+
+            devices_.setDevChangedCallback(onDeviceChanged, this);
 
             std::cout << "ObsbotCameraAdapter started." << std::endl;
 
@@ -41,14 +41,17 @@ namespace cameras::obsbot {
     }
 
     void ObsbotCameraAdapter::onDeviceChanged(std::string devSn, bool connected, void* param) {
+		std::cout << "Device changed: " << devSn << " connected: " << connected << std::endl;
         auto* adapter = static_cast<ObsbotCameraAdapter*>(param);
         if (connected) {
+			std::cout << "Device connected: " << devSn << std::endl;
             auto dev = adapter->devices_.getDevBySn(devSn);
             if (dev && dev->devMode() == Device::DevModeUvc) {
                 adapter->manager_.addCamera(std::make_shared<ObsbotCamera>(dev));
             }
         }
         else {
+			std::cout << "Device disconnected: " << devSn << std::endl;
             adapter->manager_.removeCamera(devSn);
         }
     }
