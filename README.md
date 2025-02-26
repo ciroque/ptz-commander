@@ -11,8 +11,7 @@ Cameras are the list of controllable PTZ devices; cameras are added / removed dy
 
 - list
 - select
-- setPosition
-- setZoom (should this be a parameter on setPosition?)
+- move
 - show
 
 ### Presets

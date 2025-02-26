@@ -7,11 +7,11 @@ namespace cameras {
         return cameras_;  // Returns a copy for safety
     }
 
-    std::shared_ptr<ICamera> CameraManager::getFirstCamera() const
-    {
-        if (cameras_.empty()) return nullptr;
-
-        return cameras_.front();
+    std::shared_ptr<ICamera> CameraManager::findBySerialNumber(const std::string& sn) const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = std::find_if(cameras_.begin(), cameras_.end(),
+            [&sn](const auto& cam) { return cam->getSerialNumber() == sn; });
+        return (it != cameras_.end()) ? *it : nullptr;
     }
 
     void CameraManager::addCamera(std::shared_ptr<ICamera> camera) {

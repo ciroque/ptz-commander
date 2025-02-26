@@ -6,18 +6,18 @@ set(CMAKE_CXX_STANDARD 20)
 add_executable(ptz_commander main.cpp
         commands/Command.cpp
         commands/Command.h
-        commands/ListCommand.cpp
-        commands/ListCommand.h
+        "commands/camera/ListCommand.cpp"
+        "commands/camera/ListCommand.h"
         
         data/Context.h
-        commands/ShowCommand.cpp
-        commands/ShowCommand.h
-        commands/SelectCommand.cpp
-        commands/SelectCommand.h
+        "commands/camera/ShowCommand.cpp"
+        "commands/camera/ShowCommand.h"
+        
+        
         commands/CommandHandler.cpp
         commands/CommandHandler.h
         "core/Application.cpp"
-        "core/Application.h" "cameras/CameraManager.h" "cameras/CameraManager.cpp" "cameras/obsbot/ObsbotCamera.h" "cameras/obsbot/ObsbotCamera.cpp" "cameras/obsbot/ObsbotCameraAdapter.h" "cameras/obsbot/ObsbotCameraAdapter.cpp" "cameras/utils.h" "cameras/CameraState.h" "commands/MoveCommand.h" "commands/MoveCommand.cpp")
+        "core/Application.h" "cameras/CameraManager.h" "cameras/CameraManager.cpp" "cameras/obsbot/ObsbotCamera.h" "cameras/obsbot/ObsbotCamera.cpp" "cameras/obsbot/ObsbotCameraAdapter.h" "cameras/obsbot/ObsbotCameraAdapter.cpp" "cameras/utils.h" "cameras/CameraState.h" "commands/camera/MoveCommand.h" "commands/camera/MoveCommand.cpp")
 
 
 # Include directories for headers in obsbot/

@@ -1,49 +1,67 @@
 #ifndef COMMANDHANDLER_H
 #define COMMANDHANDLER_H
+
 #include <iostream>
 #include <map>
 #include <memory>
+#include <string>
 
 #include "Command.h"
-#include "ListCommand.h"
-#include "MoveCommand.h"
-#include "SelectCommand.h"
-#include "ShowCommand.h"
+#include "camera/ListCommand.h"
+#include "camera/MoveCommand.h"
+#include "camera/ShowCommand.h"
+// Add others: preset/*, scene/*
 
 namespace commands {
+    class CommandHandler {
+        std::map<std::string, std::unique_ptr<Command>> commands;
 
-class CommandHandler {
-    std::map<std::string, std::unique_ptr<Command>> commands;
-public:
-    explicit CommandHandler(data::Context& ctx) {
-        addCommand(std::make_unique<ListCommand>());
-        addCommand(std::make_unique<ShowCommand>());
-        addCommand(std::make_unique<SelectCommand>());
-        addCommand(std::make_unique<MoveCommand>());
-    }
-
-    void addCommand(std::unique_ptr<Command> cmd) {
-        commands[cmd->getName()] = std::move(cmd);
-    }
-
-    void execute(data::Context& ctx, const std::string& input) {
-        std::string cmdName = input;
-        std::string args;
-        size_t spacePos = input.find(' ');
-        if (spacePos != std::string::npos) {
-            cmdName = input.substr(0, spacePos);
-            args = input.substr(spacePos + 1);
+    public:
+        explicit CommandHandler(data::Context& ctx) {
+            addCommand(std::make_unique<camera::ListCommand>());
+            addCommand(std::make_unique<camera::MoveCommand>());
+            addCommand(std::make_unique<camera::ShowCommand>());
+            // Add preset, scene commands here
         }
 
-        auto it = commands.find(cmdName);
-        if (it != commands.end()) {
-            it->second->execute(ctx, args);
-        } else {
-            std::cout << "Unknown command: " << cmdName << std::endl;
+        void addCommand(std::unique_ptr<Command> cmd) {
+            commands[cmd->getName()] = std::move(cmd);
         }
-    }
-};
 
+        void execute(data::Context& ctx, const std::string& input) {
+            if (input.empty()) {
+                std::cout << "No command provided." << std::endl;
+                return;
+            }
+
+            // Split input: "camera move RMOWTHF7211JGR 35.0 90.0 1.1"
+            std::string objectVerb, args;
+            size_t firstSpace = input.find(' ');
+            if (firstSpace == std::string::npos) {
+                objectVerb = input;  // e.g., "list" (for flat commands, if any)
+            }
+            else {
+                objectVerb = input.substr(0, firstSpace);  // "camera"
+                std::string rest = input.substr(firstSpace + 1);
+                size_t secondSpace = rest.find(' ');
+                if (secondSpace != std::string::npos) {
+                    objectVerb += " " + rest.substr(0, secondSpace);  // "camera move"
+                    args = rest.substr(secondSpace + 1);  // "RMOWTHF7211JGR 35.0 90.0 1.1"
+                }
+                else {
+                    objectVerb += " " + rest;  // "camera list"
+                }
+            }
+
+            auto it = commands.find(objectVerb);
+            if (it != commands.end()) {
+                it->second->execute(ctx, args);
+            }
+            else {
+                std::cout << "Unknown command: " << objectVerb << std::endl;
+            }
+        }
+    };
 } // commands
 
-#endif //COMMANDHANDLER_H
+#endif // COMMANDHANDLER_H
