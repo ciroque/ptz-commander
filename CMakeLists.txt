@@ -17,7 +17,7 @@ add_executable(ptz_commander main.cpp
         commands/CommandHandler.cpp
         commands/CommandHandler.h
         "core/Application.cpp"
-        "core/Application.h" "cameras/CameraManager.h" "cameras/CameraManager.cpp" "cameras/obsbot/ObsbotCamera.h" "cameras/obsbot/ObsbotCamera.cpp" "cameras/obsbot/ObsbotCameraAdapter.h" "cameras/obsbot/ObsbotCameraAdapter.cpp" "cameras/utils.h" "cameras/Preset.h" "commands/camera/MoveCommand.h" "commands/camera/MoveCommand.cpp")
+        "core/Application.h" "cameras/CameraManager.h" "cameras/CameraManager.cpp" "cameras/obsbot/ObsbotCamera.h" "cameras/obsbot/ObsbotCamera.cpp" "cameras/obsbot/ObsbotCameraAdapter.h" "cameras/obsbot/ObsbotCameraAdapter.cpp" "cameras/utils.h" "cameras/Preset.h" "commands/camera/MoveCommand.h" "commands/camera/MoveCommand.cpp" "commands/preset/StoreCommand.h" "commands/preset/StoreCommand.cpp" "commands/preset/DiscardCommand.h" "commands/preset/DiscardCommand.cpp" "commands/preset/ListCommand.h" "commands/preset/ListCommand.cpp" "commands/preset/ApplyCommand.h" "commands/preset/ApplyCommand.cpp")
 
 
 # Include directories for headers in obsbot/

@@ -1,6 +1,8 @@
 #ifndef PRESET_H
 #define PRESET_H
 
+#include <string>
+
 namespace cameras {
 	class Preset {
 	public:
@@ -10,6 +12,7 @@ namespace cameras {
 		float pan;
 		float pitch;
 		float zoom;
+		std::string name;
 	};
 
 }

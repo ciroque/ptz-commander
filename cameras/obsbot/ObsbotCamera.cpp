@@ -23,7 +23,7 @@ namespace cameras {
         return (zoomResult == 0 && gimbalResult == 0);  // True if both succeed
     }
 
-    Preset ObsbotCamera::getCurrentState() const {
+    Preset ObsbotCamera::getCurrentPos() const {
         Preset state;
         if (device_) {
             float pos[3];

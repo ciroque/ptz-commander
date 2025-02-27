@@ -15,7 +15,7 @@ namespace cameras {
         std::string getName() const override;
         bool isConnected() const override;
         bool setPosition(float pan, float tilt, float zoom) override;
-        Preset getCurrentState() const override;
+        Preset getCurrentPos() const override;
 
     private:
         std::shared_ptr<Device> device_;

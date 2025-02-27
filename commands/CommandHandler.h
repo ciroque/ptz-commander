@@ -10,7 +10,11 @@
 #include "camera/ListCommand.h"
 #include "camera/MoveCommand.h"
 #include "camera/ShowCommand.h"
-// Add others: preset/*, scene/*
+
+#include "preset/ApplyCommand.h"
+#include "preset/DiscardCommand.h"
+#include "preset/ListCommand.h"
+#include "preset/StoreCommand.h"
 
 namespace commands {
     class CommandHandler {
@@ -21,7 +25,11 @@ namespace commands {
             addCommand(std::make_unique<camera::ListCommand>());
             addCommand(std::make_unique<camera::MoveCommand>());
             addCommand(std::make_unique<camera::ShowCommand>());
-            // Add preset, scene commands here
+            
+            addCommand(std::make_unique<preset::ApplyCommand>());
+            addCommand(std::make_unique<preset::DiscardCommand>());
+            addCommand(std::make_unique<preset::ListCommand>());
+            addCommand(std::make_unique<preset::StoreCommand>());
         }
 
         void addCommand(std::unique_ptr<Command> cmd) {

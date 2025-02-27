@@ -37,7 +37,7 @@ namespace commands::camera {
 
         // Table output for all cameras
         for (const auto& camera : cameras) {
-            auto cameraState = camera->getCurrentState();
+            auto cameraState = camera->getCurrentPos();
             std::cout << "Camera details for " << camera->getSerialNumber() << ":" << std::endl << std::endl;
             std::cout << std::left
                 << std::setw(20) << "Field" << " | "
