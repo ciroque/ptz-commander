@@ -2,8 +2,8 @@
 #define COMMANDS_CAMERA_SHOWCOMMAND_H
 
 #include "../Command.h"
-#include "../../cameras/ICamera.h"
-#include "../../cameras/CameraState.h"
+#include "../../cameras/Camera.h"
+#include "../../cameras/Preset.h"
 #include <sstream>
 #include <vector>
 

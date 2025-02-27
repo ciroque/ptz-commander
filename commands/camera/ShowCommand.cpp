@@ -17,7 +17,7 @@ namespace commands::camera {
         }
 
         std::string serialNumber = tokens[0];
-        std::list<std::shared_ptr<cameras::ICamera>> cameras;
+        std::list<std::shared_ptr<cameras::Camera>> cameras;
 
         if (serialNumber == "*") {
             cameras = ctx.cameraMgr.getCameras();

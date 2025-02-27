@@ -2,19 +2,19 @@
 #include <iostream>
 
 namespace cameras {
-    std::list<std::shared_ptr<ICamera>> CameraManager::getCameras() const {
+    std::list<std::shared_ptr<Camera>> CameraManager::getCameras() const {
         std::lock_guard<std::mutex> lock(mutex_);
         return cameras_;  // Returns a copy for safety
     }
 
-    std::shared_ptr<ICamera> CameraManager::findBySerialNumber(const std::string& sn) const {
+    std::shared_ptr<Camera> CameraManager::findBySerialNumber(const std::string& sn) const {
         std::lock_guard<std::mutex> lock(mutex_);
         auto it = std::find_if(cameras_.begin(), cameras_.end(),
             [&sn](const auto& cam) { return cam->getSerialNumber() == sn; });
         return (it != cameras_.end()) ? *it : nullptr;
     }
 
-    void CameraManager::addCamera(std::shared_ptr<ICamera> camera) {
+    void CameraManager::addCamera(std::shared_ptr<Camera> camera) {
         std::lock_guard<std::mutex> lock(mutex_);
         if (!camera) return;  // Guard against null
 

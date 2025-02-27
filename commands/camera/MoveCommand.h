@@ -2,7 +2,7 @@
 #define COMMANDS_CAMERA_MOVECOMMAND_H
 
 #include "../Command.h"
-#include "../../cameras/ICamera.h"
+#include "../../cameras/Camera.h"
 #include <sstream>
 #include <vector>
 #include <stdexcept>

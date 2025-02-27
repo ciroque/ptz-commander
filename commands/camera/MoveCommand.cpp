@@ -2,7 +2,7 @@
 #define COMMANDS_CAMERA_MOVECOMMAND_H
 
 #include "../Command.h"
-#include "../../cameras/ICamera.h"
+#include "../../cameras/Camera.h"
 #include <sstream>
 #include <vector>
 #include <iostream>
@@ -57,7 +57,7 @@ namespace commands::camera {
         }
 
         std::string serialNumber = tokens[0];
-        std::list<std::shared_ptr<cameras::ICamera>> cameras;
+        std::list<std::shared_ptr<cameras::Camera>> cameras;
 
         if (serialNumber == "*") {
             cameras = ctx.cameraMgr.getCameras();
