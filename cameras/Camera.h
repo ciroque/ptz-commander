@@ -4,12 +4,13 @@
 #include "Preset.h"
 #include <string>
 #include <list>
+#include <map>  // For std::map
 #include <memory>
 
 namespace cameras {
     class Camera {
     protected:
-        std::list<std::shared_ptr<Preset>> presets_;  // Preset storage
+        std::map<std::string, std::shared_ptr<Preset>> presets_;  // Key: preset name, Value: Preset
 
     public:
         virtual ~Camera() = default;
@@ -23,11 +24,15 @@ namespace cameras {
 
         // Preset methods (concrete in base class)
         std::list<std::shared_ptr<Preset>> getPresets() const {
-            return presets_;  // Returns copy—thread-safe via CameraManager mutex
+            std::list<std::shared_ptr<Preset>> list;
+            for (const auto& pair : presets_) {
+                list.push_back(pair.second);
+            }
+            return list;
         }
 
-        void AddPreset(Preset state) {
-            presets_.push_back(std::make_shared<Preset>(state));
+        void AddPreset(const std::string& name, Preset preset) {
+            presets_[name] = std::make_shared<Preset>(preset);
         }
     };
 }

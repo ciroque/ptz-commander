@@ -27,7 +27,7 @@ namespace commands::preset {
         
 		cameras::Preset preset(presetName, ptz);
 
-        camera->AddPreset(preset);
+        camera->AddPreset(presetName, preset);
 
         std::cout << "Added preset '" << presetName << "' for " << serialNumber << std::endl;
     }

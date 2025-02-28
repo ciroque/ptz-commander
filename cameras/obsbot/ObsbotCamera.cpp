@@ -33,8 +33,9 @@ namespace cameras {
                 ptz.tilt = pos[1]; 
                 ptz.pan = pos[2];   
             }
-			float zoom = 0.0f;
-            if (device_->cameraGetZoomAbsoluteR(zoom)) {
+			
+            float zoom = 0.0f;
+            if (device_->cameraGetZoomAbsoluteR(zoom) == 0) {
 				ptz.zoom = (zoom - 1.0) * 100;
             }
         }
