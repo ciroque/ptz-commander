@@ -26,7 +26,7 @@ namespace commands::preset {
             }
         }
         else {
-            auto camera = ctx.cameraMgr.findBySerialNumber(serialNumber);
+            auto camera = ctx.cameraMgr.findById(serialNumber);
             if (!camera) {
                 std::cout << "Camera not found: " << serialNumber << std::endl;
                 return;

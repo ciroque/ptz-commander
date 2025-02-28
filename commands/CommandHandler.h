@@ -7,6 +7,8 @@
 #include <string>
 
 #include "Command.h"
+
+#include "camera/AliasCommand.h"
 #include "camera/ListCommand.h"
 #include "camera/MoveCommand.h"
 #include "camera/ShowCommand.h"
@@ -24,6 +26,8 @@ namespace commands {
 
     public:
         explicit CommandHandler(data::Context& ctx) {
+
+            addCommand(std::make_unique<camera::AliasCommand>());
             addCommand(std::make_unique<camera::ListCommand>());
             addCommand(std::make_unique<camera::MoveCommand>());
             addCommand(std::make_unique<camera::ShowCommand>());

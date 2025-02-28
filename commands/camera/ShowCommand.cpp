@@ -27,7 +27,7 @@ namespace commands::camera {
             }
         }
         else {
-            auto camera = ctx.cameraMgr.findBySerialNumber(serialNumber);
+            auto camera = ctx.cameraMgr.findById(serialNumber);
             if (!camera) {
                 std::cout << "Camera not found: " << serialNumber << std::endl;
                 return;
@@ -42,27 +42,38 @@ namespace commands::camera {
             std::cout << std::left
                 << std::setw(20) << "Field" << " | "
                 << std::setw(30) << "Value" << std::endl;
+
             std::cout << std::string(20, '-') << "-+-"
                 << std::string(30, '-') << std::endl;
 
             std::cout << std::left
                 << std::setw(20) << "Name" << " | "
                 << std::setw(30) << camera->getName() << std::endl;
+
+            std::cout << std::left
+                << std::setw(20) << "Alias" << " | "
+                << std::setw(30) << camera->getAlias() << std::endl;
+
             std::cout << std::left
                 << std::setw(20) << "Serial Number" << " | "
                 << std::setw(30) << camera->getSerialNumber() << std::endl;
+
             std::cout << std::left
                 << std::setw(20) << "Connected" << " | "
                 << std::setw(30) << (camera->isConnected() ? "Yes" : "No") << std::endl;
+
             std::cout << std::left
                 << std::setw(20) << "Pan" << " | "
                 << std::setw(30) << ptz.pan << std::endl;
+
             std::cout << std::left
                 << std::setw(20) << "Pitch" << " | "
                 << std::setw(30) << ptz.tilt << std::endl;
+
             std::cout << std::left
                 << std::setw(20) << "Zoom" << " | "
                 << std::setw(30) << ptz.zoom << std::endl;
+
             std::cout << std::endl;  // Space between camera tables
         }
     }

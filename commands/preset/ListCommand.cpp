@@ -13,7 +13,7 @@ namespace commands::preset {
             auto presets = camera->getPresets();
             if (presets.empty()) continue;  // Skip cameras with no presets
 
-            std::cout << "Camera: " << camera->getSerialNumber() << " (" << camera->getName() << ")" << std::endl;
+            std::cout << "Camera: " << camera->getSerialNumber() << " (" << camera->getFriendlyName() << ")" << std::endl;
             std::cout << std::left
                 << std::setw(20) << "Preset Name" << " | "
                 << std::setw(10) << "Pan" << " | "

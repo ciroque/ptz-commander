@@ -7,10 +7,12 @@ namespace cameras {
         return cameras_;  // Returns a copy for safety
     }
 
-    std::shared_ptr<Camera> CameraManager::findBySerialNumber(const std::string& sn) const {
+    std::shared_ptr<Camera> CameraManager::findById(const std::string& id) const {
         std::lock_guard<std::mutex> lock(mutex_);
         auto it = std::find_if(cameras_.begin(), cameras_.end(),
-            [&sn](const auto& cam) { return cam->getSerialNumber() == sn; });
+            [&id](const auto& cam) {
+                return cam->getAlias() == id || cam->getSerialNumber() == id || cam->getName() == id;
+            });
         return (it != cameras_.end()) ? *it : nullptr;
     }
 

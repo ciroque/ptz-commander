@@ -10,10 +10,16 @@
 namespace cameras {
     class Camera {
     protected:
-        std::map<std::string, std::shared_ptr<Preset>> presets_;  // Key: preset name, Value: Preset
+        std::map<std::string, std::shared_ptr<Preset>> presets_; 
+        std::string alias_;
 
     public:
         virtual ~Camera() = default;
+
+        std::string getAlias() const { return alias_; }
+        void setAlias(const std::string& alias) { alias_ = alias; }
+
+		std::string getFriendlyName() const { return alias_.empty() ? getName() : alias_; }
 
         // Core PTZ methods (still virtual for overrides)
         virtual std::string getSerialNumber() const = 0;
