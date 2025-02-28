@@ -2,9 +2,9 @@
 #define CAMERAS_OBSBOT_OBSBOT_CAMERA_H
 
 #include "../Camera.h"  // Now Camera, not ICamera
-#include "../obsbot/comm.hpp"
-#include "../obsbot/dev.hpp"
-#include "../obsbot/devs.hpp"
+#include "../../include/obsbot/comm.hpp"
+#include "../../include/obsbot/dev.hpp"
+#include "../../include/obsbot/devs.hpp"
 #include <memory>
 
 namespace cameras {

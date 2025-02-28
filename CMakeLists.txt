@@ -21,15 +21,16 @@ add_executable(ptz_commander main.cpp
 
 
 # Include directories for headers in obsbot/
-target_include_directories(ptz_commander PRIVATE "${CMAKE_SOURCE_DIR}/obsbot")
+target_include_directories(ptz_commander PRIVATE "${CMAKE_SOURCE_DIR}/include/obsbot")
+target_include_directories(ptz_commander PRIVATE "${CMAKE_SOURCE_DIR}/include/nlohmann")
 
 # Link against libdev.lib in obsbot/
-target_link_libraries(ptz_commander PRIVATE "${CMAKE_SOURCE_DIR}/obsbot/libdev.lib")
+target_link_libraries(ptz_commander PRIVATE "${CMAKE_SOURCE_DIR}/lib/obsbot/libdev.lib")
 
 # Copy libdev.dll to the build directory after building
 add_custom_command(TARGET ptz_commander POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/obsbot/libdev.dll"
+        "${CMAKE_SOURCE_DIR}/lib/obsbot/libdev.dll"
         "$<TARGET_FILE_DIR:ptz_commander>"
     COMMENT "Copying libdev.dll to output directory"
 )

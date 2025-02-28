@@ -3,9 +3,9 @@
 
 #include "../CameraManager.h"
 
-#include "../obsbot/comm.hpp"
-#include "../obsbot/dev.hpp"
-#include "../obsbot/devs.hpp"
+#include "../../include/obsbot/comm.hpp"
+#include "../../include/obsbot/dev.hpp"
+#include "../../include/obsbot/devs.hpp"
 
 #include <thread>
 #include <atomic>
