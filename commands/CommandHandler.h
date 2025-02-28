@@ -14,6 +14,8 @@
 #include "preset/ApplyCommand.h"
 #include "preset/DiscardCommand.h"
 #include "preset/ListCommand.h"
+#include "preset/LoadCommand.h"
+#include "preset/SaveCommand.h"
 #include "preset/StoreCommand.h"
 
 namespace commands {
@@ -29,6 +31,8 @@ namespace commands {
             addCommand(std::make_unique<preset::ApplyCommand>());
             addCommand(std::make_unique<preset::DiscardCommand>());
             addCommand(std::make_unique<preset::ListCommand>());
+            addCommand(std::make_unique<preset::LoadCommand>());
+            addCommand(std::make_unique<preset::SaveCommand>());
             addCommand(std::make_unique<preset::StoreCommand>());
         }
 
