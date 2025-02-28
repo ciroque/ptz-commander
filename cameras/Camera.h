@@ -39,6 +39,10 @@ namespace cameras {
             auto it = presets_.find(name);
             return (it != presets_.end()) ? it->second.get() : nullptr;
         }
+
+        void RemovePreset(const std::string& name) {
+            presets_.erase(name);
+        }
     };
 }
 
