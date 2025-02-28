@@ -18,8 +18,8 @@ namespace cameras {
         virtual std::string getSerialNumber() const = 0;
         virtual std::string getName() const = 0;
         virtual bool isConnected() const = 0;
-        virtual bool setPosition(float pan, float tilt, float zoom) = 0;
-        virtual Preset getCurrentPos() const = 0;
+        virtual bool setPosition(float pan, float tilt, int zoom) = 0;
+        virtual Ptz getCurrentPtz() const = 0;
 
         // Preset methods (concrete in base class)
         std::list<std::shared_ptr<Preset>> getPresets() const {

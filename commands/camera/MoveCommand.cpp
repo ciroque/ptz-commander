@@ -1,47 +1,34 @@
-#ifndef COMMANDS_CAMERA_MOVECOMMAND_H
-#define COMMANDS_CAMERA_MOVECOMMAND_H
-
-#include "../Command.h"
-#include "../../cameras/Camera.h"
-#include <sstream>
-#include <vector>
+#include "MoveCommand.h"
 #include <iostream>
 
 namespace commands::camera {
-    class MoveCommand : public Command {
-    public:
-        MoveCommand() { name = "camera move"; }
-        void execute(data::Context& ctx, const std::string& args) override;
-
-    private:
-        // Split args into tokens
-        std::vector<std::string> splitArgs(const std::string& args) const {
-            std::vector<std::string> tokens;
-            std::stringstream ss(args);
-            std::string token;
-            while (ss >> token) {
-                tokens.push_back(token);
-            }
-            return tokens;
+    std::vector<std::string> MoveCommand::splitArgs(const std::string& args) const {
+        std::vector<std::string> tokens;
+        std::stringstream ss(args);
+        std::string token;
+        while (ss >> token) {
+            tokens.push_back(token);
         }
+        return tokens;
+    }
 
-        // Parse floats from tokens (starting at index)
-        std::vector<float> parseFloats(const std::vector<std::string>& tokens, size_t start, size_t count) const {
-            if (tokens.size() < start + count) {
-                throw std::invalid_argument("Not enough arguments for move command");
-            }
-            std::vector<float> floats;
-            for (size_t i = start; i < start + count; ++i) {
-                try {
-                    floats.push_back(std::stof(tokens[i]));
-                }
-                catch (const std::exception&) {
-                    throw std::invalid_argument("Invalid float argument: " + tokens[i]);
-                }
-            }
-            return floats;
+    cameras::Ptz MoveCommand::parsePtz(const std::vector<std::string>& tokens, size_t start, size_t count) const {
+        if (tokens.size() < start + count || count != 3) {
+            throw std::invalid_argument("Not enough arguments for move command");
         }
-    };
+        cameras::Ptz ptz;
+        try {
+            ptz.pan = std::stof(tokens[start]);
+            ptz.tilt = std::stof(tokens[start + 1]);
+            ptz.zoom = std::stoi(tokens[start + 2]);
+            if (ptz.zoom < 0) ptz.zoom = 0;
+            if (ptz.zoom > 100) ptz.zoom = 100;
+        }
+        catch (const std::exception& e) {
+            throw std::invalid_argument(std::string("Invalid argument: ") + e.what());
+        }
+        return ptz;
+    }
 
     void MoveCommand::execute(data::Context& ctx, const std::string& args) {
         if (args.empty()) {
@@ -49,7 +36,6 @@ namespace commands::camera {
             return;
         }
 
-        // Split args into tokens
         auto tokens = splitArgs(args);
         if (tokens.size() < 4) {
             std::cout << "Usage: camera move <serialNumber> <pan> <tilt> <zoom>" << std::endl;
@@ -76,14 +62,11 @@ namespace commands::camera {
         }
 
         try {
-            auto ptz = parseFloats(tokens, 1, 3);  // pan, tilt, zoom
-            float pan = ptz[0];
-            float tilt = ptz[1];
-            float zoom = ptz[2];
+            cameras::Ptz ptz = parsePtz(tokens, 1, 3);  // pan, tilt, zoom (0-100)
 
             bool allGood = true;
             for (auto& camera : cameras) {
-                if (!camera->setPosition(pan, tilt, zoom)) {
+                if (!camera->setPosition(ptz.pan, ptz.tilt, ptz.zoom)) {
                     std::cout << "Failed to move camera: " << camera->getSerialNumber() << std::endl;
                     allGood = false;
                 }
@@ -92,10 +75,11 @@ namespace commands::camera {
             if (allGood) {
                 if (serialNumber == "*") {
                     std::cout << "Moved " << cameras.size() << " camera" << (cameras.size() > 1 ? "s" : "")
-                        << " to pan: " << pan << ", tilt: " << tilt << ", zoom: " << zoom << std::endl;
+                        << " to pan: " << ptz.pan << ", tilt: " << ptz.tilt << ", zoom: " << ptz.zoom << std::endl;
                 }
                 else {
-                    std::cout << "Moved " << serialNumber << " to pan: " << pan << ", tilt: " << tilt << ", zoom: " << zoom << std::endl;
+                    std::cout << "Moved " << serialNumber << " to pan: " << ptz.pan << ", tilt: " << ptz.tilt
+                        << ", zoom: " << ptz.zoom << std::endl;
                 }
             }
             else {
@@ -107,5 +91,3 @@ namespace commands::camera {
         }
     }
 }
-
-#endif // COMMANDS_CAMERA_MOVECOMMAND_H

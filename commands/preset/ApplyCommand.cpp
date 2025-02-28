@@ -31,7 +31,7 @@ namespace commands::preset {
         }
 
         const auto& preset = *it;
-        if (!camera->setPosition(preset->pan, preset->pitch, preset->zoom)) {  // Note: pitch vs. tilt swap if needed
+        if (!camera->setPosition(preset->ptz.pan, preset->ptz.tilt, preset->ptz.zoom)) {  // Note: pitch vs. tilt swap if needed
             std::cout << "Failed to apply preset '" << presetName << "' to " << serialNumber << std::endl;
             return;
         }

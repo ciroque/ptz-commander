@@ -15,25 +15,29 @@ namespace cameras {
         return device_ != nullptr;  // Could refine with SDK status
     }
 
-    bool ObsbotCamera::setPosition(float pan, float tilt, float zoom) {
+    bool ObsbotCamera::setPosition(float pan, float tilt, int zoom) {
         if (!device_) return false;
 
-        int32_t zoomResult = device_->cameraSetZoomAbsoluteR(zoom);
+        float scaledZoom = 1.0f + (zoom / 100.0f);
+
+        int32_t zoomResult = device_->cameraSetZoomAbsoluteR(scaledZoom);
         int32_t gimbalResult = device_->gimbalSetSpeedPositionR(RollValue, tilt, pan, MaxMoveSpeed, MaxMoveSpeed, MaxMoveSpeed);
         return (zoomResult == 0 && gimbalResult == 0);  // True if both succeed
     }
 
-    Preset ObsbotCamera::getCurrentPos() const {
-        Preset state;
+    Ptz ObsbotCamera::getCurrentPtz() const {
+        Ptz ptz{};
         if (device_) {
             float pos[3];
             if (device_->gimbalGetAttitudeInfoR(pos) == 0) {
-                state.roll = pos[0];  
-                state.pitch = pos[1]; 
-                state.pan = pos[2];   
+                ptz.tilt = pos[1]; 
+                ptz.pan = pos[2];   
             }
-            device_->cameraGetZoomAbsoluteR(state.zoom);
+			float zoom = 0.0f;
+            if (device_->cameraGetZoomAbsoluteR(zoom)) {
+				ptz.zoom = (zoom - 1.0) * 100;
+            }
         }
-        return state;
+        return ptz;
     }
 }

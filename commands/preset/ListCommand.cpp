@@ -27,9 +27,9 @@ namespace commands::preset {
             for (const auto& preset : presets) {
                 std::cout << std::left
                     << std::setw(20) << preset->name << " | "
-                    << std::setw(10) << preset->pan << " | "
-                    << std::setw(10) << preset->pitch << " | "
-                    << std::setw(10) << preset->zoom << std::endl;
+                    << std::setw(10) << preset->ptz.pan << " | "
+                    << std::setw(10) << preset->ptz.tilt << " | "
+                    << std::setw(10) << preset->ptz.zoom << std::endl;
             }
             std::cout << std::endl;  // Space between cameras
         }

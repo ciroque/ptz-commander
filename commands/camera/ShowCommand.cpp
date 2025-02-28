@@ -37,7 +37,7 @@ namespace commands::camera {
 
         // Table output for all cameras
         for (const auto& camera : cameras) {
-            auto cameraState = camera->getCurrentPos();
+            auto ptz = camera->getCurrentPtz();
             std::cout << "Camera details for " << camera->getSerialNumber() << ":" << std::endl << std::endl;
             std::cout << std::left
                 << std::setw(20) << "Field" << " | "
@@ -55,17 +55,14 @@ namespace commands::camera {
                 << std::setw(20) << "Connected" << " | "
                 << std::setw(30) << (camera->isConnected() ? "Yes" : "No") << std::endl;
             std::cout << std::left
-                << std::setw(20) << "Roll" << " | "
-                << std::setw(30) << cameraState.roll << std::endl;
-            std::cout << std::left
                 << std::setw(20) << "Pan" << " | "
-                << std::setw(30) << cameraState.pan << std::endl;
+                << std::setw(30) << ptz.pan << std::endl;
             std::cout << std::left
                 << std::setw(20) << "Pitch" << " | "
-                << std::setw(30) << cameraState.pitch << std::endl;
+                << std::setw(30) << ptz.tilt << std::endl;
             std::cout << std::left
                 << std::setw(20) << "Zoom" << " | "
-                << std::setw(30) << cameraState.zoom << std::endl;
+                << std::setw(30) << ptz.zoom << std::endl;
             std::cout << std::endl;  // Space between camera tables
         }
     }
