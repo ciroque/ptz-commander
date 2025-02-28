@@ -5,7 +5,6 @@
 #include "../../cameras/Camera.h"
 #include <sstream>
 #include <vector>
-#include <iostream>
 
 namespace commands::preset {
     class ApplyCommand : public Command {

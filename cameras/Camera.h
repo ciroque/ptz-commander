@@ -34,6 +34,11 @@ namespace cameras {
         void AddPreset(const std::string& name, Preset preset) {
             presets_[name] = std::make_shared<Preset>(preset);
         }
+
+        const Preset* GetPresetByName(const std::string& name) const {
+            auto it = presets_.find(name);
+            return (it != presets_.end()) ? it->second.get() : nullptr;
+        }
     };
 }
 
