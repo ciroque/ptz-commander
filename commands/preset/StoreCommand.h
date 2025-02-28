@@ -1,5 +1,5 @@
-#ifndef COMMANDS_PRESET_ADDCOMMAND_H
-#define COMMANDS_PRESET_ADDCOMMAND_H
+#ifndef COMMANDS_PRESET_STORECOMMAND_H
+#define COMMANDS_PRESET_STORECOMMAND_H
 
 #include "../Command.h"
 #include "../../cameras/Camera.h"
@@ -25,4 +25,4 @@ namespace commands::preset {
     };
 }
 
-#endif // COMMANDS_PRESET_ADDCOMMAND_H
+#endif // COMMANDS_PRESET_STORECOMMAND_H
