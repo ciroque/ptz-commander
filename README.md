@@ -25,22 +25,22 @@ The `zoom` argument is an integer between 0 and 100, where 0 is the camera's min
 
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
-| `camera alias`                 | <id> <alias>                          | Sets a friendly alias for a camera—e.g., ```camera alias RMOWTHF7211JGR "LeftCam"```. |
+| `camera alias`                 | ```<id> <alias>```                      | Sets a friendly alias for a camera — e.g., ```camera alias RMOWTHF7211JGR "LeftCam"```. |
 | `camera list`                  | None                                    | Lists all available cameras. |
-| `camera move`                  | <id|*> <pan> <tilt> <zoom>            | Moves camera(s) to PTZ—```pan```, ```tilt``` (float), ```zoom``` (int, 0-100). Asterisk moves all cameras.          |
-| `camera show`                  | <id|*>                                | Shows camera details.           |
+| `camera move`                  | ```<id|*> <pan> <tilt> <zoom>```            | Moves camera(s) to PTZ—```pan```, ```tilt``` (float), ```zoom``` (int, 0-100). Asterisk moves all cameras.          |
+| `camera show`                  | ```<id|*>```                                | Shows camera details.           |
 
 
 ### Preset
 
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
-| `preset apply`                 | `<id|*> <name>`                         | Applies a named preset — moves camera(s) to stored PTZ.                      |
-| `preset discard`               | `<id|*> <name>`                         | Removes a named preset from memory.                                        |
+| `preset apply`                 | ```<id|*> <name>```                         | Applies a named preset — moves camera(s) to stored PTZ.                      |
+| `preset discard`               | ```<id|*> <name>```                         | Removes a named preset from memory.                                        |
 | `preset list`                  | None                                    | Lists all presets for all cameras.  |
 | `preset load`                  | None                                    | Loads presets into memory — overwrites existing presets.  |
 | `preset save`                  | None                                    | Saves all presets — overwrites existing file.               |
-| `preset store`                 | `<id|*> <name>`                         | Stores current PTZ as a named preset in memory—e.g., `"intro"`.            |
+| `preset store`                 | ```<id|*> <name>```                         | Stores current PTZ as a named preset in memory—e.g., ```"intro"```.            |
 
 ## Notes
 - **Tech Debt**: Preset name dupes—first match wins—alias collisions—first camera wins—<10 cameras—O(n) lookups.
