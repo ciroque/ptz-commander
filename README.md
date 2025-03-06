@@ -27,7 +27,7 @@ The `zoom` argument is an integer between 0 and 100, where 0 is the camera's min
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
 | `camera alias`                 | ```<id> <alias>```                      | Sets a friendly alias for a camera — e.g., ```camera alias RMOWTHF7211JGR "LeftCam"```. |
 | `camera list`                  | None                                    | Lists all available cameras. |
-| `camera move`                  | ```<id|*> <pan> <tilt> <zoom>```            | Moves camera(s) to PTZ—```pan```, ```tilt``` (float), ```zoom``` (int, 0-100). Asterisk moves all cameras.          |
+| `camera move`                  | ```<id|*> <pan> <tilt> <zoom>```            | Moves camera(s) to PTZ — ```pan```, ```tilt``` (float), ```zoom``` (int, 0-100). Asterisk moves all cameras.          |
 | `camera show`                  | ```<id|*>```                                | Shows camera details.           |
 
 
