@@ -1,14 +1,15 @@
 #ifndef CAMERAS_OBSBOT_OBSBOT_CAMERA_H
 #define CAMERAS_OBSBOT_OBSBOT_CAMERA_H
 
-#include "../Camera.h"  // Now Camera, not ICamera
+#include "../Camera.h"
 #include "../../include/obsbot/comm.hpp"
 #include "../../include/obsbot/dev.hpp"
 #include "../../include/obsbot/devs.hpp"
 #include <memory>
+#include <iostream>
 
 namespace cameras {
-    class ObsbotCamera : public Camera {  // Inherit from Camera
+    class ObsbotCamera : public Camera {
     public:
         explicit ObsbotCamera(std::shared_ptr<Device> dev);
         std::string getSerialNumber() const override;
@@ -19,8 +20,8 @@ namespace cameras {
 
     private:
         std::shared_ptr<Device> device_;
-        static constexpr float RollValue = 0.0f;  // Tiny 4K roll unused
-        static constexpr float MaxMoveSpeed = 90.0f;  // Default speed
+        static constexpr float RollValue = 0.0f; 
+        static constexpr float MaxMoveSpeed = 75.0f;
     };
 }
 
