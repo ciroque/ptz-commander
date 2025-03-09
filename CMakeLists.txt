@@ -17,7 +17,33 @@ add_executable(ptz_commander main.cpp
         commands/CommandHandler.cpp
         commands/CommandHandler.h
         "core/Application.cpp"
-        "core/Application.h" "cameras/CameraManager.h" "cameras/CameraManager.cpp" "cameras/obsbot/ObsbotCamera.h" "cameras/obsbot/ObsbotCamera.cpp" "cameras/obsbot/ObsbotCameraAdapter.h" "cameras/obsbot/ObsbotCameraAdapter.cpp" "cameras/utils.h" "cameras/Preset.h" "commands/camera/MoveCommand.h" "commands/camera/MoveCommand.cpp" "commands/preset/StoreCommand.h" "commands/preset/StoreCommand.cpp" "commands/preset/DiscardCommand.h" "commands/preset/DiscardCommand.cpp" "commands/preset/ListCommand.h" "commands/preset/ListCommand.cpp" "commands/preset/ApplyCommand.h" "commands/preset/ApplyCommand.cpp" "commands/preset/SaveCommand.h" "commands/preset/SaveCommand.cpp" "commands/preset/LoadCommand.h" "commands/preset/LoadCommand.cpp" "commands/camera/AliasCommand.h" "commands/camera/AliasCommand.cpp")
+        "core/Application.h" 
+        "cameras/CameraManager.h" 
+        "cameras/CameraManager.cpp" 
+        "cameras/obsbot/ObsbotCamera.h" 
+        "cameras/obsbot/ObsbotCamera.cpp" 
+        "cameras/obsbot/ObsbotCameraAdapter.h" 
+        "cameras/obsbot/ObsbotCameraAdapter.cpp" 
+        "cameras/utils.h" "cameras/Preset.h" 
+        "commands/camera/MoveCommand.h" 
+        "commands/camera/MoveCommand.cpp" 
+        "commands/preset/StoreCommand.h" 
+        "commands/preset/StoreCommand.cpp" 
+        "commands/preset/DiscardCommand.h" 
+        "commands/preset/DiscardCommand.cpp" 
+        "commands/preset/ListCommand.h" 
+        "commands/preset/ListCommand.cpp" 
+        "commands/preset/ApplyCommand.h" 
+        "commands/preset/ApplyCommand.cpp" 
+        "commands/preset/SaveCommand.h" 
+        "commands/preset/SaveCommand.cpp" 
+        "commands/preset/LoadCommand.h" 
+        "commands/preset/LoadCommand.cpp" 
+        "commands/camera/AliasCommand.h" 
+        "commands/camera/AliasCommand.cpp"
+        "commands/console/ClearCommand.h"
+        "commands/console/ClearCommand.cpp"
+)
 
 
 # Include directories for headers in obsbot/

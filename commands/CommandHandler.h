@@ -13,6 +13,8 @@
 #include "camera/MoveCommand.h"
 #include "camera/ShowCommand.h"
 
+#include "console/ClearCommand.h"
+
 #include "preset/ApplyCommand.h"
 #include "preset/DiscardCommand.h"
 #include "preset/ListCommand.h"
@@ -31,6 +33,8 @@ namespace commands {
             addCommand(std::make_unique<camera::ListCommand>());
             addCommand(std::make_unique<camera::MoveCommand>());
             addCommand(std::make_unique<camera::ShowCommand>());
+
+			addCommand(std::make_unique<console::ClearCommand>());
             
             addCommand(std::make_unique<preset::ApplyCommand>());
             addCommand(std::make_unique<preset::DiscardCommand>());
