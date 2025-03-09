@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="PTZ Commander" Language="1033" Version="1.0.0.0" Manufacturer="YourName" UpgradeCode="6B565268-915A-461E-8EBF-F154B835455D">
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version is already installed." />
+    <MediaTemplate />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLDIR" Name="PTZCommander">
+          <Component Id="MainExecutable" Guid="FD1A4136-F580-4B86-A949-C9913E293DE6">
+            <File Id="PTZCommanderExe" Source="..\out\build\x64-Release\ptz_commander.exe" />
+            <File Id="LibDevDll" Source="..\out\build\x64-Release\libdev.dll" />
+            <!-- Add to PATH -->
+            <Environment Id="PATH" Name="PATH" Value="[INSTALLDIR]" Action="set" Part="last" System="yes" />
+          </Component>
+        </Directory>
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="PTZCommander">
+          <Component Id="ProgramMenuDir" Guid="4C3EF0AE-865A-47E1-8288-7BBC08AB73C5">
+            <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall" />
+            <RegistryValue Root="HKCU" Key="Software\PTZCommander" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+            <Shortcut Id="ApplicationShortcut" Name="PTZ Commander" Description="PTZ Camera Control" Target="[INSTALLDIR]ptz_commander" />
+          </Component>
+        </Directory>
+      </Directory>
+      <Directory Id="DesktopFolder" Name="Desktop">
+        <Component Id="DesktopShortcut" Guid="9F9B5663-F8A3-49AA-8B20-178FB192FF69">
+          <Condition><![CDATA[DESKTOPSHORTCUT]]></Condition>
+          <Shortcut Id="DesktopApplicationShortcut" Name="PTZ Commander" Description="PTZ Camera Control" Target="[INSTALLDIR]ptz_commander" />
+          <RemoveFolder Id="DesktopFolder" On="uninstall" />
+          <RegistryValue Root="HKCU" Key="Software\PTZCommander" Name="desktop" Type="integer" Value="1" KeyPath="yes" />
+        </Component>
+      </Directory>
+    </Directory>
+
+    <Feature Id="ProductFeature" Title="PTZ Commander" Level="1">
+      <ComponentRef Id="MainExecutable" />
+      <ComponentRef Id="ProgramMenuDir" />
+      <ComponentRef Id="DesktopShortcut" />
+    </Feature>
+
+    <UI>
+      <DialogRef Id="CustomizeDlg" />
+      <Publish Dialog="CustomizeDlg" Control="Next" Event="DoAction" Value="SetDesktopShortcut" Order="1">1</Publish>
+      <Property Id="DESKTOPSHORTCUT" Value="0" />
+    </UI>
+    <CustomAction Id="SetDesktopShortcut" Property="DESKTOPSHORTCUT" Value="1" />
+  </Product>
+</Wix>
