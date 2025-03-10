@@ -16,6 +16,7 @@ namespace cameras {
         std::string getName() const override;
         bool isConnected() const override;
         bool setPosition(float pan, float tilt, int zoom) override;
+		bool setZoom(int zoom, int speed) override;
         Ptz getCurrentPtz() const override;
 
     private:

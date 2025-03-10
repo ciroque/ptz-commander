@@ -14,7 +14,6 @@ add_executable(ptz_commander main.cpp
         "commands/camera/ShowCommand.h"
         
         
-        commands/CommandHandler.cpp
         commands/CommandHandler.h
         "core/Application.cpp"
         "core/Application.h" 
@@ -43,7 +42,7 @@ add_executable(ptz_commander main.cpp
         "commands/camera/AliasCommand.cpp"
         "commands/console/ClearCommand.h"
         "commands/console/ClearCommand.cpp"
-)
+ "commands/camera/PushCommand.h" "commands/camera/PushCommand.cpp")
 
 
 # Include directories for headers in obsbot/

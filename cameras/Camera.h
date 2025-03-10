@@ -26,6 +26,7 @@ namespace cameras {
         virtual std::string getName() const = 0;
         virtual bool isConnected() const = 0;
         virtual bool setPosition(float pan, float tilt, int zoom) = 0;
+		virtual bool setZoom(int zoom, int speed) = 0;
         virtual Ptz getCurrentPtz() const = 0;
 
         // Preset methods (concrete in base class)

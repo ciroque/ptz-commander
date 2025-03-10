@@ -42,6 +42,28 @@ namespace cameras {
         return (zoomResult == 0 && gimbalResult == 0);
     }
 
+    bool ObsbotCamera::setZoom(int zoom, int speed) {
+        if (!device_) return false;
+
+        // Validate inputs
+        if (zoom < 0 || zoom > 100 || speed < 0 || speed > 100) return false;
+
+        // Convert zoom (0-100) to scaledZoom (1.0-2.0) like setPosition
+        float scaledZoom = 1.0f + (zoom / 100.0f);
+
+        // Convert to zoom_ratio (100x magnification: 1.0-2.0 ? 100-200)
+        uint32_t zoomRatio = static_cast<uint32_t>(scaledZoom * 100);
+
+        // Convert speed (0-100%) to zoom_speed (0-10 range, with 255 as max option)
+        uint32_t zoomSpeed = (speed * 10) / 100;  // Scale 0-100% to 0-10
+        if (zoomSpeed == 0 && speed > 0) zoomSpeed = 1;  // Avoid default (0) unless intentional
+
+        // Set zoom with speed
+        int32_t result = device_->cameraSetZoomWithSpeedAbsoluteR(zoomRatio, zoomSpeed);
+        return result == RM_RET_OK;
+    }
+
+
     Ptz ObsbotCamera::getCurrentPtz() const {
         Ptz ptz{ 0.0f, 0.0f, 0 }; 
         if (device_) {

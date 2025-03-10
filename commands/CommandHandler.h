@@ -11,6 +11,7 @@
 #include "camera/AliasCommand.h"
 #include "camera/ListCommand.h"
 #include "camera/MoveCommand.h"
+#include "camera/PushCommand.h"
 #include "camera/ShowCommand.h"
 
 #include "console/ClearCommand.h"
@@ -32,6 +33,8 @@ namespace commands {
             addCommand(std::make_unique<camera::AliasCommand>());
             addCommand(std::make_unique<camera::ListCommand>());
             addCommand(std::make_unique<camera::MoveCommand>());
+			addCommand(std::make_unique<camera::PushCommand>());
+
             addCommand(std::make_unique<camera::ShowCommand>());
 
 			addCommand(std::make_unique<console::ClearCommand>());
