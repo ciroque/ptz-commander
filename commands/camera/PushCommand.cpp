@@ -15,7 +15,7 @@ namespace commands::camera {
         }
 
         std::string serialNumber = tokens[0];
-        int targetZoom;
+        int targetZoom = 0;
         try {
             targetZoom = std::stoi(tokens[1]);
         }
@@ -53,7 +53,13 @@ namespace commands::camera {
 
         bool allGood = true;
         for (auto& camera : cameras) {
-            // Use setZoom method without limit checking
+			auto currentPtz = camera->getCurrentPtz();
+            if (currentPtz.zoom >= targetZoom) {
+				std::cout << "Camera " << camera->getSerialNumber() << " already at or past target zoom." << std::endl;
+				allGood = false;
+				continue;
+			}
+
             if (!camera->setZoom(targetZoom, speed)) {
                 std::cout << "Failed to push zoom for " << camera->getSerialNumber() << std::endl;
                 allGood = false;

@@ -46,23 +46,30 @@ namespace cameras {
         if (!device_) return false;
 
         // Validate inputs
-        if (zoom < 0 || zoom > 100 || speed < 0 || speed > 100) return false;
+        if (zoom < 0 || zoom > 100 || (speed < 0 || (speed > 100 && speed != 255))) return false;
 
-        // Convert zoom (0-100) to scaledZoom (1.0-2.0) like setPosition
-        float scaledZoom = 1.0f + (zoom / 100.0f);
-
-        // Convert to zoom_ratio (100x magnification: 1.0-2.0 ? 100-200)
-        uint32_t zoomRatio = static_cast<uint32_t>(scaledZoom * 100);
+        // Convert zoom (0-100) to zoom_ratio (100-400)
+        uint32_t zoomRatio = static_cast<uint32_t>(100 + (zoom * 3));
 
         // Convert speed (0-100%) to zoom_speed (0-10 range, with 255 as max option)
+        
         uint32_t zoomSpeed = (speed * 10) / 100;  // Scale 0-100% to 0-10
-        if (zoomSpeed == 0 && speed > 0) zoomSpeed = 1;  // Avoid default (0) unless intentional
+        
+        if (zoomSpeed == 0 && speed > 0) {
+            zoomSpeed = 1;  // Avoid default (0) unless intentional
+		}
+        else if (speed == 255) {
+			zoomSpeed = 255;  // Max speed
+		}
+
 
         // Set zoom with speed
         int32_t result = device_->cameraSetZoomWithSpeedAbsoluteR(zoomRatio, zoomSpeed);
+        if (result != RM_RET_OK) {
+            std::cout << "Failed to set zoom: result = " << result << std::endl;
+        }
         return result == RM_RET_OK;
     }
-
 
     Ptz ObsbotCamera::getCurrentPtz() const {
         Ptz ptz{ 0.0f, 0.0f, 0 }; 
