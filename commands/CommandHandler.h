@@ -9,6 +9,7 @@
 #include "Command.h"
 
 #include "camera/AliasCommand.h"
+#include "camera/HelpCommand.h"
 #include "camera/ListCommand.h"
 #include "camera/MoveCommand.h"
 #include "camera/PushCommand.h"
@@ -18,10 +19,13 @@
 
 #include "preset/ApplyCommand.h"
 #include "preset/DiscardCommand.h"
+#include "preset/HelpCommand.h"
 #include "preset/ListCommand.h"
 #include "preset/LoadCommand.h"
 #include "preset/SaveCommand.h"
 #include "preset/StoreCommand.h"
+
+#include "HelpCommand.h"
 
 namespace commands {
     class CommandHandler {
@@ -45,6 +49,10 @@ namespace commands {
             addCommand(std::make_unique<preset::LoadCommand>());
             addCommand(std::make_unique<preset::SaveCommand>());
             addCommand(std::make_unique<preset::StoreCommand>());
+            
+            addCommand(std::make_unique<HelpCommand>());
+            addCommand(std::make_unique<camera::HelpCommand>());
+            addCommand(std::make_unique<preset::HelpCommand>());
         }
 
         void addCommand(std::unique_ptr<Command> cmd) {
