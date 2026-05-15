@@ -17,10 +17,12 @@ namespace cameras::obsbot::strategies {
         int32_t r1 = dev->aiSetAiTrackModeEnabledR(Device::AiTrackNormal, false);
         int32_t r2 = dev->aiSetAiTrackModeEnabledR(Device::AiTrackHumanNormal, false);
         int32_t r3 = dev->aiSetAiTrackModeEnabledR(Device::AiTrackGroup, false);
+        int32_t gestureResult = dev->aiSetGestureParaR(Device::DevGestureParaTypeGesture, false);
 
-        dev->aiSetGestureParaR(Device::DevGestureParaTypeGesture, false);
-
-        return (r1 == RM_RET_OK || r2 == RM_RET_OK || r3 == RM_RET_OK);
+        return (r1 == RM_RET_OK &&
+                r2 == RM_RET_OK &&
+                r3 == RM_RET_OK &&
+                gestureResult == RM_RET_OK);
     }
 
     bool TailAirStrategy::moveTo(float pan, float tilt, int zoom, Device* dev) {
@@ -28,9 +30,10 @@ namespace cameras::obsbot::strategies {
 
         zoom = clamp(zoom, 0, 100);
         float scaledZoom = 1.0f + (zoom / 100.0f);
-        dev->cameraSetZoomAbsoluteR(scaledZoom);
+        int32_t zoomResult = dev->cameraSetZoomAbsoluteR(scaledZoom);
+        int32_t gimbalResult = dev->aiSetGimbalMotorAngleR(0.0f, tilt, pan);
 
-        return dev->aiSetGimbalMotorAngleR(0.0f, tilt, pan) == RM_RET_OK;
+        return zoomResult == RM_RET_OK && gimbalResult == RM_RET_OK;
     }
 
     bool TailAirStrategy::setZoom(int zoom, int speed, Device* dev) {

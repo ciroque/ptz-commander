@@ -22,7 +22,7 @@ namespace cameras::obsbot::strategies {
             dev->aiSetGestureCtrlIndividualR(i, false);
         }
 
-        return (aiResult == RM_RET_OK || bootResult == RM_RET_OK);
+        return (aiResult == RM_RET_OK && bootResult == RM_RET_OK);
     }
 
     bool TinyFamilyStrategy::moveTo(float pan, float tilt, int zoom, Device* dev) {
@@ -30,15 +30,18 @@ namespace cameras::obsbot::strategies {
 
         zoom = clamp(zoom, 0, 100);
         float scaledZoom = 1.0f + (zoom / 100.0f);
-        dev->cameraSetZoomAbsoluteR(scaledZoom);
+        int32_t zoomResult = dev->cameraSetZoomAbsoluteR(scaledZoom);
 
         // Tiny 2 prefers absolute angle, others use speed position
+        int32_t moveResult;
         if (dev->productType() == ObsbotProdTiny2) {
-            return dev->aiSetGimbalMotorAngleR(0.0f, tilt, pan) == RM_RET_OK;
+            moveResult = dev->aiSetGimbalMotorAngleR(0.0f, tilt, pan);
         }
         else {
-            return dev->gimbalSetSpeedPositionR(0, tilt, pan, 80, 80, 80) == RM_RET_OK;
+            moveResult = dev->gimbalSetSpeedPositionR(0, tilt, pan, 80, 80, 80);
         }
+
+        return (zoomResult == RM_RET_OK && moveResult == RM_RET_OK);
     }
 
     bool TinyFamilyStrategy::setZoom(int zoom, int speed, Device* dev) {

@@ -42,7 +42,13 @@ add_executable(ptz_commander main.cpp
         "commands/camera/AliasCommand.cpp"
         "commands/console/ClearCommand.h"
         "commands/console/ClearCommand.cpp"
- "commands/camera/PushCommand.h" "commands/camera/PushCommand.cpp" "cameras/obsbot/strategies/ObsbotControlStrategy.h" "cameras/obsbot/strategies/TinyFamilyStrategy.h" "cameras/obsbot/strategies/TinyFamilyStrategy.cpp" "cameras/obsbot/strategies/TailAirStrategy.h" "cameras/obsbot/strategies/TailAirStrategy.cpp")
+        "commands/camera/PushCommand.h"
+        "commands/camera/PushCommand.cpp"
+        "cameras/obsbot/strategies/ObsbotControlStrategy.h"
+        "cameras/obsbot/strategies/TinyFamilyStrategy.h"
+        "cameras/obsbot/strategies/TinyFamilyStrategy.cpp"
+        "cameras/obsbot/strategies/TailAirStrategy.h"
+        "cameras/obsbot/strategies/TailAirStrategy.cpp")
 
 
 # Include directories for headers in obsbot/

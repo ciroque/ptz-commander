@@ -11,10 +11,14 @@ namespace cameras {
 
     namespace {
         std::unique_ptr<cameras::obsbot::strategies::ObsbotControlStrategy> createStrategy(ObsbotProductType type) {
-            if (type == ObsbotProdTailAir) {
+            switch (type) {
+            case ObsbotProdTailAir:
+            case ObsbotProdTail2:
+            case ObsbotProdTail2S:
                 return std::make_unique<cameras::obsbot::strategies::TailAirStrategy>();
+            default:
+                return std::make_unique<cameras::obsbot::strategies::TinyFamilyStrategy>();
             }
-            return std::make_unique<cameras::obsbot::strategies::TinyFamilyStrategy>();
         }
     }
 

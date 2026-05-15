@@ -7,6 +7,8 @@
 #include <chrono>
 #include <mutex>
 #include <cstdarg>
+#include <cstdio>
+#include <ctime>
 #include <array>
 
 namespace cameras::obsbot {
@@ -23,8 +25,11 @@ namespace cameras::obsbot {
             // Timestamp
             auto now = std::chrono::system_clock::now();
             auto time_t = std::chrono::system_clock::to_time_t(now);
-            char timeBuf[64];
-            std::strftime(timeBuf, sizeof(timeBuf), "%Y-%m-%d %H:%M:%S", std::localtime(&time_t));
+            std::tm timeBuf{};
+            localtime_s(&timeBuf, &time_t);
+
+            char timeStr[64];
+            std::strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &timeBuf);
 
             const char* levelStr = "UNKNOWN";
             if (lvl == DEV_ERROR) levelStr = "ERROR";
@@ -36,7 +41,7 @@ namespace cameras::obsbot {
             std::array<char, 1024> buffer{};
             vsnprintf(buffer.data(), buffer.size(), msg, args);
 
-            logFile << "[" << timeBuf << "] [" << levelStr << "] "
+            logFile << "[" << timeStr << "] [" << levelStr << "] "
                 << buffer.data() << std::endl;
             logFile.flush();
         }
@@ -46,11 +51,10 @@ namespace cameras::obsbot {
         : devices_(Devices::get()), manager_(manager), running_(false) {
 
         // === SDK Logging Redirect ===
-        dev_set_log_handler(sdkLogHandler, nullptr);
-
         logFile.open("obsbot_sdk.log", std::ios::out | std::ios::app);
         if (logFile.is_open()) {
             std::cout << "✅ OBSBOT SDK logging redirected to: obsbot_sdk.log" << std::endl;
+            dev_set_log_handler(sdkLogHandler, nullptr);
         }
         else {
             std::cerr << "❌ Failed to open obsbot_sdk.log for writing" << std::endl;
