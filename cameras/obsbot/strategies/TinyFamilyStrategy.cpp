@@ -49,7 +49,15 @@ namespace cameras::obsbot::strategies {
 
         zoom = clamp(zoom, 0, 100);
         uint32_t zoomRatio = static_cast<uint32_t>(100 + (zoom * 3));
-        uint32_t zoomSpeed = (speed == 255) ? 255u : static_cast<uint32_t>(clamp((speed * 10) / 100, 0, 10));
+
+        uint32_t zoomSpeed;
+        if (speed == 255) {
+            zoomSpeed = 255u;
+        }
+        else {
+            int scaledSpeed = clamp((speed * 10) / 100, 0, 10);
+            zoomSpeed = (speed > 0 && scaledSpeed == 0) ? 1u : static_cast<uint32_t>(scaledSpeed);
+        }
 
         return dev->cameraSetZoomWithSpeedAbsoluteR(zoomRatio, zoomSpeed) == RM_RET_OK;
     }

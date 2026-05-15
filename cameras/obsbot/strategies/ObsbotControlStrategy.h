@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../../../include/obsbot/dev.hpp"
-#include <memory>
 
 namespace cameras::obsbot::strategies {
 

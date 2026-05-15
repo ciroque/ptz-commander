@@ -76,7 +76,14 @@ namespace cameras::obsbot {
         if (!running_) {
             running_ = true;
 
-            devices_.startNetworkScanImmediately();
+            int32_t scanResult = devices_.startNetworkScanImmediately();
+            if (scanResult == RM_RET_OK) {
+                std::cout << "✅ Network scan started successfully" << std::endl;
+            }
+            else {
+                std::cerr << "⚠️ Network scan failed to start (code: " << scanResult 
+                          << ") - scanning may already be in progress" << std::endl;
+            }
 
             findDevices();
 

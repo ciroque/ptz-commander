@@ -1,4 +1,4 @@
-// ObsbotCameraAdapter.h  (no changes needed)
+// ObsbotCameraAdapter.h
 #ifndef CAMERAS_OBSBOT_OBSBOT_CAMERA_ADAPTER_H
 #define CAMERAS_OBSBOT_OBSBOT_CAMERA_ADAPTER_H
 
