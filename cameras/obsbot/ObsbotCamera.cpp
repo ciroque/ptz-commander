@@ -1,25 +1,46 @@
 #include "ObsbotCamera.h"
 
+// Full includes - this is where the compiler finally sees the real class
+#include "strategies/ObsbotControlStrategy.h"
+#include "strategies/TinyFamilyStrategy.h"
+#include "strategies/TailAirStrategy.h"
+
+#include <iostream>
+
 namespace cameras {
-    ObsbotCamera::ObsbotCamera(std::shared_ptr<Device> dev) : device_(std::move(dev)) {
-        if (device_) {
-            // Disable AI on creation
-            int32_t setAiModeResult = device_->cameraSetAiModeU(Device::AiWorkModeNone, 0);
-            int32_t setBootModeResult = device_->cameraSetBootModeU(Device::AiWorkModeNone, Device::AiSubModeNormal);
 
-            // I think this is all that is needed to disable the AI stuff, but going to leave the rest just in case!
-            device_->aiSetEnabledR(false);
-
-            for (int i = 0; i < 5; i++) {
-				device_->aiSetGestureCtrlIndividualR(i, false);
-            }
-
-            if (setAiModeResult != RM_RET_OK || setBootModeResult != RM_RET_OK) {
-                std::cout << "Warning: Failed to disable AI mode for " << getSerialNumber()
-                    << " (AI: " << setAiModeResult << ", Boot: " << setBootModeResult << ")" << std::endl;
+    namespace {
+        std::unique_ptr<cameras::obsbot::strategies::ObsbotControlStrategy> createStrategy(ObsbotProductType type) {
+            switch (type) {
+            case ObsbotProdTailAir:
+            case ObsbotProdTail2:
+            case ObsbotProdTail2S:
+                return std::make_unique<cameras::obsbot::strategies::TailAirStrategy>();
+            default:
+                return std::make_unique<cameras::obsbot::strategies::TinyFamilyStrategy>();
             }
         }
     }
+
+    ObsbotCamera::ObsbotCamera(std::shared_ptr<Device> dev)
+        : device_(std::move(dev))
+    {
+        if (!device_) return;
+
+        strategy_ = createStrategy(device_->productType());
+
+        std::string sn = getSerialNumber();
+        std::cout << "Initializing camera: " << getName() << " (" << sn << ")" << std::endl;
+
+        if (strategy_ && strategy_->disableAI(device_.get())) {
+            std::cout << "✅ AI / Tracking fully disabled for " << sn << std::endl;
+        }
+        else {
+            std::cout << "Warning: Failed to fully disable AI for " << sn << std::endl;
+        }
+    }
+
+    ObsbotCamera::~ObsbotCamera() = default;   // crucial
 
     std::string ObsbotCamera::getSerialNumber() const {
         return device_ ? device_->devSn() : "Unknown";
@@ -30,60 +51,32 @@ namespace cameras {
     }
 
     bool ObsbotCamera::isConnected() const {
-        return device_ != nullptr;  // Could refine with SDK status
+        return device_ != nullptr;
     }
 
     bool ObsbotCamera::setPosition(float pan, float tilt, int zoom) {
-        if (!device_) return false;
-        zoom = zoom < 0 ? 0 : zoom > 100 ? 100 : zoom;
-        float scaledZoom = 1.0f + (zoom / 100.0f);
-        int32_t zoomResult = device_->cameraSetZoomAbsoluteR(scaledZoom);
-        int32_t gimbalResult = device_->gimbalSetSpeedPositionR(RollValue, tilt, pan, MaxMoveSpeed, MaxMoveSpeed, MaxMoveSpeed);
-        return (zoomResult == 0 && gimbalResult == 0);
+        return strategy_ ? strategy_->moveTo(pan, tilt, zoom, device_.get()) : false;
     }
 
     bool ObsbotCamera::setZoom(int zoom, int speed) {
-        if (!device_) return false;
-
-        // Validate inputs
-        if (zoom < 0 || zoom > 100 || (speed < 0 || (speed > 100 && speed != 255))) return false;
-
-        // Convert zoom (0-100) to zoom_ratio (100-400)
-        uint32_t zoomRatio = static_cast<uint32_t>(100 + (zoom * 3));
-
-        // Convert speed (0-100%) to zoom_speed (0-10 range, with 255 as max option)
-        
-        uint32_t zoomSpeed = (speed * 10) / 100;  // Scale 0-100% to 0-10
-        
-        if (zoomSpeed == 0 && speed > 0) {
-            zoomSpeed = 1;  // Avoid default (0) unless intentional
-		}
-        else if (speed == 255) {
-			zoomSpeed = 255;  // Max speed
-		}
-
-
-        // Set zoom with speed
-        int32_t result = device_->cameraSetZoomWithSpeedAbsoluteR(zoomRatio, zoomSpeed);
-        if (result != RM_RET_OK) {
-            std::cout << "Failed to set zoom: result = " << result << std::endl;
-        }
-        return result == RM_RET_OK;
+        return strategy_ ? strategy_->setZoom(zoom, speed, device_.get()) : false;
     }
 
     Ptz ObsbotCamera::getCurrentPtz() const {
-        Ptz ptz{ 0.0f, 0.0f, 0 }; 
-        if (device_) {
-            float pos[3];
-            if (device_->gimbalGetAttitudeInfoR(pos) == 0) {
-                ptz.tilt = pos[1];  
-                ptz.pan = pos[2];   
-            }
-            float zoom = 0.0f;
-            if (device_->cameraGetZoomAbsoluteR(zoom) == 0) {
-                ptz.zoom = (zoom - 1.0) * 100;
-            }
+        Ptz ptz{ 0.0f, 0.0f, 0 };
+        if (!device_) return ptz;
+
+        float pos[3] = { 0 };
+        if (device_->gimbalGetAttitudeInfoR(pos) == RM_RET_OK) {
+            ptz.tilt = pos[1];
+            ptz.pan = pos[2];
+        }
+
+        float zoomVal = 0.0f;
+        if (device_->cameraGetZoomAbsoluteR(zoomVal) == RM_RET_OK) {
+            ptz.zoom = static_cast<int>((zoomVal - 1.0f) * 100.0f);
         }
         return ptz;
     }
-}
+
+} // namespace cameras
