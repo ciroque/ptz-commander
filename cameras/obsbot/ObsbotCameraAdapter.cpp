@@ -24,9 +24,9 @@ namespace cameras::obsbot {
 
             // Timestamp
             auto now = std::chrono::system_clock::now();
-            auto time_t = std::chrono::system_clock::to_time_t(now);
+            auto nowTime = std::chrono::system_clock::to_time_t(now);
             std::tm timeBuf{};
-            localtime_s(&timeBuf, &time_t);
+            localtime_s(&timeBuf, &nowTime);
 
             char timeStr[64];
             std::strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &timeBuf);

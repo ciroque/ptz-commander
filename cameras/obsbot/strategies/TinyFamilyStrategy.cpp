@@ -1,5 +1,4 @@
 #include "TinyFamilyStrategy.h"
-#include <iostream>
 #include <algorithm>
 
 namespace cameras::obsbot::strategies {

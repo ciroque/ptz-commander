@@ -1,5 +1,4 @@
 #include "TailAirStrategy.h"
-#include <iostream>
 #include <algorithm>
 
 namespace cameras::obsbot::strategies {
