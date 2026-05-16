@@ -53,11 +53,11 @@ namespace cameras::obsbot {
         // === SDK Logging Redirect ===
         logFile.open("obsbot_sdk.log", std::ios::out | std::ios::app);
         if (logFile.is_open()) {
-            std::cout << "✅ OBSBOT SDK logging redirected to: obsbot_sdk.log" << std::endl;
+            std::cout << "OBSBOT SDK logging redirected to: obsbot_sdk.log" << std::endl;
             dev_set_log_handler(sdkLogHandler, nullptr);
         }
         else {
-            std::cerr << "❌ Failed to open obsbot_sdk.log for writing" << std::endl;
+            std::cerr << "Failed to open obsbot_sdk.log for writing" << std::endl;
         }
 
         devices_.setEnableMdnsScan(true);
@@ -78,10 +78,10 @@ namespace cameras::obsbot {
 
             int32_t scanResult = devices_.startNetworkScanImmediately();
             if (scanResult == RM_RET_OK) {
-                std::cout << "✅ Network scan started successfully" << std::endl;
+                std::cout << "Network scan started successfully" << std::endl;
             }
             else {
-                std::cerr << "⚠️ Network scan failed to start (code: " << scanResult 
+                std::cerr << "Network scan failed to start (code: " << scanResult 
                           << ") - scanning may already be in progress" << std::endl;
             }
 
@@ -105,7 +105,7 @@ namespace cameras::obsbot {
         auto* adapter = static_cast<ObsbotCameraAdapter*>(param);
         if (!adapter) return;
 
-        std::cout << "Device event: " << devSn << " → " << (connected ? "CONNECTED" : "DISCONNECTED") << std::endl;
+        std::cout << "Device event: " << devSn << " - " << (connected ? "CONNECTED" : "DISCONNECTED") << std::endl;
 
         if (connected) {
             auto dev = adapter->devices_.getDevBySn(devSn);

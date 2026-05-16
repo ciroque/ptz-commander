@@ -33,7 +33,7 @@ namespace cameras {
         std::cout << "Initializing camera: " << getName() << " (" << sn << ")" << std::endl;
 
         if (strategy_ && strategy_->disableAI(device_.get())) {
-            std::cout << "✅ AI / Tracking fully disabled for " << sn << std::endl;
+            std::cout << "AI / Tracking fully disabled for " << sn << std::endl;
         }
         else {
             std::cout << "Warning: Failed to fully disable AI for " << sn << std::endl;
