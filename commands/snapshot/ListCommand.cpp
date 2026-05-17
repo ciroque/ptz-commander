@@ -1,4 +1,5 @@
 #include "ListCommand.h"
+#include "../../cameras/Camera.h"
 #include <iostream>
 #include <map>
 

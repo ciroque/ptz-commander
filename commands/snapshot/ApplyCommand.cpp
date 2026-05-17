@@ -1,4 +1,5 @@
 #include "ApplyCommand.h"
+#include "../../cameras/Camera.h"
 #include <iostream>
 
 namespace commands::snapshot {
