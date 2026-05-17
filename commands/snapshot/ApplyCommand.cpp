@@ -26,6 +26,7 @@ namespace commands::snapshot {
 
         bool allGood = true;
         int appliedCount = 0;
+        int foundCount = 0;
 
         for (auto& camera : cameras) {
             const cameras::Preset* preset = camera->GetPresetByName(presetName);
@@ -33,6 +34,8 @@ namespace commands::snapshot {
                 std::cout << "Preset not found: " << presetName << " for " << camera->getSerialNumber() << " (skipping)" << std::endl;
                 continue;
             }
+
+            foundCount++;
 
             if (!camera->setPosition(preset->ptz.pan, preset->ptz.tilt, preset->ptz.zoom)) {
                 std::cout << "Failed to apply preset '" << presetName << "' to " << camera->getSerialNumber() << std::endl;
@@ -49,6 +52,9 @@ namespace commands::snapshot {
         }
         else if (appliedCount > 0) {
             std::cout << "Snapshot '" << presetName << "' partially applied to " << appliedCount << " camera(s) - some cameras failed" << std::endl;
+        }
+        else if (foundCount > 0) {
+            std::cout << "Snapshot '" << presetName << "' not applied - all cameras failed to move" << std::endl;
         }
         else {
             std::cout << "Snapshot '" << presetName << "' not applied - preset not found on any camera" << std::endl;
