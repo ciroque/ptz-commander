@@ -16,9 +16,10 @@ add_executable(ptz_commander main.cpp
         
         commands/CommandHandler.h
         "core/Application.cpp"
-        "core/Application.h" 
+        "core/Application.h"
+        "core/Logger.h"
         "cameras/CameraManager.h" 
-        "cameras/CameraManager.cpp" 
+        "cameras/CameraManager.cpp"
         "cameras/obsbot/ObsbotCamera.h" 
         "cameras/obsbot/ObsbotCamera.cpp" 
         "cameras/obsbot/ObsbotCameraAdapter.h" 

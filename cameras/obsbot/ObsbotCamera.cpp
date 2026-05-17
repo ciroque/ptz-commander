@@ -4,8 +4,7 @@
 #include "strategies/ObsbotControlStrategy.h"
 #include "strategies/TinyFamilyStrategy.h"
 #include "strategies/TailAirStrategy.h"
-
-#include <iostream>
+#include "../../core/Logger.h"
 
 namespace cameras {
 
@@ -30,13 +29,13 @@ namespace cameras {
         strategy_ = createStrategy(device_->productType());
 
         std::string sn = getSerialNumber();
-        std::cout << "Initializing camera: " << getName() << " (" << sn << ")" << std::endl;
+        core::Logger::info("Initializing camera: " + getName() + " (" + sn + ")");
 
         if (strategy_ && strategy_->disableAI(device_.get())) {
-            std::cout << "AI / Tracking fully disabled for " << sn << std::endl;
+            core::Logger::info("AI / Tracking fully disabled for " + sn);
         }
         else {
-            std::cout << "Warning: Failed to fully disable AI for " << sn << std::endl;
+            core::Logger::warn("Failed to fully disable AI for " + sn);
         }
     }
 
