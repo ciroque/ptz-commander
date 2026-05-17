@@ -55,11 +55,6 @@ namespace commands::snapshot {
                 std::cout << "Applied preset '" << presetName << "' to " << camera->getSerialNumber() << std::endl;
                 appliedCount++;
             }
-
-            // Add delay between camera moves (except after the last one)
-            if (camera != cameras.back()) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
-            }
         }
 
         if (appliedCount > 0 && allGood) {
