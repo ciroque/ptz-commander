@@ -1,5 +1,5 @@
 #include "CameraManager.h"
-#include <iostream>
+#include "../core/Logger.h"
 
 namespace cameras {
     std::list<std::shared_ptr<Camera>> CameraManager::getCameras() const {
@@ -25,7 +25,7 @@ namespace cameras {
             [&sn](const auto& c) { return c->getSerialNumber() == sn; });
         if (it == cameras_.end()) {
             cameras_.push_back(camera);
-            std::cout << "CameraManager added camera: " << sn << std::endl;
+            core::Logger::info("CameraManager added camera: " + sn);
         }
     }
 
@@ -35,7 +35,7 @@ namespace cameras {
             [&serialNumber](const auto& c) { return c->getSerialNumber() == serialNumber; });
         if (it != cameras_.end()) {
             cameras_.erase(it);
-            std::cout << "CameraManager removed camera: " << serialNumber << std::endl;
+            core::Logger::info("CameraManager removed camera: " + serialNumber);
         }
     }
 }

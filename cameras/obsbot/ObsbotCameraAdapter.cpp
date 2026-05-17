@@ -1,8 +1,9 @@
 #include "ObsbotCameraAdapter.h"
 #include "ObsbotCamera.h"
 #include "../../include/obsbot/comm.hpp"
+#include "../../core/Application.h"
+#include "../../core/Logger.h"
 
-#include <iostream>
 #include <fstream>
 #include <chrono>
 #include <mutex>
@@ -53,11 +54,11 @@ namespace cameras::obsbot {
         // === SDK Logging Redirect ===
         logFile.open("obsbot_sdk.log", std::ios::out | std::ios::app);
         if (logFile.is_open()) {
-            std::cout << "OBSBOT SDK logging redirected to: obsbot_sdk.log" << std::endl;
+            core::Logger::info("OBSBOT SDK logging redirected to: obsbot_sdk.log");
             dev_set_log_handler(sdkLogHandler, nullptr);
         }
         else {
-            std::cerr << "Failed to open obsbot_sdk.log for writing" << std::endl;
+            core::Logger::error("Failed to open obsbot_sdk.log for writing");
         }
 
         devices_.setEnableMdnsScan(true);
@@ -78,18 +79,17 @@ namespace cameras::obsbot {
 
             int32_t scanResult = devices_.startNetworkScanImmediately();
             if (scanResult == RM_RET_OK) {
-                std::cout << "Network scan started successfully" << std::endl;
+                core::Logger::info("Network scan started successfully");
             }
             else {
-                std::cerr << "Network scan failed to start (code: " << scanResult 
-                          << ") - scanning may already be in progress" << std::endl;
+                core::Logger::warn("Network scan failed to start (code: " + std::to_string(scanResult) + ") - scanning may already be in progress");
             }
 
             findDevices();
 
             devices_.setDevChangedCallback(onDeviceChanged, this);
 
-            std::cout << "ObsbotCameraAdapter started (USB + Network + SDK logging to file)." << std::endl;
+            core::Logger::info("ObsbotCameraAdapter started (USB + Network + SDK logging to file)");
         }
     }
 
@@ -97,7 +97,7 @@ namespace cameras::obsbot {
         if (running_) {
             running_ = false;
             devices_.setDevChangedCallback(nullptr, nullptr);
-            std::cout << "ObsbotCameraAdapter stopped." << std::endl;
+            core::Logger::info("ObsbotCameraAdapter stopped");
         }
     }
 
@@ -105,7 +105,7 @@ namespace cameras::obsbot {
         auto* adapter = static_cast<ObsbotCameraAdapter*>(param);
         if (!adapter) return;
 
-        std::cout << "Device event: " << devSn << " - " << (connected ? "CONNECTED" : "DISCONNECTED") << std::endl;
+        core::Logger::info("Device event: " + devSn + " - " + (connected ? "CONNECTED" : "DISCONNECTED"));
 
         if (connected) {
             auto dev = adapter->devices_.getDevBySn(devSn);
@@ -114,8 +114,7 @@ namespace cameras::obsbot {
                     dev->devMode() == Device::DevModeNet) {
 
                     std::string mode = (dev->devMode() == Device::DevModeNet) ? "NETWORK" : "USB";
-                    std::cout << "Adding " << mode << " device: "
-                        << dev->devName() << " (" << devSn << ")" << std::endl;
+                    core::Logger::info("Adding " + mode + " device: " + dev->devName() + " (" + devSn + ")");
 
                     adapter->manager_.addCamera(std::make_shared<ObsbotCamera>(dev));
                 }
@@ -131,7 +130,7 @@ namespace cameras::obsbot {
         for (const auto& dev : devList) {
             if (dev && (dev->devMode() == Device::DevModeUvc ||
                 dev->devMode() == Device::DevModeNet)) {
-                std::cout << "Pre-existing device found: " << dev->devName() << std::endl;
+                core::Logger::info("Pre-existing device found: " + dev->devName());
                 manager_.addCamera(std::make_shared<ObsbotCamera>(dev));
             }
         }
