@@ -1,5 +1,5 @@
-#ifndef SNAPSHOT_LISTCOMMAND_H
-#define SNAPSHOT_LISTCOMMAND_H
+#ifndef COMMANDS_SNAPSHOT_LISTCOMMAND_H
+#define COMMANDS_SNAPSHOT_LISTCOMMAND_H
 
 #include "../Command.h"
 
@@ -16,4 +16,4 @@ public:
 
 } // namespace commands::snapshot
 
-#endif // SNAPSHOT_LISTCOMMAND_H
+#endif // COMMANDS_SNAPSHOT_LISTCOMMAND_H

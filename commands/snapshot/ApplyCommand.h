@@ -1,5 +1,5 @@
-#ifndef SNAPSHOT_APPLYCOMMAND_H
-#define SNAPSHOT_APPLYCOMMAND_H
+#ifndef COMMANDS_SNAPSHOT_APPLYCOMMAND_H
+#define COMMANDS_SNAPSHOT_APPLYCOMMAND_H
 
 #include "../Command.h"
 #include <sstream>
@@ -29,4 +29,4 @@ private:
 
 } // namespace commands::snapshot
 
-#endif // SNAPSHOT_APPLYCOMMAND_H
+#endif // COMMANDS_SNAPSHOT_APPLYCOMMAND_H

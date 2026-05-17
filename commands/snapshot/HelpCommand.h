@@ -1,5 +1,5 @@
-#ifndef SNAPSHOT_HELPCOMMAND_H
-#define SNAPSHOT_HELPCOMMAND_H
+#ifndef COMMANDS_SNAPSHOT_HELPCOMMAND_H
+#define COMMANDS_SNAPSHOT_HELPCOMMAND_H
 
 #include "../Command.h"
 #include <iostream>
@@ -19,4 +19,4 @@ public:
 
 } // namespace commands::snapshot
 
-#endif // SNAPSHOT_HELPCOMMAND_H
+#endif // COMMANDS_SNAPSHOT_HELPCOMMAND_H
