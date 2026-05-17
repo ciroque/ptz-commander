@@ -16,7 +16,7 @@ public:
     void execute(data::Context& ctx, const std::string& args) override;
 
 private:
-    const std::vector<std::string> splitArgs(const std::string& args) {
+    std::vector<std::string> splitArgs(const std::string& args) const {
         std::vector<std::string> tokens;
         std::istringstream stream(args);
         std::string token;

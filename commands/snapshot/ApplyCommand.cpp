@@ -1,35 +1,21 @@
 #include "ApplyCommand.h"
 #include <iostream>
-#include <thread>
-#include <chrono>
 
 namespace commands::snapshot {
 
     void ApplyCommand::execute(data::Context& ctx, const std::string& args) {
         if (args.empty()) {
-            std::cout << "Usage: snapshot apply <name> [delay_ms]" << std::endl;
+            std::cout << "Usage: snapshot apply <name>" << std::endl;
             return;
         }
 
         auto tokens = splitArgs(args);
         if (tokens.empty()) {
-            std::cout << "Usage: snapshot apply <name> [delay_ms]" << std::endl;
+            std::cout << "Usage: snapshot apply <name>" << std::endl;
             return;
         }
 
         std::string presetName = tokens[0];
-        int delayMs = 2000;  // Default 2000ms (2 seconds)
-
-        // Parse optional delay (if present)
-        if (tokens.size() > 1) {
-            try {
-                delayMs = std::stoi(tokens[1]);
-                if (delayMs < 0) delayMs = 2000;  // Use default if negative
-            }
-            catch (const std::exception&) {
-                std::cout << "Invalid delay_ms, using default 2000ms" << std::endl;
-            }
-        }
 
         // Get ALL cameras (snapshot applies to all cameras by definition)
         auto cameras = ctx.cameraMgr.getCameras();
@@ -40,6 +26,7 @@ namespace commands::snapshot {
 
         bool allGood = true;
         int appliedCount = 0;
+
         for (auto& camera : cameras) {
             const cameras::Preset* preset = camera->GetPresetByName(presetName);
             if (!preset) {
