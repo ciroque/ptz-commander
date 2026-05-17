@@ -25,6 +25,10 @@
 #include "preset/SaveCommand.h"
 #include "preset/StoreCommand.h"
 
+#include "snapshot/ApplyCommand.h"
+#include "snapshot/ListCommand.h"
+#include "snapshot/HelpCommand.h"
+
 #include "HelpCommand.h"
 
 namespace commands {
@@ -49,10 +53,14 @@ namespace commands {
             addCommand(std::make_unique<preset::LoadCommand>());
             addCommand(std::make_unique<preset::SaveCommand>());
             addCommand(std::make_unique<preset::StoreCommand>());
-            
+
+            addCommand(std::make_unique<snapshot::ApplyCommand>());
+            addCommand(std::make_unique<snapshot::ListCommand>());
+
             addCommand(std::make_unique<HelpCommand>());
             addCommand(std::make_unique<camera::HelpCommand>());
             addCommand(std::make_unique<preset::HelpCommand>());
+            addCommand(std::make_unique<snapshot::HelpCommand>());
         }
 
         void addCommand(std::unique_ptr<Command> cmd) {

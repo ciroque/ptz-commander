@@ -8,10 +8,15 @@ namespace commands::preset {
             return;
         }
 
-        std::cout << "Listing presets..." << std::endl << std::endl;
+        bool anyPresets = false;
         for (const auto& camera : cameras) {
             auto presets = camera->getPresets();
-            if (presets.empty()) continue;  // Skip cameras with no presets
+            if (presets.empty()) continue;
+
+            if (!anyPresets) {
+                std::cout << "Listing presets..." << std::endl << std::endl;
+                anyPresets = true;
+            }
 
             std::cout << "Camera: " << camera->getSerialNumber() << " (" << camera->getFriendlyName() << ")" << std::endl;
             std::cout << std::left
@@ -31,7 +36,11 @@ namespace commands::preset {
                     << std::setw(10) << preset->ptz.tilt << " | "
                     << std::setw(10) << preset->ptz.zoom << std::endl;
             }
-            std::cout << std::endl;  // Space between cameras
+            std::cout << std::endl;
+        }
+
+        if (!anyPresets) {
+            std::cout << "No presets found." << std::endl;
         }
     }
 }

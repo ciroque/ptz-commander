@@ -11,7 +11,7 @@ namespace commands::preset {
         }
 
         auto tokens = splitArgs(args);
-        if (tokens.empty()) {
+        if (tokens.size() < 2) {
             std::cout << "Usage: preset apply <serialNumber|*> <name|*> [delay_ms]" << std::endl;
             return;
         }
