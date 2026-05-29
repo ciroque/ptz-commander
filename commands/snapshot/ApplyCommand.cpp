@@ -10,7 +10,7 @@ namespace commands::snapshot {
             return;
         }
 
-        auto tokens = splitArgs(args);
+        auto tokens = commands::splitArgs(args);
         if (tokens.empty()) {
             std::cout << "Usage: snapshot apply <name>" << std::endl;
             return;

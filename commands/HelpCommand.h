@@ -14,6 +14,7 @@ namespace commands {
             std::cout << "  camera help         Show camera command help\n";
             std::cout << "  preset help         Show preset command help\n";
             std::cout << "  snapshot help       Show snapshot command help\n";
+            std::cout << "  cls                 Clear the screen\n";
             std::cout << "  camera <command>    Camera operations\n";
             std::cout << "  preset <command>    Preset operations\n";
             std::cout << "  snapshot <command>  Multi-camera preset operations\n";

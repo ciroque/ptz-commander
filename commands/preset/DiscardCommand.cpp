@@ -8,7 +8,7 @@ namespace commands::preset {
             return;
         }
 
-        auto tokens = splitArgs(args);
+        auto tokens = commands::splitArgs(args);
         if (tokens.size() < 2) {
             std::cout << "Usage: preset discard <serialNumber|*> <name>" << std::endl;
             return;

@@ -8,7 +8,7 @@ namespace commands::camera {
             return;
         }
 
-        auto tokens = splitArgs(args);
+        auto tokens = commands::splitArgs(args);
         if (tokens.size() < 2) {
             std::cout << "Usage: camera alias <serialNumber> <alias>" << std::endl;
             return;
