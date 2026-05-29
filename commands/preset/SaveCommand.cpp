@@ -11,6 +11,15 @@ namespace commands::preset {
             return;
         }
 
+        std::string filename = "presets.ptzc";
+        auto tokens = splitArgs(args);
+        if (!tokens.empty()) {
+            filename = tokens[0];
+            if (filename.find('.') == std::string::npos) {
+                filename += ".ptzc";
+            }
+        }
+
         nlohmann::json j;
         for (const auto& camera : cameras) {
             nlohmann::json camJson;
@@ -20,19 +29,19 @@ namespace commands::preset {
                 presetJson["pan"] = preset->ptz.pan;
                 presetJson["tilt"] = preset->ptz.tilt;
                 presetJson["zoom"] = preset->ptz.zoom;
-                camJson[preset->name] = presetJson;  // Map key as name
+                camJson[preset->name] = presetJson;
             }
             j[camera->getSerialNumber()] = camJson;
         }
 
-        std::ofstream file("presets.json");
+        std::ofstream file(filename);
         if (file.is_open()) {
             file << j.dump(2);
             file.close();
-            std::cout << "Saved presets to presets.json for " << cameras.size() << " cameras" << std::endl;
+            std::cout << "Saved presets to " << filename << " for " << cameras.size() << " cameras" << std::endl;
         }
         else {
-            std::cout << "Failed to write to presets.json" << std::endl;
+            std::cout << "Failed to write to " << filename << std::endl;
         }
     }
 }
