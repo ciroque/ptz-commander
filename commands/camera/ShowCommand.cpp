@@ -10,7 +10,7 @@ namespace commands::camera {
         }
 
         // Split args to get serial number or wildcard
-        auto tokens = splitArgs(args);
+        auto tokens = commands::splitArgs(args);
         if (tokens.empty()) {
             std::cout << "Usage: camera show <serialNumber> (or * for all)" << std::endl;
             return;

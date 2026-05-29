@@ -50,6 +50,7 @@ add_executable(ptz_commander main.cpp
         "commands/snapshot/ListCommand.h"
         "commands/snapshot/ListCommand.cpp"
         "commands/snapshot/HelpCommand.h"
+        "commands/Arguments.h"
         "cameras/obsbot/strategies/ObsbotControlStrategy.h"
         "cameras/obsbot/strategies/TinyFamilyStrategy.h"
         "cameras/obsbot/strategies/TinyFamilyStrategy.cpp"

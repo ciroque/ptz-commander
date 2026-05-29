@@ -12,7 +12,7 @@ namespace commands::preset {
 		}
 
 		std::string filename = "presets.ptzc";
-		auto tokens = splitArgs(args);
+		auto tokens = commands::splitArgs(args);
 		if (!tokens.empty()) {
 			filename = tokens[0];
 			if (filename.find('.') == std::string::npos) {

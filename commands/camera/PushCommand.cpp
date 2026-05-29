@@ -8,9 +8,9 @@
 
 namespace commands::camera {
     void PushCommand::execute(data::Context& ctx, const std::string& args) {
-        auto tokens = splitArgs(args);
+        auto tokens = commands::splitArgs(args);
         if (tokens.size() < 2) {
-            std::cout << "Usage: push <serialNumber|*> <targetZoom> [speed]" << std::endl;
+            std::cout << "Usage: camera push <serialNumber|*> <targetZoom> [speed]" << std::endl;
             return;
         }
 

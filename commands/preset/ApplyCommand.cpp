@@ -1,5 +1,6 @@
 #include "ApplyCommand.h"
 #include <iostream>
+#include <vector>  // for std::vector in execute()
 #include <thread>
 #include <chrono>
 
@@ -10,7 +11,7 @@ namespace commands::preset {
             return;
         }
 
-        auto tokens = splitArgs(args);
+        auto tokens = commands::splitArgs(args);
         if (tokens.size() < 2) {
             std::cout << "Usage: preset apply <serialNumber|*> <name|*> [delay_ms]" << std::endl;
             return;

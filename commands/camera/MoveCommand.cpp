@@ -2,16 +2,6 @@
 #include <iostream>
 
 namespace commands::camera {
-    std::vector<std::string> MoveCommand::splitArgs(const std::string& args) const {
-        std::vector<std::string> tokens;
-        std::stringstream ss(args);
-        std::string token;
-        while (ss >> token) {
-            tokens.push_back(token);
-        }
-        return tokens;
-    }
-
     cameras::Ptz MoveCommand::parsePtz(const std::vector<std::string>& tokens, size_t start, size_t count) const {
         if (tokens.size() < start + count || count != 3) {
             throw std::invalid_argument("Not enough arguments for move command");
@@ -36,7 +26,7 @@ namespace commands::camera {
             return;
         }
 
-        auto tokens = splitArgs(args);
+        auto tokens = commands::splitArgs(args);
         if (tokens.size() < 4) {
             std::cout << "Usage: camera move <serialNumber> <pan> <tilt> <zoom>" << std::endl;
             return;
