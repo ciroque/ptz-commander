@@ -34,7 +34,9 @@ namespace cameras::obsbot::strategies {
         // Tiny 2 prefers absolute angle, others use speed position
         int32_t moveResult;
         if (dev->productType() == ObsbotProdTiny2) {
-            moveResult = dev->aiSetGimbalMotorAngleR(0.0f, tilt, pan);
+            // SDK signature: aiSetGimbalMotorAngleR(float pitch, float yaw, float roll)
+            // pitch = tilt, yaw = pan. We pass roll=0 explicitly.
+            moveResult = dev->aiSetGimbalMotorAngleR(tilt, pan, 0.0f);
         }
         else {
             moveResult = dev->gimbalSetSpeedPositionR(0, tilt, pan, 80, 80, 80);
