@@ -30,7 +30,10 @@ namespace cameras::obsbot::strategies {
         zoom = clamp(zoom, 0, 100);
         float scaledZoom = 1.0f + (zoom / 100.0f);
         int32_t zoomResult = dev->cameraSetZoomAbsoluteR(scaledZoom);
-        int32_t gimbalResult = dev->aiSetGimbalMotorAngleR(0.0f, tilt, pan);
+
+        // SDK signature: aiSetGimbalMotorAngleR(float pitch, float yaw, float roll)
+        // pitch = tilt, yaw = pan. We pass roll=0 explicitly.
+        int32_t gimbalResult = dev->aiSetGimbalMotorAngleR(tilt, pan, 0.0f);
 
         return zoomResult == RM_RET_OK && gimbalResult == RM_RET_OK;
     }
