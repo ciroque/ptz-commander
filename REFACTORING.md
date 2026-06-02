@@ -29,6 +29,13 @@ Items are roughly prioritized by **impact vs effort**.
 - Fixed incorrect internal usage string in `PushCommand.cpp` (was printing `push ...` instead of `camera push ...`).
 - This work partially addresses the "Clean up the multiple HelpCommand classes" item that was previously in the Lower Priority section.
 
+### Complete the Control Strategy Pattern (Reading Side) (Original Item #1 after renumbering)
+- Added `virtual cameras::Ptz getCurrentPtz(Device* dev) = 0;` to `ObsbotControlStrategy`.
+- Implemented `getCurrentPtz` in both `TinyFamilyStrategy` and `TailAirStrategy` (extracted the previous logic from `ObsbotCamera`).
+- Updated `ObsbotCamera::getCurrentPtz()` to delegate to the strategy: `strategy_->getCurrentPtz(device_.get())`.
+- The strategy pattern now owns the full PTZ contract (both reading current state and writing moves/zoom).
+- This allows future per-camera-family differences in how attitude/zoom data is read from the SDK.
+
 ---
 
 ## High Impact / High ROI (Strongly Recommended)
@@ -40,18 +47,13 @@ See the **Recently Completed** section at the top of this document for details.
 
 ---
 
-### 1. Complete the Control Strategy Pattern (Reading Side)
+### ~~1. Complete the Control Strategy Pattern (Reading Side)~~ (COMPLETED)
 
-**Problem**: We have a good `ObsbotControlStrategy` for *writing* PTZ (move/zoom), but `getCurrentPtz()` lives only in `ObsbotCamera` with a single code path using `gimbalGetAttitudeInfoR`.
-
-The recent pan/tilt bug showed that different camera families can have different coordinate or data ordering behaviors.
-
-**Impact**: High (prevents future coordinate/reading bugs)
-**Effort**: Medium
-**Suggested approach**:
-- Add `getCurrentPtz(Device* dev)` (or similar) to `ObsbotControlStrategy`.
-- Move the current reading logic into `TinyFamilyStrategy` and create appropriate logic for `TailAirStrategy`.
-- This makes the Strategy pattern actually own the full PTZ contract.
+**Status**: Completed.
+- Strategy interface extended with `getCurrentPtz`.
+- Logic moved into `TinyFamilyStrategy` and `TailAirStrategy`.
+- `ObsbotCamera` now delegates fully.
+See the **Recently Completed** section for details.
 
 ---
 
@@ -158,6 +160,6 @@ The relationship between them is not very clear in the code or architecture.
 
 ---
 
-**Last updated**: After completing the `splitArgs()` deduplication and a full review + standardization of all in-app help commands (on the `feat/named-preset-files` branch).
+**Last updated**: After completing the Control Strategy Pattern for reading PTZ state (full read/write ownership in strategies) on the `feat/named-preset-files` branch.
 
 Feel free to edit, prioritize, or turn items into GitHub issues / individual PR plans.

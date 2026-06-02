@@ -8,6 +8,7 @@ namespace cameras::obsbot::strategies {
         bool disableAI(Device* dev) override;
         bool moveTo(float pan, float tilt, int zoom, Device* dev) override;
         bool setZoom(int zoom, int speed, Device* dev) override;
+        cameras::Ptz getCurrentPtz(Device* dev) override;
     };
 
 } // namespace cameras::obsbot::strategies
