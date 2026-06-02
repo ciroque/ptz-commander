@@ -29,12 +29,19 @@ Items are roughly prioritized by **impact vs effort**.
 - Fixed incorrect internal usage string in `PushCommand.cpp` (was printing `push ...` instead of `camera push ...`).
 - This work partially addresses the "Clean up the multiple HelpCommand classes" item that was previously in the Lower Priority section.
 
-### Complete the Control Strategy Pattern (Reading Side) (Original Item #1 after renumbering)
+### Complete the Control Strategy Pattern (Reading Side)
 - Added `virtual cameras::Ptz getCurrentPtz(Device* dev) = 0;` to `ObsbotControlStrategy`.
 - Implemented `getCurrentPtz` in both `TinyFamilyStrategy` and `TailAirStrategy` (extracted the previous logic from `ObsbotCamera`).
 - Updated `ObsbotCamera::getCurrentPtz()` to delegate to the strategy: `strategy_->getCurrentPtz(device_.get())`.
 - The strategy pattern now owns the full PTZ contract (both reading current state and writing moves/zoom).
 - This allows future per-camera-family differences in how attitude/zoom data is read from the SDK.
+
+### Extract Duplicate Logic from Camera Strategies (Original Item #2)
+- Created [cameras/obsbot/strategies/StrategyUtils.h](/cameras/obsbot/strategies/StrategyUtils.h) with shared `clamp`, zoom scaling helpers (`scaleZoomForAbsoluteSet`, `computeZoomRatio`, `computeZoomSpeed`), zoom read scaler, and `readCommonPtzFromDevice`.
+- Removed the duplicated anonymous `clamp` template and inline zoom/scale logic from both `TinyFamilyStrategy.cpp` and `TailAirStrategy.cpp`.
+- Both strategies (and the recently added `getCurrentPtz`) now delegate to the shared utils.
+- Removed the dead `cameras/utils.h` (with its unused `scaleToRange`) from CMakeLists.txt (the source file can be reviewed/deleted separately).
+- Also deduplicated the `getCurrentPtz` body via the new `readCommonPtzFromDevice` helper.
 
 ---
 
@@ -57,19 +64,10 @@ See the **Recently Completed** section for details.
 
 ---
 
-### 2. Extract Duplicate Logic from Camera Strategies
+### ~~2. Extract Duplicate Logic from Camera Strategies~~ (COMPLETED)
 
-**Problem**: `TailAirStrategy` and `TinyFamilyStrategy` duplicate:
-- The `clamp` template function
-- Zoom scaling logic (`scaledZoom`, `zoomRatio`, speed calculation)
-
-There is also an unused `scaleToRange()` function in `cameras/utils.h`.
-
-**Impact**: Medium–High
-**Effort**: Low
-**Suggested approach**:
-- Move shared math into `cameras/obsbot/strategies/` (e.g. `StrategyUtils.h` or a base class with protected helpers).
-- Either delete or integrate the existing `utils.h` function.
+**Status**: Completed.
+See the **Recently Completed** section at the top of this document for details.
 
 ---
 
@@ -146,7 +144,7 @@ The relationship between them is not very clear in the code or architecture.
 - Create a small, reusable argument parsing library (support for flags, quoted strings, typed parsing).
 - ~~Clean up the multiple `HelpCommand` classes (root + per domain)~~ — partially addressed (see Recently Completed section).
 - Consider extracting common camera lookup logic (`*` vs specific ID) into a helper.
-- Review and potentially remove or properly integrate `cameras/utils.h`.
+- ~~Review and potentially remove or properly integrate `cameras/utils.h`~~ (removed from CMakeLists.txt as part of duplicate extraction; file itself can be deleted).
 - Add a `.clang-format` / consistent code style (indentation, bracing, etc. are currently inconsistent between files).
 - Document the coordinate system assumptions per camera family (especially after the recent Tail Air fix).
 
@@ -160,6 +158,6 @@ The relationship between them is not very clear in the code or architecture.
 
 ---
 
-**Last updated**: After completing the Control Strategy Pattern for reading PTZ state (full read/write ownership in strategies) on the `feat/named-preset-files` branch.
+**Last updated**: After extracting duplicate clamp/zoom logic from camera strategies into StrategyUtils.h (on the `feat/named-preset-files` branch).
 
 Feel free to edit, prioritize, or turn items into GitHub issues / individual PR plans.
