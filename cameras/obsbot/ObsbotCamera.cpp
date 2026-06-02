@@ -62,20 +62,7 @@ namespace cameras {
     }
 
     Ptz ObsbotCamera::getCurrentPtz() const {
-        Ptz ptz{ 0.0f, 0.0f, 0 };
-        if (!device_) return ptz;
-
-        float pos[3] = { 0 };
-        if (device_->gimbalGetAttitudeInfoR(pos) == RM_RET_OK) {
-            ptz.tilt = pos[1];
-            ptz.pan = pos[2];
-        }
-
-        float zoomVal = 0.0f;
-        if (device_->cameraGetZoomAbsoluteR(zoomVal) == RM_RET_OK) {
-            ptz.zoom = static_cast<int>((zoomVal - 1.0f) * 100.0f);
-        }
-        return ptz;
+        return strategy_ ? strategy_->getCurrentPtz(device_.get()) : Ptz{ 0.0f, 0.0f, 0 };
     }
 
 } // namespace cameras

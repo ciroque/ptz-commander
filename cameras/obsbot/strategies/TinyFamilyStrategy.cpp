@@ -63,4 +63,21 @@ namespace cameras::obsbot::strategies {
         return dev->cameraSetZoomWithSpeedAbsoluteR(zoomRatio, zoomSpeed) == RM_RET_OK;
     }
 
+    cameras::Ptz TinyFamilyStrategy::getCurrentPtz(Device* dev) {
+        cameras::Ptz ptz{ 0.0f, 0.0f, 0 };
+        if (!dev) return ptz;
+
+        float pos[3] = { 0 };
+        if (dev->gimbalGetAttitudeInfoR(pos) == RM_RET_OK) {
+            ptz.tilt = pos[1];
+            ptz.pan = pos[2];
+        }
+
+        float zoomVal = 0.0f;
+        if (dev->cameraGetZoomAbsoluteR(zoomVal) == RM_RET_OK) {
+            ptz.zoom = static_cast<int>((zoomVal - 1.0f) * 100.0f);
+        }
+        return ptz;
+    }
+
 } // namespace cameras::obsbot::strategies
