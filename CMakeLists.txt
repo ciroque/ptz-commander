@@ -3,69 +3,21 @@ project(ptz_commander)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(ptz_commander main.cpp
-        commands/Command.cpp
-        commands/Command.h
-        "commands/camera/ListCommand.cpp"
-        "commands/camera/ListCommand.h"
-        
-        data/Context.h
-        "commands/camera/ShowCommand.cpp"
-        "commands/camera/ShowCommand.h"
-        
-        
-        commands/CommandHandler.h
-        "core/Application.cpp"
-        "core/Application.h"
-        "core/Logger.h"
-        "cameras/CameraManager.h" 
-        "cameras/CameraManager.cpp"
-        "cameras/obsbot/ObsbotCamera.h" 
-        "cameras/obsbot/ObsbotCamera.cpp" 
-        "cameras/obsbot/ObsbotCameraAdapter.h" 
-        "cameras/obsbot/ObsbotCameraAdapter.cpp" 
-        "cameras/Preset.h" 
-        "commands/camera/MoveCommand.h" 
-        "commands/camera/MoveCommand.cpp" 
-        "commands/preset/StoreCommand.h" 
-        "commands/preset/StoreCommand.cpp" 
-        "commands/preset/DiscardCommand.h" 
-        "commands/preset/DiscardCommand.cpp" 
-        "commands/preset/ListCommand.h" 
-        "commands/preset/ListCommand.cpp" 
-        "commands/preset/ApplyCommand.h" 
-        "commands/preset/ApplyCommand.cpp" 
-        "commands/preset/SaveCommand.h" 
-        "commands/preset/SaveCommand.cpp" 
-        "commands/preset/LoadCommand.h" 
-        "commands/preset/LoadCommand.cpp" 
-        "commands/camera/AliasCommand.h" 
-        "commands/camera/AliasCommand.cpp"
-        "commands/console/ClearCommand.h"
-        "commands/console/ClearCommand.cpp"
-        "commands/camera/PushCommand.h"
-        "commands/camera/PushCommand.cpp"
-        "commands/snapshot/ApplyCommand.h"
-        "commands/snapshot/ApplyCommand.cpp"
-        "commands/snapshot/ListCommand.h"
-        "commands/snapshot/ListCommand.cpp"
-        "commands/snapshot/HelpCommand.h"
-        "commands/Arguments.h"
-        "cameras/obsbot/strategies/ObsbotControlStrategy.h"
-        "cameras/obsbot/strategies/StrategyUtils.h"
-        "cameras/obsbot/strategies/TinyFamilyStrategy.h"
-        "cameras/obsbot/strategies/TinyFamilyStrategy.cpp"
-        "cameras/obsbot/strategies/TailAirStrategy.h"
-        "cameras/obsbot/strategies/TailAirStrategy.cpp")
+add_executable(ptz_commander main.cpp)
 
+# Modular source organization via subdirectories + target_sources
+add_subdirectory(core)
+add_subdirectory(data)
+add_subdirectory(cameras)
+add_subdirectory(commands)
 
-# Include directories for headers in obsbot/
+# Include directories for third-party headers (nlohmann/json, obsbot SDK, spdlog)
 target_include_directories(ptz_commander PRIVATE "${CMAKE_SOURCE_DIR}/include/")
 
-# Link against libdev.lib in obsbot/
+# Link against obsbot SDK
 target_link_libraries(ptz_commander PRIVATE "${CMAKE_SOURCE_DIR}/lib/obsbot/libdev.lib")
 
-# Copy libdev.dll to the build directory after building
+# Copy libdev.dll to the build directory after building (so the exe can find it at runtime)
 add_custom_command(TARGET ptz_commander POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_SOURCE_DIR}/lib/obsbot/libdev.dll"

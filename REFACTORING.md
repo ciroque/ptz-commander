@@ -43,6 +43,13 @@ Items are roughly prioritized by **impact vs effort**.
 - Removed the dead `cameras/utils.h` (with its unused `scaleToRange`) from CMakeLists.txt (the source file can be reviewed/deleted separately).
 - Also deduplicated the `getCurrentPtz` body via the new `readCommonPtzFromDevice` helper.
 
+### Improve CMake Build Configuration (Original Item #3)
+- Refactored the build system into a modular structure using `add_subdirectory()` + `target_sources()`.
+- Created dedicated CMakeLists.txt files under `core/`, `data/`, `cameras/`, and `commands/`.
+- The root CMakeLists.txt is now short and focused on high-level setup (executable declaration, includes, linking, post-build steps).
+- Adding new files (new commands, new camera strategies, etc.) only requires editing the local subdirectory's CMakeLists.txt.
+- Configuration now succeeds without the previous giant flat file list.
+
 ---
 
 ## High Impact / High ROI (Strongly Recommended)
@@ -71,16 +78,21 @@ See the **Recently Completed** section at the top of this document for details.
 
 ---
 
-### 3. Improve CMake Build Configuration
+### ~~3. Improve CMake Build Configuration~~ (COMPLETED)
 
-**Problem**: `CMakeLists.txt` manually lists every single `.cpp` and `.h` file. This is brittle, error-prone, and painful when adding new commands or cameras.
+**Status**: Completed.
+- Root [CMakeLists.txt](/CMakeLists.txt) is now minimal and clean.
+- Created per-module `CMakeLists.txt` files:
+  - `core/CMakeLists.txt`
+  - `data/CMakeLists.txt`
+  - `cameras/CMakeLists.txt`
+  - `commands/CMakeLists.txt`
+- Used `add_subdirectory()` + `target_sources(ptz_commander PRIVATE ...)` to attach sources logically.
+- New files (e.g. Arguments.h, StrategyUtils.h) are now easy to add in their local directory's CMakeLists.
+- Removed reference to dead `cameras/utils.h`.
+- Configuration succeeds cleanly.
 
-**Impact**: High for long-term maintainability
-**Effort**: Low–Medium
-**Suggested approach**:
-- Use `file(GLOB_RECURSE ...)` (with care) **or** better: organize into proper targets and use `target_sources()`.
-- Consider splitting into subdirectories with their own `CMakeLists.txt` includes.
-- At minimum, group files logically instead of a giant flat list.
+See the **Recently Completed** section for the full summary.
 
 ---
 
@@ -158,6 +170,6 @@ The relationship between them is not very clear in the code or architecture.
 
 ---
 
-**Last updated**: After extracting duplicate clamp/zoom logic from camera strategies into StrategyUtils.h (on the `feat/named-preset-files` branch).
+**Last updated**: After improving the CMake build configuration with modular subdirectories + target_sources (on the `feat/named-preset-files` branch).
 
 Feel free to edit, prioritize, or turn items into GitHub issues / individual PR plans.
