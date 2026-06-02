@@ -1,14 +1,7 @@
 #include "TailAirStrategy.h"
-#include <algorithm>
+#include "StrategyUtils.h"
 
 namespace cameras::obsbot::strategies {
-
-    namespace {
-        template<typename T>
-        T clamp(const T& val, const T& minVal, const T& maxVal) {
-            return std::min(std::max(val, minVal), maxVal);
-        }
-    }
 
     bool TailAirStrategy::disableAI(Device* dev) {
         if (!dev) return false;
@@ -27,8 +20,7 @@ namespace cameras::obsbot::strategies {
     bool TailAirStrategy::moveTo(float pan, float tilt, int zoom, Device* dev) {
         if (!dev) return false;
 
-        zoom = clamp(zoom, 0, 100);
-        float scaledZoom = 1.0f + (zoom / 100.0f);
+        float scaledZoom = scaleZoomForAbsoluteSet(zoom);
         int32_t zoomResult = dev->cameraSetZoomAbsoluteR(scaledZoom);
 
         // SDK signature: aiSetGimbalMotorAngleR(float pitch, float yaw, float roll)
@@ -41,36 +33,14 @@ namespace cameras::obsbot::strategies {
     bool TailAirStrategy::setZoom(int zoom, int speed, Device* dev) {
         if (!dev) return false;
 
-        zoom = clamp(zoom, 0, 100);
-        uint32_t zoomRatio = static_cast<uint32_t>(100 + (zoom * 3));
-
-        uint32_t zoomSpeed;
-        if (speed == 255) {
-            zoomSpeed = 255u;
-        }
-        else {
-            int scaledSpeed = clamp((speed * 10) / 100, 0, 10);
-            zoomSpeed = (speed > 0 && scaledSpeed == 0) ? 1u : static_cast<uint32_t>(scaledSpeed);
-        }
+        uint32_t zoomRatio = computeZoomRatio(zoom);
+        uint32_t zoomSpeed = computeZoomSpeed(speed);
 
         return dev->cameraSetZoomWithSpeedAbsoluteR(zoomRatio, zoomSpeed) == RM_RET_OK;
     }
 
     cameras::Ptz TailAirStrategy::getCurrentPtz(Device* dev) {
-        cameras::Ptz ptz{ 0.0f, 0.0f, 0 };
-        if (!dev) return ptz;
-
-        float pos[3] = { 0 };
-        if (dev->gimbalGetAttitudeInfoR(pos) == RM_RET_OK) {
-            ptz.tilt = pos[1];
-            ptz.pan = pos[2];
-        }
-
-        float zoomVal = 0.0f;
-        if (dev->cameraGetZoomAbsoluteR(zoomVal) == RM_RET_OK) {
-            ptz.zoom = static_cast<int>((zoomVal - 1.0f) * 100.0f);
-        }
-        return ptz;
+        return readCommonPtzFromDevice(dev);
     }
 
 } // namespace cameras::obsbot::strategies
