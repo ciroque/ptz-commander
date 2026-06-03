@@ -98,16 +98,17 @@ See the **Recently Completed** section for the full summary.
 
 ## Medium Impact / Good Architecture Improvements
 
-### 4. Introduce a Proper Preset Persistence Abstraction
+### ~~4. Introduce a Proper Preset Persistence Abstraction~~ (COMPLETED)
 
-**Context**: The current `feat/named-preset-files` work is adding filename support to `LoadCommand`/`SaveCommand`, but persistence logic is still scattered directly in the command classes using raw `nlohmann::json` + `std::fstream`.
+**Status**: Completed.
+- Introduced `cameras/PresetStore` (.h + .cpp) as the central class.
+- It owns filename normalization, the full gig JSON format (per-serial `{"alias": "...", "presets": { ... }}`), loading presets+aliases into live Camera instances in the manager, and saving from them.
+- LoadCommand and SaveCommand now delegate to the store after parsing the optional filename arg (preserving original UX and messages).
+- Direct nlohmann/json + fstream usage for persistence removed from commands.
+- The bundled gig model (aliases + presets together) is implemented as the accepted breaking change.
+- Ready for future extensions (auto-save on changes, other backends, validation, etc.) inside the store.
 
-**Impact**: High (especially as named preset files mature)
-**Effort**: Medium
-**Suggested approach**:
-- Create a `PresetStore` / `PresetRepository` class (or interface + implementations).
-- Move JSON serialization, file handling, and the default filename logic there.
-- This will make future features (auto-save, multiple backends, validation, migration from `.json` → `.ptzc`) much cleaner.
+See cameras/PresetStore.h for the interface, and the updated Load/SaveCommand.cpp for usage.
 
 ---
 
@@ -170,6 +171,6 @@ The relationship between them is not very clear in the code or architecture.
 
 ---
 
-**Last updated**: After improving the CMake build configuration with modular subdirectories + target_sources (on the `feat/named-preset-files` branch).
+**Last updated**: After implementing the PresetStore abstraction for gig file persistence (with bundled aliases) on the `feat/named-preset-files` branch.
 
 Feel free to edit, prioritize, or turn items into GitHub issues / individual PR plans.

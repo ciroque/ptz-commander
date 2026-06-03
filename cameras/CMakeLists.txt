@@ -4,6 +4,8 @@ target_sources(ptz_commander PRIVATE
     CameraManager.cpp
     CameraManager.h
     Preset.h
+    PresetStore.cpp
+    PresetStore.h
 
     obsbot/ObsbotCamera.cpp
     obsbot/ObsbotCamera.h
