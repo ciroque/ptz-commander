@@ -8,17 +8,17 @@ namespace commands {
     class HelpCommand : public Command {
     public:
         HelpCommand() { name = "help"; }
-        void execute(data::Context&, const std::string&) override {
-            std::cout << "Available root commands:\n";
-            std::cout << "  help                Show this help message\n";
-            std::cout << "  camera help         Show camera command help\n";
-            std::cout << "  preset help         Show preset command help\n";
-            std::cout << "  snapshot help       Show snapshot command help\n";
-            std::cout << "  cls                 Clear the screen\n";
-            std::cout << "  camera <command>    Camera operations\n";
-            std::cout << "  preset <command>    Preset operations\n";
-            std::cout << "  snapshot <command>  Multi-camera preset operations\n";
-            std::cout << "  exit                Exit the application\n";
+        void execute(data::Context& ctx, const std::string&) override {
+            ctx.out << "Available root commands:\n";
+            ctx.out << "  help                Show this help message\n";
+            ctx.out << "  camera help         Show camera command help\n";
+            ctx.out << "  preset help         Show preset command help\n";
+            ctx.out << "  snapshot help       Show snapshot command help\n";
+            ctx.out << "  cls                 Clear the screen\n";
+            ctx.out << "  camera <command>    Camera operations\n";
+            ctx.out << "  preset <command>    Preset operations\n";
+            ctx.out << "  snapshot <command>  Multi-camera preset operations\n";
+            ctx.out << "  exit                Exit the application\n";
         }
     };
 }

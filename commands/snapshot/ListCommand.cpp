@@ -9,7 +9,7 @@ namespace commands::snapshot {
         auto cameras = ctx.cameraMgr.getCameras();
 
         if (cameras.empty()) {
-            std::cout << "No cameras found." << std::endl;
+            ctx.err << "No cameras found." << std::endl;
             return;
         }
 
@@ -25,13 +25,13 @@ namespace commands::snapshot {
         }
 
         if (presetCounts.empty()) {
-            std::cout << "No presets found on any camera." << std::endl;
+            ctx.err << "No presets found on any camera." << std::endl;
             return;
         }
 
-        std::cout << "Snapshot presets available:" << std::endl;
+        ctx.out << "Snapshot presets available:" << std::endl;
         for (const auto& [name, count] : presetCounts) {
-            std::cout << "  " << name << "  (" << count << " camera" 
+            ctx.out << "  " << name << "  (" << count << " camera" 
                       << (count == 1 ? "" : "s") << ")" << std::endl;
         }
     }

@@ -10,7 +10,7 @@ namespace commands::camera {
     void PushCommand::execute(data::Context& ctx, const std::string& args) {
         auto tokens = commands::splitArgs(args);
         if (tokens.size() < 2) {
-            std::cout << "Usage: camera push <serialNumber|*> <targetZoom> [speed]" << std::endl;
+            ctx.err << "Usage: camera push <serialNumber|*> <targetZoom> [speed]" << std::endl;
             return;
         }
 
@@ -20,7 +20,7 @@ namespace commands::camera {
             targetZoom = std::stoi(tokens[1]);
         }
         catch (const std::exception&) {
-            std::cout << "Invalid target zoom value." << std::endl;
+            ctx.err << "Invalid target zoom value." << std::endl;
             return;
         }
 
@@ -30,7 +30,7 @@ namespace commands::camera {
                 speed = std::stoi(tokens[2]);
             }
             catch (const std::exception&) {
-                std::cout << "Invalid speed value, using default 50." << std::endl;
+                ctx.err << "Invalid speed value, using default 50." << std::endl;
             }
         }
 
@@ -38,14 +38,14 @@ namespace commands::camera {
         if (serialNumber == "*") {
             cameras = ctx.cameraMgr.getCameras();
             if (cameras.empty()) {
-                std::cout << "No cameras found to push." << std::endl;
+                ctx.err << "No cameras found to push." << std::endl;
                 return;
             }
         }
         else {
             auto camera = ctx.cameraMgr.findById(serialNumber);
             if (!camera) {
-                std::cout << "Camera not found: " << serialNumber << std::endl;
+                ctx.err << "Camera not found: " << serialNumber << std::endl;
                 return;
             }
             cameras.push_back(camera);
@@ -55,22 +55,22 @@ namespace commands::camera {
         for (auto& camera : cameras) {
 			auto currentPtz = camera->getCurrentPtz();
             if (currentPtz.zoom >= targetZoom) {
-				std::cout << "Camera " << camera->getSerialNumber() << " already at or past target zoom." << std::endl;
+				ctx.out << "Camera " << camera->getSerialNumber() << " already at or past target zoom." << std::endl;
 				allGood = false;
 				continue;
 			}
 
             if (!camera->setZoom(targetZoom, speed)) {
-                std::cout << "Failed to push zoom for " << camera->getSerialNumber() << std::endl;
+                ctx.err << "Failed to push zoom for " << camera->getSerialNumber() << std::endl;
                 allGood = false;
             }
             else {
-                std::cout << "Pushed zoom to " << targetZoom << " for " << camera->getSerialNumber() << std::endl;
+                ctx.out << "Pushed zoom to " << targetZoom << " for " << camera->getSerialNumber() << std::endl;
             }
         }
 
         if (!allGood) {
-            std::cout << "Some cameras failed to push zoom." << std::endl;
+            ctx.err << "Some cameras failed to push zoom." << std::endl;
         }
     }
 }

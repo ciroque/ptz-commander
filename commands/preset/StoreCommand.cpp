@@ -4,13 +4,13 @@
 namespace commands::preset {
     void StoreCommand::execute(data::Context& ctx, const std::string& args) {
         if (args.empty()) {
-            std::cout << "Usage: preset store <serialNumber|*> <name>" << std::endl;
+            ctx.err << "Usage: preset store <serialNumber|*> <name>" << std::endl;
             return;
         }
 
         auto tokens = commands::splitArgs(args);
         if (tokens.size() < 2) {
-            std::cout << "Usage: preset store <serialNumber|*> <name>" << std::endl;
+            ctx.err << "Usage: preset store <serialNumber|*> <name>" << std::endl;
             return;
         }
 
@@ -21,14 +21,14 @@ namespace commands::preset {
         if (serialNumber == "*") {
             cameras = ctx.cameraMgr.getCameras();
             if (cameras.empty()) {
-                std::cout << "No cameras found to store preset." << std::endl;
+                ctx.err << "No cameras found to store preset." << std::endl;
                 return;
             }
         }
         else {
             auto camera = ctx.cameraMgr.findById(serialNumber);
             if (!camera) {
-                std::cout << "Camera not found: " << serialNumber << std::endl;
+                ctx.err << "Camera not found: " << serialNumber << std::endl;
                 return;
             }
             cameras.push_back(camera);
@@ -41,7 +41,7 @@ namespace commands::preset {
             camera->AddPreset(presetName, preset);
         }
 
-        std::cout << "Stored preset '" << presetName << "' for "
+        ctx.out << "Stored preset '" << presetName << "' for "
             << (serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber)
             << std::endl;
     }

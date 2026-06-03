@@ -22,13 +22,13 @@ namespace commands::camera {
 
     void MoveCommand::execute(data::Context& ctx, const std::string& args) {
         if (args.empty()) {
-            std::cout << "Usage: camera move <serialNumber> <pan> <tilt> <zoom>" << std::endl;
+            ctx.err << "Usage: camera move <serialNumber> <pan> <tilt> <zoom>" << std::endl;
             return;
         }
 
         auto tokens = commands::splitArgs(args);
         if (tokens.size() < 4) {
-            std::cout << "Usage: camera move <serialNumber> <pan> <tilt> <zoom>" << std::endl;
+            ctx.err << "Usage: camera move <serialNumber> <pan> <tilt> <zoom>" << std::endl;
             return;
         }
 
@@ -38,14 +38,14 @@ namespace commands::camera {
         if (serialNumber == "*") {
             cameras = ctx.cameraMgr.getCameras();
             if (cameras.empty()) {
-                std::cout << "No cameras found to move." << std::endl;
+                ctx.err << "No cameras found to move." << std::endl;
                 return;
             }
         }
         else {
             auto camera = ctx.cameraMgr.findById(serialNumber);
             if (!camera) {
-                std::cout << "Camera not found: " << serialNumber << std::endl;
+                ctx.err << "Camera not found: " << serialNumber << std::endl;
                 return;
             }
             cameras.push_back(camera);
@@ -57,27 +57,27 @@ namespace commands::camera {
             bool allGood = true;
             for (auto& camera : cameras) {
                 if (!camera->setPosition(ptz.pan, ptz.tilt, ptz.zoom)) {
-                    std::cout << "Failed to move camera: " << camera->getSerialNumber() << std::endl;
+                    ctx.err << "Failed to move camera: " << camera->getSerialNumber() << std::endl;
                     allGood = false;
                 }
             }
 
             if (allGood) {
                 if (serialNumber == "*") {
-                    std::cout << "Moved " << cameras.size() << " camera" << (cameras.size() > 1 ? "s" : "")
+                    ctx.out << "Moved " << cameras.size() << " camera" << (cameras.size() > 1 ? "s" : "")
                         << " to pan: " << ptz.pan << ", tilt: " << ptz.tilt << ", zoom: " << ptz.zoom << std::endl;
                 }
                 else {
-                    std::cout << "Moved " << serialNumber << " to pan: " << ptz.pan << ", tilt: " << ptz.tilt
+                    ctx.out << "Moved " << serialNumber << " to pan: " << ptz.pan << ", tilt: " << ptz.tilt
                         << ", zoom: " << ptz.zoom << std::endl;
                 }
             }
             else {
-                std::cout << "Some cameras failed to move." << std::endl;
+                ctx.err << "Some cameras failed to move." << std::endl;
             }
         }
         catch (const std::invalid_argument& e) {
-            std::cout << "Error: " << e.what() << std::endl;
+            ctx.err << "Error: " << e.what() << std::endl;
         }
     }
 }

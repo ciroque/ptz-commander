@@ -36,7 +36,7 @@ namespace commands {
         std::map<std::string, std::unique_ptr<Command>> commands;
 
     public:
-        explicit CommandHandler(data::Context& ctx) {
+        CommandHandler() {
 
             addCommand(std::make_unique<camera::AliasCommand>());
             addCommand(std::make_unique<camera::ListCommand>());
@@ -69,7 +69,7 @@ namespace commands {
 
         void execute(data::Context& ctx, const std::string& input) {
             if (input.empty()) {
-                std::cout << "No command provided." << std::endl;
+                ctx.err << "No command provided." << std::endl;
                 return;
             }
 
@@ -97,7 +97,7 @@ namespace commands {
                 it->second->execute(ctx, args);
             }
             else {
-                std::cout << "Unknown command: " << objectVerb << std::endl;
+                ctx.err << "Unknown command: " << objectVerb << std::endl;
             }
         }
     };

@@ -4,13 +4,13 @@
 namespace commands::camera {
     void AliasCommand::execute(data::Context& ctx, const std::string& args) {
         if (args.empty()) {
-            std::cout << "Usage: camera alias <serialNumber> <alias>" << std::endl;
+            ctx.err << "Usage: camera alias <serialNumber> <alias>" << std::endl;
             return;
         }
 
         auto tokens = commands::splitArgs(args);
         if (tokens.size() < 2) {
-            std::cout << "Usage: camera alias <serialNumber> <alias>" << std::endl;
+            ctx.err << "Usage: camera alias <serialNumber> <alias>" << std::endl;
             return;
         }
 
@@ -19,11 +19,11 @@ namespace commands::camera {
 
         auto camera = ctx.cameraMgr.findById(serialNumber);
         if (!camera) {
-            std::cout << "Camera not found: " << serialNumber << std::endl;
+            ctx.err << "Camera not found: " << serialNumber << std::endl;
             return;
         }
 
         camera->setAlias(alias);
-        std::cout << "Set alias '" << alias << "' for camera " << serialNumber << std::endl;
+        ctx.out << "Set alias '" << alias << "' for camera " << serialNumber << std::endl;
     }
 }

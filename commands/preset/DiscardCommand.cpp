@@ -4,13 +4,13 @@
 namespace commands::preset {
     void DiscardCommand::execute(data::Context& ctx, const std::string& args) {
         if (args.empty()) {
-            std::cout << "Usage: preset discard <serialNumber|*> <name>" << std::endl;
+            ctx.err << "Usage: preset discard <serialNumber|*> <name>" << std::endl;
             return;
         }
 
         auto tokens = commands::splitArgs(args);
         if (tokens.size() < 2) {
-            std::cout << "Usage: preset discard <serialNumber|*> <name>" << std::endl;
+            ctx.err << "Usage: preset discard <serialNumber|*> <name>" << std::endl;
             return;
         }
 
@@ -21,14 +21,14 @@ namespace commands::preset {
         if (serialNumber == "*") {
             cameras = ctx.cameraMgr.getCameras();
             if (cameras.empty()) {
-                std::cout << "No cameras found to discard preset." << std::endl;
+                ctx.err << "No cameras found to discard preset." << std::endl;
                 return;
             }
         }
         else {
             auto camera = ctx.cameraMgr.findById(serialNumber);
             if (!camera) {
-                std::cout << "Camera not found: " << serialNumber << std::endl;
+                ctx.err << "Camera not found: " << serialNumber << std::endl;
                 return;
             }
             cameras.push_back(camera);
@@ -37,7 +37,7 @@ namespace commands::preset {
         bool allFound = true;
         for (auto& camera : cameras) {
             if (!camera->GetPresetByName(presetName)) {
-                std::cout << "Preset not found: " << presetName << " for " << camera->getSerialNumber() << std::endl;
+                ctx.err << "Preset not found: " << presetName << " for " << camera->getSerialNumber() << std::endl;
                 allFound = false;
                 continue;
             }
@@ -45,12 +45,12 @@ namespace commands::preset {
         }
 
         if (allFound) {
-            std::cout << "Discarded preset '" << presetName << "' from "
+            ctx.out << "Discarded preset '" << presetName << "' from "
                 << (serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber)
                 << std::endl;
         }
         else {
-            std::cout << "Discarded preset '" << presetName << "' from some cameras." << std::endl;
+            ctx.err << "Discarded preset '" << presetName << "' from some cameras." << std::endl;
         }
     }
 }

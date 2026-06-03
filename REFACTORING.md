@@ -112,16 +112,16 @@ See cameras/PresetStore.h for the interface, and the updated Load/SaveCommand.cp
 
 ---
 
-### 5. Reduce Raw `std::cout` Usage in Commands
+### ~~5. Reduce Raw `std::cout` Usage in Commands~~ (COMPLETED)
 
-**Problem**: Almost all user-facing output is done via raw `std::cout` directly inside command implementations. `core::Logger` (spdlog) is only used in the camera adapter layer.
+**Status**: Completed.
+- Added `out` and `err` streams (defaulting to cout/cerr) to `data::Context`.
+- Updated *all* direct `std::cout`/`std::cerr` in the commands/ directory (including header-only HelpCommands and CommandHandler) to go through `ctx.out` / `ctx.err`.
+- This provides a simple injectable output abstraction for testability/redirection without changing much else.
+- REPL prompts in Application also routed through ctx.out for full consistency (bonus).
+- Logger remains for internal structured logging.
 
-**Impact**: Medium (consistency + future testability / redirection)
-**Effort**: Medium
-**Options**:
-- Introduce a simple `Output` / `Console` abstraction passed via `Context`.
-- Or make Logger more central for *all* output (with different levels/sinks).
-- At minimum, centralize common output patterns (success messages, tables, errors).
+The Context is now the central place for I/O in command execution.
 
 ---
 
@@ -171,6 +171,6 @@ The relationship between them is not very clear in the code or architecture.
 
 ---
 
-**Last updated**: After implementing the PresetStore abstraction for gig file persistence (with bundled aliases) on the `feat/named-preset-files` branch.
+**Last updated**: After reducing raw cout usage in Commands (and REPL) by routing through Context streams (item 5) on the `feat/named-preset-files` branch.
 
 Feel free to edit, prioritize, or turn items into GitHub issues / individual PR plans.

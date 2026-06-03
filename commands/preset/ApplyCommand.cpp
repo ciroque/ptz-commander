@@ -7,13 +7,13 @@
 namespace commands::preset {
     void ApplyCommand::execute(data::Context& ctx, const std::string& args) {
         if (args.empty()) {
-            std::cout << "Usage: preset apply <serialNumber|*> <name|*> [delay_ms]" << std::endl;
+            ctx.err << "Usage: preset apply <serialNumber|*> <name|*> [delay_ms]" << std::endl;
             return;
         }
 
         auto tokens = commands::splitArgs(args);
         if (tokens.size() < 2) {
-            std::cout << "Usage: preset apply <serialNumber|*> <name|*> [delay_ms]" << std::endl;
+            ctx.err << "Usage: preset apply <serialNumber|*> <name|*> [delay_ms]" << std::endl;
             return;
         }
 
@@ -28,7 +28,7 @@ namespace commands::preset {
                 if (delayMs < 0) delayMs = 5000;  // Minimum 2s
             }
             catch (const std::exception&) {
-                std::cout << "Invalid delay_ms, using default 2000ms" << std::endl;
+                ctx.err << "Invalid delay_ms, using default 2000ms" << std::endl;
             }
         }
 
@@ -36,14 +36,14 @@ namespace commands::preset {
         if (serialNumber == "*") {
             cameras = ctx.cameraMgr.getCameras();
             if (cameras.empty()) {
-                std::cout << "No cameras found to apply preset." << std::endl;
+                ctx.err << "No cameras found to apply preset." << std::endl;
                 return;
             }
         }
         else {
             auto camera = ctx.cameraMgr.findById(serialNumber);
             if (!camera) {
-                std::cout << "Camera not found: " << serialNumber << std::endl;
+                ctx.err << "Camera not found: " << serialNumber << std::endl;
                 return;
             }
             cameras.push_back(camera);
@@ -55,18 +55,18 @@ namespace commands::preset {
                 // Cycle through all presets for this camera
                 auto presets = camera->getPresets();
                 if (presets.empty()) {
-                    std::cout << "No presets found for " << camera->getSerialNumber() << std::endl;
+                    ctx.err << "No presets found for " << camera->getSerialNumber() << std::endl;
                     allGood = false;
                     continue;
                 }
 
                 for (const auto& preset : presets) {
                     if (!camera->setPosition(preset->ptz.pan, preset->ptz.tilt, preset->ptz.zoom)) {
-                        std::cout << "Failed to apply preset '" << preset->name << "' to " << camera->getSerialNumber() << std::endl;
+                        ctx.err << "Failed to apply preset '" << preset->name << "' to " << camera->getSerialNumber() << std::endl;
                         allGood = false;
                     }
                     else {
-                        std::cout << "Applied preset '" << preset->name << "' to " << camera->getSerialNumber() << std::endl;
+                        ctx.out << "Applied preset '" << preset->name << "' to " << camera->getSerialNumber() << std::endl;
                     }
                     std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
                 }
@@ -75,28 +75,28 @@ namespace commands::preset {
                 // Apply single preset by name
                 const cameras::Preset* preset = camera->GetPresetByName(presetNameOrWildcard);
                 if (!preset) {
-                    std::cout << "Preset not found: " << presetNameOrWildcard << " for " << camera->getSerialNumber() << std::endl;
+                    ctx.err << "Preset not found: " << presetNameOrWildcard << " for " << camera->getSerialNumber() << std::endl;
                     allGood = false;
                     continue;
                 }
 
                 if (!camera->setPosition(preset->ptz.pan, preset->ptz.tilt, preset->ptz.zoom)) {
-                    std::cout << "Failed to apply preset '" << presetNameOrWildcard << "' to " << camera->getSerialNumber() << std::endl;
+                    ctx.err << "Failed to apply preset '" << presetNameOrWildcard << "' to " << camera->getSerialNumber() << std::endl;
                     allGood = false;
                 }
                 else {
-                    std::cout << "Applied preset '" << presetNameOrWildcard << "' to " << camera->getSerialNumber() << std::endl;
+                    ctx.out << "Applied preset '" << presetNameOrWildcard << "' to " << camera->getSerialNumber() << std::endl;
                 }
             }
         }
 
         if (allGood) {
-            std::cout << "Applied preset" << (presetNameOrWildcard == "*" ? "s" : " '") << presetNameOrWildcard
+            ctx.out << "Applied preset" << (presetNameOrWildcard == "*" ? "s" : " '") << presetNameOrWildcard
                 << "' to " << (serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber)
                 << std::endl;
         }
         else {
-            std::cout << "Some presets failed to apply for " << (serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber) << "." << std::endl;
+            ctx.err << "Some presets failed to apply for " << (serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber) << "." << std::endl;
         }
     }
 }

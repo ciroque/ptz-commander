@@ -4,7 +4,7 @@ namespace commands::preset {
     void ListCommand::execute(data::Context& ctx, const std::string& args) {
         auto cameras = ctx.cameraMgr.getCameras();
         if (cameras.empty()) {
-            std::cout << "No cameras found." << std::endl;
+            ctx.err << "No cameras found." << std::endl;
             return;
         }
 
@@ -14,33 +14,33 @@ namespace commands::preset {
             if (presets.empty()) continue;
 
             if (!anyPresets) {
-                std::cout << "Listing presets..." << std::endl << std::endl;
+                ctx.out << "Listing presets..." << std::endl << std::endl;
                 anyPresets = true;
             }
 
-            std::cout << "Camera: " << camera->getSerialNumber() << " (" << camera->getFriendlyName() << ")" << std::endl;
-            std::cout << std::left
+            ctx.out << "Camera: " << camera->getSerialNumber() << " (" << camera->getFriendlyName() << ")" << std::endl;
+            ctx.out << std::left
                 << std::setw(20) << "Preset Name" << " | "
                 << std::setw(10) << "Pan" << " | "
                 << std::setw(10) << "Tilt" << " | "
                 << std::setw(10) << "Zoom" << std::endl;
-            std::cout << std::string(20, '-') << "-+-"
+            ctx.out << std::string(20, '-') << "-+-"
                 << std::string(10, '-') << "-+-"
                 << std::string(10, '-') << "-+-"
                 << std::string(10, '-') << std::endl;
 
             for (const auto& preset : presets) {
-                std::cout << std::left
+                ctx.out << std::left
                     << std::setw(20) << preset->name << " | "
                     << std::setw(10) << preset->ptz.pan << " | "
                     << std::setw(10) << preset->ptz.tilt << " | "
                     << std::setw(10) << preset->ptz.zoom << std::endl;
             }
-            std::cout << std::endl;
+            ctx.out << std::endl;
         }
 
         if (!anyPresets) {
-            std::cout << "No presets found." << std::endl;
+            ctx.err << "No presets found." << std::endl;
         }
     }
 }

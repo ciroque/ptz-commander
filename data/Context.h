@@ -2,18 +2,19 @@
 #define DATA_CONTEXT_H
 
 #include "../cameras/CameraManager.h"
+#include <iostream>
 
 namespace data {
     class Context {
     public:
-        static constexpr int noCameraSelected = -1;
-        
         cameras::CameraManager& cameraMgr;  // Reference to CameraManager from Application
-        
-        int selectedDevice = noCameraSelected;
+        std::ostream& out;                  // For normal user output (success, tables, etc.)
+        std::ostream& err;                  // For errors and usage messages
 
-        Context(cameras::CameraManager& mgr)
-            : cameraMgr(mgr), selectedDevice(-1) {}
+        Context(cameras::CameraManager& mgr,
+                std::ostream& output = std::cout,
+                std::ostream& error = std::cerr)
+            : cameraMgr(mgr), out(output), err(error) {}
     };
 }
 

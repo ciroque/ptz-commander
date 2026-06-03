@@ -11,7 +11,7 @@ namespace commands::camera {
     void ListCommand::execute(data::Context& ctx, const std::string& args) {
         auto cameras = ctx.cameraMgr.getCameras();
         if (cameras.empty()) {
-            std::cout << "No cameras found." << std::endl;
+            ctx.err << "No cameras found." << std::endl;
             return;
         }
 
@@ -22,21 +22,21 @@ namespace commands::camera {
 
 
         // Table header
-        std::cout << "Listing devices..." << std::endl << std::endl;
-        std::cout << std::left
+        ctx.out << "Listing devices..." << std::endl << std::endl;
+        ctx.out << std::left
             << std::setw(NameColWidth) << "Name" << " | "
             << std::setw(AliasColWidth) << "Alias" << " | "
             << std::setw(SerialNumberColWidth) << "Serial Number" << " | "
             << std::setw(ConnectedColWidth) << "Connected" << std::endl;
         
-        std::cout << std::string(NameColWidth, '-') << "-+-"
+        ctx.out << std::string(NameColWidth, '-') << "-+-"
             << std::string(AliasColWidth, '-') << "-+-"
             << std::string(SerialNumberColWidth, '-') << "-+-"
             << std::string(ConnectedColWidth, '-') << std::endl;
 
         // Table rows
         for (const auto& camera : cameras) {
-            std::cout << std::left
+            ctx.out << std::left
                 << std::setw(NameColWidth) << camera->getName() << " | "
                 << std::setw(AliasColWidth) << camera->getAlias() << " | "
                 << std::setw(SerialNumberColWidth) << camera->getSerialNumber() << " | "

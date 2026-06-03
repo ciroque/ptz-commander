@@ -6,7 +6,7 @@ namespace commands::preset {
     void SaveCommand::execute(data::Context& ctx, const std::string& args) {
         auto cameras = ctx.cameraMgr.getCameras();
         if (cameras.empty()) {
-            std::cout << "No cameras found to save presets." << std::endl;
+            ctx.err << "No cameras found to save presets." << std::endl;
             return;
         }
 
@@ -19,10 +19,10 @@ namespace commands::preset {
 
         cameras::PresetStore store;
         if (!store.save(ctx.cameraMgr, filename)) {
-            std::cout << "Failed to write to " << filename << std::endl;
+            ctx.err << "Failed to write to " << filename << std::endl;
             return;
         }
 
-        std::cout << "Saved presets to " << filename << " for " << cameras.size() << " cameras" << std::endl;
+        ctx.out << "Saved presets to " << filename << " for " << cameras.size() << " cameras" << std::endl;
     }
 }
