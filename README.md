@@ -37,8 +37,8 @@ The `zoom` argument is an integer between 0 and 100, where 0 is the camera's min
 | `preset apply`                 | ```<id|*> <name>```                         | Applies a named preset — moves camera(s) to stored PTZ.                      |
 | `preset discard`               | ```<id|*> <name>```                         | Removes a named preset from memory.                                        |
 | `preset list`                  | None                                    | Lists all presets for all cameras.  |
-| `preset load`                  | `<file>` (optional)                     | Loads presets from a `.ptzc` file into memory (defaults to `presets.ptzc`). Merges with existing presets; same-named presets are overwritten. |
-| `preset save`                  | `<file>` (optional)                     | Saves current in-memory presets to a `.ptzc` file (defaults to `presets.ptzc`). |
+| `preset load`                  | `<file>` (optional)                     | Loads a gig from `.ptzc` (per-camera: `{"alias": "...", "presets": { ... }}`). Merges presets, applies aliases. Defaults to `presets.ptzc`. |
+| `preset save`                  | `<file>` (optional)                     | Saves current presets + aliases as a self-contained gig (per-camera: alias + presets). Defaults to `presets.ptzc`. |
 | `preset store`                 | ```<id|*> <name>```                         | Stores current PTZ as a named preset in memory—e.g., ```"intro"```.            |
 
 ### Preset Files
@@ -50,6 +50,19 @@ Presets are stored in JSON files using the `.ptzc` extension ("PTZ Commander").
 - When no filename is given, the default is `presets.ptzc`
 
 This allows multiple independent preset collections (different shows, venues, camera configurations, etc.). `preset load` merges into the current in-memory presets; use `preset discard` or restart the app to start fresh.
+
+Example gig file structure (per-camera):
+```json
+{
+  "RMOWTHF7211JGR": {
+    "alias": "LeftCam",
+    "presets": {
+      "intro": { "name": "intro", "pan": 0.0, "tilt": 0.0, "zoom": 0 },
+      "close": { "name": "close", "pan": 12.5, "tilt": -3.2, "zoom": 65 }
+    }
+  }
+}
+```
 
 ## Notes
 - **Tech Debt**: Preset name dupes—first match wins—alias collisions—first camera wins—<10 cameras—O(n) lookups.

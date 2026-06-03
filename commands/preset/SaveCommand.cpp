@@ -1,7 +1,6 @@
 #include "SaveCommand.h"
+#include "../../cameras/PresetStore.h"
 #include <iostream>
-#include <fstream>
-#include <nlohmann/json.hpp>
 
 namespace commands::preset {
     void SaveCommand::execute(data::Context& ctx, const std::string& args) {
@@ -15,33 +14,15 @@ namespace commands::preset {
         auto tokens = commands::splitArgs(args);
         if (!tokens.empty()) {
             filename = tokens[0];
-            if (filename.find('.') == std::string::npos) {
-                filename += ".ptzc";
-            }
         }
+        filename = cameras::PresetStore::normalizeFilename(filename);
 
-        nlohmann::json j;
-        for (const auto& camera : cameras) {
-            nlohmann::json camJson;
-            for (const auto& preset : camera->getPresets()) {
-                nlohmann::json presetJson;
-                presetJson["name"] = preset->name;
-                presetJson["pan"] = preset->ptz.pan;
-                presetJson["tilt"] = preset->ptz.tilt;
-                presetJson["zoom"] = preset->ptz.zoom;
-                camJson[preset->name] = presetJson;
-            }
-            j[camera->getSerialNumber()] = camJson;
-        }
-
-        std::ofstream file(filename);
-        if (file.is_open()) {
-            file << j.dump(2);
-            file.close();
-            std::cout << "Saved presets to " << filename << " for " << cameras.size() << " cameras" << std::endl;
-        }
-        else {
+        cameras::PresetStore store;
+        if (!store.save(ctx.cameraMgr, filename)) {
             std::cout << "Failed to write to " << filename << std::endl;
+            return;
         }
+
+        std::cout << "Saved presets to " << filename << " for " << cameras.size() << " cameras" << std::endl;
     }
 }
