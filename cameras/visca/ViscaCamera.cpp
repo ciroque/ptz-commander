@@ -67,19 +67,24 @@ bool ViscaCamera::setPosition(float pan, float tilt, int zoom) {
         return false;
     }
 
+    // Compute the actual values that will be sent (ViscaCommands clamps to camera limits)
+    float clampedPan  = ViscaCommands::viscaToPanDegrees(ViscaCommands::panDegreesToVisca(pan));
+    float clampedTilt = ViscaCommands::viscaToTiltDegrees(ViscaCommands::tiltDegreesToVisca(tilt));
+    int   clampedZoom = ViscaCommands::viscaToZoomPercent(ViscaCommands::zoomPercentToVisca(zoom));
+
     auto ptCmd = ViscaCommands::panTiltAbsolute(pan, tilt, 0x10, 0x10, address_);
     auto zmCmd = ViscaCommands::zoomAbsolute(zoom, address_);
 
     bool ok = transport_->write(ptCmd) && transport_->write(zmCmd);
 
     if (ok) {
-        lastPtz_.pan  = pan;
-        lastPtz_.tilt = tilt;
-        lastPtz_.zoom = zoom;
+        lastPtz_.pan  = clampedPan;
+        lastPtz_.tilt = clampedTilt;
+        lastPtz_.zoom = clampedZoom;
         core::Logger::info("VISCA sent absolute PTZ to " + getSerialNumber() +
-                           " pan=" + std::to_string(pan) +
-                           " tilt=" + std::to_string(tilt) +
-                           " zoom=" + std::to_string(zoom));
+                           " pan=" + std::to_string(clampedPan) +
+                           " tilt=" + std::to_string(clampedTilt) +
+                           " zoom=" + std::to_string(clampedZoom));
     } else {
         core::Logger::error("VISCA failed to send absolute PTZ on " + port_);
     }
@@ -95,12 +100,13 @@ bool ViscaCamera::setZoom(int zoom, int /*speed*/) {
         return false;
     }
 
+    int clampedZoom = ViscaCommands::viscaToZoomPercent(ViscaCommands::zoomPercentToVisca(zoom));
     auto cmd = ViscaCommands::zoomAbsolute(zoom, address_);
     bool ok = transport_->write(cmd);
 
     if (ok) {
-        lastPtz_.zoom = zoom;
-        core::Logger::info("VISCA sent absolute zoom " + std::to_string(zoom) + " to " + getSerialNumber());
+        lastPtz_.zoom = clampedZoom;
+        core::Logger::info("VISCA sent absolute zoom " + std::to_string(clampedZoom) + " to " + getSerialNumber());
     } else {
         core::Logger::error("VISCA zoom command failed on " + port_);
     }
