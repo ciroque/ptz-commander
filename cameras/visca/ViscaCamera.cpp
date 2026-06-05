@@ -105,7 +105,7 @@ bool ViscaCamera::setZoom(int zoom, int /*speed*/) {
     bool ok = transport_->write(cmd);
 
     if (ok) {
-        lastPtz_.zoom = clampedZoom;
+        lastPtz_.zoom = clampedZoom;  // use clamped value because ViscaCommands clamps caller-provided zoom to [0,100]
         core::Logger::info("VISCA sent absolute zoom " + std::to_string(clampedZoom) + " to " + getSerialNumber());
     } else {
         core::Logger::error("VISCA zoom command failed on " + port_);
