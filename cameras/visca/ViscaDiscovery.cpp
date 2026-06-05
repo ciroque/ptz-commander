@@ -265,11 +265,15 @@ std::vector<ViscaPortCandidate> ViscaDiscovery::discover() {
         candidates.push_back(cand);
     }
 
-    // Sort: Keyspan matches first, then others
+    // Sort: Keyspan matches first (by preference), then numerically by COM index
+    // (avoids "COM10" < "COM2" lexicographic ordering).
     std::sort(candidates.begin(), candidates.end(),
         [](const ViscaPortCandidate& a, const ViscaPortCandidate& b) {
             if (a.matchesKeyspan != b.matchesKeyspan) return a.matchesKeyspan > b.matchesKeyspan;
-            return a.port < b.port;
+            int na = 0, nb = 0;
+            sscanf_s(a.port.c_str(), "COM%d", &na);
+            sscanf_s(b.port.c_str(), "COM%d", &nb);
+            return na < nb;
         });
 
     for (const auto& c : candidates) {
