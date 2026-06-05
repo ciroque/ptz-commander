@@ -112,7 +112,7 @@ Because you have been moving the camera:
 - **Multiple cameras / non-Keyspan**: Discovery prefers Keyspan USA-19H (VID 0x06CD / PID 0x0121 or name match). Other serial VISCA setups may require manual construction or future CLI support.
 - **Ceiling mount / orientation**: Handled by camera settings; the degree mapping in the tool assumes "normal" desktop orientation.
 
-These match the priorities you listed (getCurrentPtz() critical, error handling next, ranges after the doc).
+Error handling for motion commands remains the next priority (per your earlier list), followed by range tuning based on real hardware data.
 
 ## 6. Tuning the Mapping
 
