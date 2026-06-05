@@ -34,14 +34,12 @@ void ViscaCameraAdapter::start() {
 }
 
 void ViscaCameraAdapter::stop() {
-    if (!running_) return;
     running_ = false;
 
     if (worker_.joinable()) {
         worker_.join();
+        core::Logger::info("ViscaCameraAdapter stopped");
     }
-
-    core::Logger::info("ViscaCameraAdapter stopped");
 }
 
 void ViscaCameraAdapter::discoverAndAdd() {
