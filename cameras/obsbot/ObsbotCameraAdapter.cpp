@@ -11,6 +11,8 @@
 #include <cstdio>
 #include <ctime>
 #include <array>
+#include <filesystem>
+#include <cstdlib>
 
 namespace cameras::obsbot {
 
@@ -52,13 +54,26 @@ namespace cameras::obsbot {
         : devices_(Devices::get()), manager_(manager), running_(false) {
 
         // === SDK Logging Redirect ===
-        logFile.open("obsbot_sdk.log", std::ios::out | std::ios::app);
+        // Write SDK logs to a user-writable location (not Program Files).
+        // This avoids permission issues after installation.
+        std::string logPath = "obsbot_sdk.log";
+        const char* localAppData = std::getenv("LOCALAPPDATA");
+        if (localAppData) {
+            std::filesystem::path logDir = std::filesystem::path(localAppData) / "PTZCommander";
+            std::error_code ec;
+            std::filesystem::create_directories(logDir, ec);
+            if (!ec) {
+                logPath = (logDir / "obsbot_sdk.log").string();
+            }
+        }
+
+        logFile.open(logPath, std::ios::out | std::ios::app);
         if (logFile.is_open()) {
-            core::Logger::info("OBSBOT SDK logging redirected to: obsbot_sdk.log");
+            core::Logger::info("OBSBOT SDK logging redirected to: " + logPath);
             dev_set_log_handler(sdkLogHandler, nullptr);
         }
         else {
-            core::Logger::error("Failed to open obsbot_sdk.log for writing");
+            core::Logger::error("Failed to open OBSBOT SDK log file for writing: " + logPath);
         }
 
         devices_.setEnableMdnsScan(true);

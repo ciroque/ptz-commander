@@ -1,0 +1,11 @@
+-- Configuring done (0.1s)
+-- Generating done (0.1s)
+-- Build files have been written to: C:/Users/steve/source/repos/ptz-commander/out/build/x64-Release
+[1/33] Scanning C:\Users\steve\source\repos\ptz-commander\commands\preset\LoadCommand.cpp for CXX dependencies
+[2/33] Scanning C:\Users\steve\source\repos\ptz-commander\commands\preset\SaveCommand.cpp for CXX dependencies
+[3/33] Scanning C:\Users\steve\source\repos\ptz-commander\cameras\PresetStore.cpp for CXX dependencies
+[4/33] Generating CXX dyndep file CMakeFiles\ptz_commander.dir\CXX.dd
+[5/8] Building CXX object CMakeFiles\ptz_commander.dir\commands\preset\SaveCommand.cpp.obj
+[6/8] Building CXX object CMakeFiles\ptz_commander.dir\commands\preset\LoadCommand.cpp.obj
+[7/8] Building CXX object CMakeFiles\ptz_commander.dir\cameras\PresetStore.cpp.obj
+[8/8] Linking CXX executable ptz_commander.exe; Copying libdev.dll to output directory

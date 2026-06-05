@@ -27,6 +27,8 @@ namespace cameras {
         /**
          * Loads presets and aliases from the given file into the cameras
          * currently present in the manager (matched by serial number).
+         * If filename has no path component, it is resolved relative to the
+         * user-writable app data directory (%LOCALAPPDATA%\PTZCommander).
          * If filename has no '.', ".ptzc" is appended.
          * Presets are merged (AddPreset); aliases are overwritten if present in file.
          * Returns true on success.
@@ -36,6 +38,8 @@ namespace cameras {
         /**
          * Saves the current presets and aliases (if set) for all cameras
          * in the manager to the given file.
+         * If filename has no path component, it is resolved relative to the
+         * user-writable app data directory (%LOCALAPPDATA%\PTZCommander).
          * If filename has no '.', ".ptzc" is appended.
          * Returns true on success.
          */
@@ -43,10 +47,14 @@ namespace cameras {
 
         /**
          * Normalizes a filename for .ptzc files: appends ".ptzc" if no extension dot is present.
+         * (Path resolution for user data is handled separately in load/save.)
          */
         static std::string normalizeFilename(std::string filename);
 
     private:
+        static std::string getDefaultPresetDir();
+        static std::string resolvePresetPath(std::string filename);
+
         // Internal helpers could go here for future backends
     };
 

@@ -3,3 +3,11 @@ cmake-build-debug/
 .idea/
 out/
 .vs/
+
+# Installer build artifacts
+installer/staging/
+installer/*.wixobj
+installer/*.wixpdb
+installer/*.msi
+installer/cab*.cab
+installer/*.log

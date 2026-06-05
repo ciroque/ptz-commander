@@ -2,6 +2,8 @@
 
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <filesystem>
+#include <cstdlib>
 
 namespace cameras {
 
@@ -12,8 +14,33 @@ namespace cameras {
         return filename;
     }
 
-    bool PresetStore::load(CameraManager& mgr, std::string filename) {
+    std::string PresetStore::getDefaultPresetDir() {
+        const char* localAppData = std::getenv("LOCALAPPDATA");
+        if (localAppData) {
+            return (std::filesystem::path(localAppData) / "PTZCommander").string();
+        }
+        // Fallback (should rarely happen)
+        return ".";
+    }
+
+    std::string PresetStore::resolvePresetPath(std::string filename) {
         filename = normalizeFilename(std::move(filename));
+
+        std::filesystem::path p(filename);
+        if (p.has_parent_path() || p.is_absolute()) {
+            // User provided a path (relative with directory or absolute) — respect it as-is
+            return filename;
+        }
+
+        // Just a bare filename — place it in the user app data directory
+        std::filesystem::path dir = getDefaultPresetDir();
+        std::error_code ec;
+        std::filesystem::create_directories(dir, ec);  // best effort
+        return (dir / p).string();
+    }
+
+    bool PresetStore::load(CameraManager& mgr, std::string filename) {
+        filename = resolvePresetPath(std::move(filename));
 
         std::ifstream file(filename);
         if (!file.is_open()) {
@@ -65,7 +92,7 @@ namespace cameras {
     }
 
     bool PresetStore::save(const CameraManager& mgr, std::string filename) const {
-        filename = normalizeFilename(std::move(filename));
+        filename = resolvePresetPath(std::move(filename));
 
         nlohmann::json j;
         auto cameras = mgr.getCameras();
