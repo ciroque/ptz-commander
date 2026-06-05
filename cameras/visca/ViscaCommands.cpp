@@ -1,0 +1,134 @@
+#include "ViscaCommands.h"
+
+#include <cstdint>
+#include <vector>
+
+namespace cameras::visca {
+
+uint8_t ViscaCommands::addressByte(uint8_t address) {
+    // VISCA camera address is 1-7 typically; command byte is 0x80 | address
+    if (address < 1) address = 1;
+    if (address > 7) address = 7;
+    return static_cast<uint8_t>(0x80 | address);
+}
+
+void ViscaCommands::appendNibblePosition(std::vector<uint8_t>& cmd, uint16_t pos) {
+    // Split 16-bit into 4 nibbles, high nibble first
+    cmd.push_back(static_cast<uint8_t>((pos >> 12) & 0x0F));
+    cmd.push_back(static_cast<uint8_t>((pos >> 8)  & 0x0F));
+    cmd.push_back(static_cast<uint8_t>((pos >> 4)  & 0x0F));
+    cmd.push_back(static_cast<uint8_t>( pos        & 0x0F));
+}
+
+std::vector<uint8_t> ViscaCommands::home(uint8_t address) {
+    std::vector<uint8_t> cmd;
+    cmd.push_back(addressByte(address));
+    cmd.push_back(0x01);
+    cmd.push_back(0x06);
+    cmd.push_back(0x04);
+    cmd.push_back(0xFF);
+    return cmd;
+}
+
+std::vector<uint8_t> ViscaCommands::panTiltAbsolute(float panDeg, float tiltDeg,
+                                                    uint8_t panSpeed, uint8_t tiltSpeed,
+                                                    uint8_t address) {
+    uint16_t panPos  = panDegreesToVisca(panDeg);
+    uint16_t tiltPos = tiltDegreesToVisca(tiltDeg);
+
+    // Clamp speeds to reasonable VISCA range
+    if (panSpeed  < 0x01) panSpeed  = 0x01;
+    if (panSpeed  > 0x18) panSpeed  = 0x18;
+    if (tiltSpeed < 0x01) tiltSpeed = 0x01;
+    if (tiltSpeed > 0x18) tiltSpeed = 0x18;
+
+    std::vector<uint8_t> cmd;
+    cmd.push_back(addressByte(address));
+    cmd.push_back(0x01);
+    cmd.push_back(0x06);
+    cmd.push_back(0x02);
+    cmd.push_back(panSpeed);
+    cmd.push_back(tiltSpeed);
+    appendNibblePosition(cmd, panPos);
+    appendNibblePosition(cmd, tiltPos);
+    cmd.push_back(0xFF);
+    return cmd;
+}
+
+std::vector<uint8_t> ViscaCommands::zoomAbsolute(int zoomPercent, uint8_t address) {
+    uint16_t zoomPos = zoomPercentToVisca(zoomPercent);
+
+    std::vector<uint8_t> cmd;
+    cmd.push_back(addressByte(address));
+    cmd.push_back(0x01);
+    cmd.push_back(0x04);
+    cmd.push_back(0x47);
+    appendNibblePosition(cmd, zoomPos);
+    cmd.push_back(0xFF);
+    return cmd;
+}
+
+std::vector<uint8_t> ViscaCommands::panTiltPositionInquiry(uint8_t address) {
+    std::vector<uint8_t> cmd;
+    cmd.push_back(addressByte(address));
+    cmd.push_back(0x09);
+    cmd.push_back(0x06);
+    cmd.push_back(0x12);
+    cmd.push_back(0xFF);
+    return cmd;
+}
+
+std::vector<uint8_t> ViscaCommands::zoomPositionInquiry(uint8_t address) {
+    std::vector<uint8_t> cmd;
+    cmd.push_back(addressByte(address));
+    cmd.push_back(0x09);
+    cmd.push_back(0x04);
+    cmd.push_back(0x47);
+    cmd.push_back(0xFF);
+    return cmd;
+}
+
+uint16_t ViscaCommands::panDegreesToVisca(float degrees) {
+    using namespace defaults;
+    degrees = std::clamp(degrees, kPanMinDeg, kPanMaxDeg);
+    float norm = (degrees - kPanMinDeg) / (kPanMaxDeg - kPanMinDeg);
+    // 0.0 -> 0x0000 (left), 1.0 -> 0xFFFF (right), center ~0x8000
+    return static_cast<uint16_t>(norm * 0xFFFFu + 0.5f);
+}
+
+uint16_t ViscaCommands::tiltDegreesToVisca(float degrees) {
+    using namespace defaults;
+    degrees = std::clamp(degrees, kTiltMinDeg, kTiltMaxDeg);
+    float norm = (degrees - kTiltMinDeg) / (kTiltMaxDeg - kTiltMinDeg);
+    return static_cast<uint16_t>(norm * 0xFFFFu + 0.5f);
+}
+
+uint16_t ViscaCommands::zoomPercentToVisca(int percent) {
+    using namespace defaults;
+    if (percent < 0) percent = 0;
+    if (percent > 100) percent = 100;
+    float norm = percent / 100.0f;
+    return static_cast<uint16_t>(kZoomMin + norm * (kZoomMax - kZoomMin) + 0.5f);
+}
+
+float ViscaCommands::viscaToPanDegrees(uint16_t visca) {
+    using namespace defaults;
+    float norm = visca / 65535.0f;
+    return kPanMinDeg + norm * (kPanMaxDeg - kPanMinDeg);
+}
+
+float ViscaCommands::viscaToTiltDegrees(uint16_t visca) {
+    using namespace defaults;
+    float norm = visca / 65535.0f;
+    return kTiltMinDeg + norm * (kTiltMaxDeg - kTiltMinDeg);
+}
+
+int ViscaCommands::viscaToZoomPercent(uint16_t visca) {
+    using namespace defaults;
+    if (visca <= kZoomMin) return 0;
+    if (visca >= kZoomMax) return 100;
+    float norm = static_cast<float>(visca - kZoomMin) / (kZoomMax - kZoomMin);
+    return static_cast<int>(norm * 100.0f + 0.5f);
+}
+
+} // namespace cameras::visca

@@ -68,3 +68,22 @@ Example gig file structure (per-camera):
 - **Tech Debt**: Preset name dupes—first match wins—alias collisions—first camera wins—<10 cameras—O(n) lookups.
 - **Dependencies**: `nlohmann/json`—`$PROJ_DIR/include/nlohmann/json.hpp`—CMake—`include_directories(include)`.
 - **Future**: `push/pull/pan`—speed control—Scenes—Pinocchio’d for now!
+
+## VISCA Serial Camera Support (Windows)
+Automatic discovery is performed at startup for VISCA-over-serial cameras.
+
+- Preferred hardware: Lumens VC-A51P (or compatible VISCA serial PTZ) connected via Keyspan USA-19H USB serial adapter (VID 06CD / PID 0121). Appears as e.g. COM3.
+- Default settings: 9600 baud, 8N1, camera address 1.
+- The implementation uses **absolute** Pan/Tilt/Zoom positioning commands only (no velocity "drive + stop" commands). This matches the `camera move` / preset model used by the rest of the tool.
+- Discovered cameras get synthetic serial numbers of the form `VISCA:COM3:1` (usable for `camera move`, `preset store/apply`, aliases, etc.).
+- Multiple VISCA cameras and/or OBSBOT cameras can coexist.
+
+Example (typical auto-discovered usage):
+```
+camera list
+camera move VISCA:COM3:1 12.5 -3.0 40
+preset store VISCA:COM3:1 intro
+preset apply VISCA:COM3:1 intro
+```
+
+Manual port configuration remains possible in future via CLI/config (the discovery and camera code are designed around defaults + `ViscaConfig` so they can be extended without major surgery).

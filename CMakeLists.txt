@@ -17,6 +17,11 @@ target_include_directories(ptz_commander PRIVATE "${CMAKE_SOURCE_DIR}/include/")
 # Link against obsbot SDK
 target_link_libraries(ptz_commander PRIVATE "${CMAKE_SOURCE_DIR}/lib/obsbot/libdev.lib")
 
+# VISCA serial discovery uses SetupAPI on Windows (VID/PID enumeration for Keyspan etc.)
+if(WIN32)
+    target_link_libraries(ptz_commander PRIVATE setupapi)
+endif()
+
 # Copy libdev.dll to the build directory after building (so the exe can find it at runtime)
 add_custom_command(TARGET ptz_commander POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different

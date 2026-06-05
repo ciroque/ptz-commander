@@ -3,6 +3,7 @@
 
 #include "../cameras/CameraManager.h"
 #include "../cameras/obsbot/ObsbotCameraAdapter.h"
+#include "../cameras/visca/ViscaCameraAdapter.h"
 #include "../commands/CommandHandler.h"
 #include "../data/Context.h"
 #include <memory>
@@ -13,9 +14,11 @@ namespace core {
     private:
         cameras::CameraManager cameraMgr_;
         std::unique_ptr<cameras::obsbot::ObsbotCameraAdapter> obsbotAdapter_;
+        std::unique_ptr<cameras::visca::ViscaCameraAdapter> viscaAdapter_;
         data::Context context_;
         commands::CommandHandler commandHandler_;
-        std::thread adapterThread_;  // Thread for adapter’s start()
+        std::thread obsbotAdapterThread_;
+        std::thread viscaAdapterThread_;
         bool running_;
         const std::string StartMessage = "PTZ Commander (type 'exit' to quit)\n> ";
         const std::string Prompt = "> ";
