@@ -28,10 +28,13 @@ struct ViscaDiscovery {
     // Returns candidates sorted with best matches (Keyspan) first.
     static std::vector<ViscaPortCandidate> discover();
 
-    // Try to open + send a safe non-motion inquiry (e.g. power or zoom position inquiry).
-    // Returns true if the port responded in a way that looks like VISCA (starts with 0x90).
-    // Note: currently the probe may be limited because full response reading is deferred;
-    // a successful open + VID/PID match is considered strong evidence.
+    // Attempt to open the serial port at the candidate's baud rate.
+    // Returns true if the open succeeds. No VISCA inquiry is sent and no
+    // response is validated (response reading / ACK handling is still deferred).
+    // The caller's confidence comes from prior VID/PID or friendly-name
+    // filtering (matchesKeyspan) plus a successful open. A future
+    // implementation may send a non-motion inquiry and check for a VISCA-like
+    // reply (starting with 0x90).
     static bool probePort(const ViscaPortCandidate& candidate);
 };
 

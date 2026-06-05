@@ -283,13 +283,15 @@ std::vector<ViscaPortCandidate> ViscaDiscovery::discover() {
 }
 
 bool ViscaDiscovery::probePort(const ViscaPortCandidate& candidate) {
-    // Lightweight probe for initial implementation.
-    // Because full response reading / ACK handling is deferred, we primarily rely on:
-    //   - Successful open of the serial port at the expected baud
-    //   - Strong preference for VID/PID match of the Keyspan USA-19H
+    // Lightweight "port present" probe: attempt to open the serial port at the
+    // candidate's baud rate. Returns true if the open succeeds.
+    // No VISCA command is sent and no response is read (full response/ACK
+    // handling is still deferred). Callers combine this with prior VID/PID or
+    // friendly-name filtering (see matchesKeyspan) to decide whether a
+    // candidate is likely a real VISCA device.
     //
-    // When a read path is added later we can send a safe inquiry here
-    // (e.g. Power Inquiry 81 09 04 00 FF or Zoom Pos Inq) and validate the reply starts with 0x90.
+    // Future work: send a safe non-motion inquiry (e.g. power or zoom position
+    // inquiry) and check that the reply starts with 0x90.
 
     WindowsSerialTransport transport;
 
