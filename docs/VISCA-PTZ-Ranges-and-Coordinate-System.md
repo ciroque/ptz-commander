@@ -106,9 +106,8 @@ Because you have been moving the camera:
 
 ## 5. Current Limitations & Future Work (as of this document)
 
-- **getCurrentPtz()**: Performs live VISCA position inquiries (Pan/Tilt + Zoom). Falls back to cached on failure. Enables capturing positions set via the camera's own presets/remote into tool presets.
-- **No response reading**: Commands are sent but we do not (yet) read ACK (90 41 FF) / Completion (90 51 FF) or error responses. Errors are only detected via serial write failure.
-- **No live position inquiry**: We have not implemented VISCA inquiries (`81 09 06 12 FF` for pan/tilt position, `81 09 04 47 FF` for zoom) + parsing of the 9-byte replies.
+- **getCurrentPtz()**: Performs live VISCA position inquiries (Pan/Tilt Pos Inquiry `81 09 06 12 FF` and Zoom Pos Inquiry `81 09 04 47 FF`). Falls back to cached last-commanded value on failure or timeout. Enables capturing positions set via the camera's own presets/remote into tool presets.
+- **No response reading for motion commands**: `setPosition` / `setZoom` (and other commands) are sent fire-and-forget. We do not read ACK (90 41 FF), Completion (90 51 FF), or error responses from the camera. Errors are only detected via serial write failure. (Position inquiries do perform synchronous reads and parse the responses.)
 - **Range clamping**: Values outside the configured min/max are silently clamped.
 - **Multiple cameras / non-Keyspan**: Discovery prefers Keyspan USA-19H (VID 0x06CD / PID 0x0121 or name match). Other serial VISCA setups may require manual construction or future CLI support.
 - **Ceiling mount / orientation**: Handled by camera settings; the degree mapping in the tool assumes "normal" desktop orientation.
