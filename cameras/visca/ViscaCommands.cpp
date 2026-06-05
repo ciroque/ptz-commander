@@ -5,16 +5,14 @@
 
 namespace cameras::visca {
 
-namespace {
-
-uint8_t addrByte(uint8_t address) {
+uint8_t ViscaCommands::addressByte(uint8_t address) {
     // VISCA camera address is 1-7 typically; command byte is 0x80 | address
     if (address < 1) address = 1;
     if (address > 7) address = 7;
     return static_cast<uint8_t>(0x80 | address);
 }
 
-void appendPosition(std::vector<uint8_t>& cmd, uint16_t pos) {
+void ViscaCommands::appendNibblePosition(std::vector<uint8_t>& cmd, uint16_t pos) {
     // Split 16-bit into 4 nibbles, high nibble first
     cmd.push_back(static_cast<uint8_t>((pos >> 12) & 0x0F));
     cmd.push_back(static_cast<uint8_t>((pos >> 8)  & 0x0F));
@@ -22,11 +20,9 @@ void appendPosition(std::vector<uint8_t>& cmd, uint16_t pos) {
     cmd.push_back(static_cast<uint8_t>( pos        & 0x0F));
 }
 
-} // anonymous namespace
-
 std::vector<uint8_t> ViscaCommands::home(uint8_t address) {
     std::vector<uint8_t> cmd;
-    cmd.push_back(addrByte(address));
+    cmd.push_back(addressByte(address));
     cmd.push_back(0x01);
     cmd.push_back(0x06);
     cmd.push_back(0x04);
@@ -47,14 +43,14 @@ std::vector<uint8_t> ViscaCommands::panTiltAbsolute(float panDeg, float tiltDeg,
     if (tiltSpeed > 0x18) tiltSpeed = 0x18;
 
     std::vector<uint8_t> cmd;
-    cmd.push_back(addrByte(address));
+    cmd.push_back(addressByte(address));
     cmd.push_back(0x01);
     cmd.push_back(0x06);
     cmd.push_back(0x02);
     cmd.push_back(panSpeed);
     cmd.push_back(tiltSpeed);
-    appendPosition(cmd, panPos);
-    appendPosition(cmd, tiltPos);
+    appendNibblePosition(cmd, panPos);
+    appendNibblePosition(cmd, tiltPos);
     cmd.push_back(0xFF);
     return cmd;
 }
@@ -63,18 +59,18 @@ std::vector<uint8_t> ViscaCommands::zoomAbsolute(int zoomPercent, uint8_t addres
     uint16_t zoomPos = zoomPercentToVisca(zoomPercent);
 
     std::vector<uint8_t> cmd;
-    cmd.push_back(addrByte(address));
+    cmd.push_back(addressByte(address));
     cmd.push_back(0x01);
     cmd.push_back(0x04);
     cmd.push_back(0x47);
-    appendPosition(cmd, zoomPos);
+    appendNibblePosition(cmd, zoomPos);
     cmd.push_back(0xFF);
     return cmd;
 }
 
 std::vector<uint8_t> ViscaCommands::panTiltPositionInquiry(uint8_t address) {
     std::vector<uint8_t> cmd;
-    cmd.push_back(addrByte(address));
+    cmd.push_back(addressByte(address));
     cmd.push_back(0x09);
     cmd.push_back(0x06);
     cmd.push_back(0x12);
@@ -84,7 +80,7 @@ std::vector<uint8_t> ViscaCommands::panTiltPositionInquiry(uint8_t address) {
 
 std::vector<uint8_t> ViscaCommands::zoomPositionInquiry(uint8_t address) {
     std::vector<uint8_t> cmd;
-    cmd.push_back(addrByte(address));
+    cmd.push_back(addressByte(address));
     cmd.push_back(0x09);
     cmd.push_back(0x04);
     cmd.push_back(0x47);
