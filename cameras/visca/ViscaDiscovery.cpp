@@ -16,8 +16,6 @@
 #include "WindowsSerialTransport.h"
 #include "ViscaCommands.h"
 
-#pragma comment(lib, "setupapi.lib")
-
 namespace cameras::visca {
 
 namespace {
