@@ -4,16 +4,30 @@
 namespace core {
     Application::Application()
         : obsbotAdapter_(std::make_unique<cameras::obsbot::ObsbotCameraAdapter>(cameraMgr_)),
-        context_(cameraMgr_),
-        commandHandler_(),
-        running_(false) {
-        adapterThread_ = std::thread(&cameras::obsbot::ObsbotCameraAdapter::start, obsbotAdapter_.get());
+          viscaAdapter_(std::make_unique<cameras::visca::ViscaCameraAdapter>(cameraMgr_)),
+          context_(cameraMgr_),
+          commandHandler_(),
+          running_(false) {
+        // Start OBSBOT adapter (hotplug + network scan) in its own thread
+        obsbotAdapterThread_ = std::thread(&cameras::obsbot::ObsbotCameraAdapter::start, obsbotAdapter_.get());
+
+        // Start VISCA serial discovery adapter (Keyspan priority + other COM ports)
+        viscaAdapterThread_ = std::thread(&cameras::visca::ViscaCameraAdapter::start, viscaAdapter_.get());
     }
 
     Application::~Application() {
-        obsbotAdapter_->stop();  // Stops adapter�s loop
-        if (adapterThread_.joinable()) {
-            adapterThread_.join();  // Wait for adapter thread to finish
+        if (viscaAdapter_) {
+            viscaAdapter_->stop();
+        }
+        if (obsbotAdapter_) {
+            obsbotAdapter_->stop();
+        }
+
+        if (viscaAdapterThread_.joinable()) {
+            viscaAdapterThread_.join();
+        }
+        if (obsbotAdapterThread_.joinable()) {
+            obsbotAdapterThread_.join();
         }
     }
 
