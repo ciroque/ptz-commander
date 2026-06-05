@@ -28,15 +28,15 @@ public:
     Ptz getCurrentPtz() const override;
 
 private:
-    bool ensureOpen();
+    bool ensureOpen() const;
 
     std::unique_ptr<SerialTransport> transport_;
     std::string port_;
     int baud_;
     uint8_t address_;
 
-    Ptz lastPtz_{0.0f, 0.0f, 0};
-    bool connected_ = false;
+    mutable Ptz lastPtz_{0.0f, 0.0f, 0};
+    mutable bool connected_ = false;
 };
 
 } // namespace cameras::visca

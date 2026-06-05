@@ -75,7 +75,7 @@ In `setPosition()` / `setZoom()`:
 - Input values are clamped to the above ranges.
 - VISCA absolute command is built and sent over the serial transport (fire-and-forget for now).
 - `lastPtz_` is updated with the (clamped) commanded value.
-- `getCurrentPtz()` returns the cached `lastPtz_` (optimistic — see limitations below).
+- `getCurrentPtz()` performs live reads via VISCA inquiries (see limitations).
 
 Speeds in absolute commands are currently fixed at `0x10` (medium) for pan/tilt.
 
@@ -102,11 +102,11 @@ Because you have been moving the camera:
 **Recommendation while learning**:
 - Use the camera's IR remote or web UI to drive to known positions (e.g. presets 1-9 on the camera itself).
 - Then in ptz-commander, issue moves with trial values and store working ones as tool presets (`preset store <id> wide-shot`).
-- Once `getCurrentPtz()` can read live values (see below), this will become much easier.
+- With live `getCurrentPtz()` via inquiries, you can drive the camera to a known position (e.g. using its internal presets or remote), call getCurrentPtz() or move to it, and then `preset store` the accurate values.
 
 ## 5. Current Limitations & Future Work (as of this document)
 
-- **getCurrentPtz()**: Currently returns the *last successfully sent* PTZ value. Not a live read from the camera. This is why using the camera's own presets to bootstrap tool presets is important right now.
+- **getCurrentPtz()**: Performs live VISCA position inquiries (Pan/Tilt + Zoom). Falls back to cached on failure. Enables capturing positions set via the camera's own presets/remote into tool presets.
 - **No response reading**: Commands are sent but we do not (yet) read ACK (90 41 FF) / Completion (90 51 FF) or error responses. Errors are only detected via serial write failure.
 - **No live position inquiry**: We have not implemented VISCA inquiries (`81 09 06 12 FF` for pan/tilt position, `81 09 04 47 FF` for zoom) + parsing of the 9-byte replies.
 - **Range clamping**: Values outside the configured min/max are silently clamped.
@@ -150,11 +150,14 @@ After changing, rebuild and re-test.
 
 ---
 
-**Next steps after this document** (per your list):
-- Commit the current changes (including this doc).
-- Then tackle `getCurrentPtz()` live reading (inquiries).
-- Then error / response handling.
-- Ranges tuning based on your experimentation.
-- Anything else (manual port override, etc.).
+**Current implementation status**:
+- Live `getCurrentPtz()` via VISCA inquiries (Pan/Tilt Pos + Zoom Pos) is implemented and converts responses back to tool units. Falls back gracefully to cache.
+- This should allow you to position the camera using its own presets/remote, then use `getCurrentPtz()` (or move + store) to capture accurate values into ptz-commander presets.
 
-Let me know when you're ready to commit or if you'd like any edits to this document first!
+**Recommended next** (per your earlier list):
+- Error / response handling (read ACK, Completion, and error packets from commands).
+- Range tuning / coordinate system validation based on your testing with the VC-A51P.
+- Manual port override support if the auto Keyspan discovery isn't sufficient for all your setups.
+- Anything else you discover while playing.
+
+Let me know the next item!

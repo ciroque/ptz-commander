@@ -41,10 +41,19 @@ struct ViscaCommands {
     // zoomPercent: 0 (wide) .. 100 (full tele)
     static std::vector<uint8_t> zoomAbsolute(int zoomPercent, uint8_t address = 1);
 
+    // Inquiry commands (to read current position from camera)
+    static std::vector<uint8_t> panTiltPositionInquiry(uint8_t address = 1);
+    static std::vector<uint8_t> zoomPositionInquiry(uint8_t address = 1);
+
     // Conversion helpers (exposed for testing / future use; mapping is linear + clamp).
     static uint16_t panDegreesToVisca(float degrees);
     static uint16_t tiltDegreesToVisca(float degrees);
     static uint16_t zoomPercentToVisca(int percent);
+
+    // Inverse conversions (VISCA units back to tool units)
+    static float viscaToPanDegrees(uint16_t visca);
+    static float viscaToTiltDegrees(uint16_t visca);
+    static int viscaToZoomPercent(uint16_t visca);
 
 private:
     static uint8_t addressByte(uint8_t address);

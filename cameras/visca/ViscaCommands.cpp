@@ -72,6 +72,26 @@ std::vector<uint8_t> ViscaCommands::zoomAbsolute(int zoomPercent, uint8_t addres
     return cmd;
 }
 
+std::vector<uint8_t> ViscaCommands::panTiltPositionInquiry(uint8_t address) {
+    std::vector<uint8_t> cmd;
+    cmd.push_back(addrByte(address));
+    cmd.push_back(0x09);
+    cmd.push_back(0x06);
+    cmd.push_back(0x12);
+    cmd.push_back(0xFF);
+    return cmd;
+}
+
+std::vector<uint8_t> ViscaCommands::zoomPositionInquiry(uint8_t address) {
+    std::vector<uint8_t> cmd;
+    cmd.push_back(addrByte(address));
+    cmd.push_back(0x09);
+    cmd.push_back(0x04);
+    cmd.push_back(0x47);
+    cmd.push_back(0xFF);
+    return cmd;
+}
+
 uint16_t ViscaCommands::panDegreesToVisca(float degrees) {
     using namespace defaults;
     degrees = std::clamp(degrees, kPanMinDeg, kPanMaxDeg);
@@ -93,6 +113,26 @@ uint16_t ViscaCommands::zoomPercentToVisca(int percent) {
     if (percent > 100) percent = 100;
     float norm = percent / 100.0f;
     return static_cast<uint16_t>(kZoomMin + norm * (kZoomMax - kZoomMin) + 0.5f);
+}
+
+float ViscaCommands::viscaToPanDegrees(uint16_t visca) {
+    using namespace defaults;
+    float norm = visca / 65535.0f;
+    return kPanMinDeg + norm * (kPanMaxDeg - kPanMinDeg);
+}
+
+float ViscaCommands::viscaToTiltDegrees(uint16_t visca) {
+    using namespace defaults;
+    float norm = visca / 65535.0f;
+    return kTiltMinDeg + norm * (kTiltMaxDeg - kTiltMinDeg);
+}
+
+int ViscaCommands::viscaToZoomPercent(uint16_t visca) {
+    using namespace defaults;
+    if (visca <= kZoomMin) return 0;
+    if (visca >= kZoomMax) return 100;
+    float norm = static_cast<float>(visca - kZoomMin) / (kZoomMax - kZoomMin);
+    return static_cast<int>(norm * 100.0f + 0.5f);
 }
 
 } // namespace cameras::visca

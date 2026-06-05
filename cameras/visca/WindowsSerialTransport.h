@@ -21,6 +21,9 @@ public:
     void close() override;
     bool write(const std::vector<uint8_t>& data) override;
 
+    void purgeInput() override;
+    std::vector<uint8_t> readPacket(int timeoutMs = 1000) override;
+
 private:
     HANDLE handle_ = INVALID_HANDLE_VALUE;
     std::string portName_;  // for logging / diagnostics, e.g. "COM3"

@@ -50,7 +50,7 @@ bool ViscaCamera::isConnected() const {
     return connected_ && transport_ && transport_->isOpen();
 }
 
-bool ViscaCamera::ensureOpen() {
+bool ViscaCamera::ensureOpen() const {
     if (transport_ && transport_->isOpen()) {
         return true;
     }
@@ -109,9 +109,87 @@ bool ViscaCamera::setZoom(int zoom, int /*speed*/) {
 }
 
 Ptz ViscaCamera::getCurrentPtz() const {
-    // Return the last successfully commanded position (optimistic cache).
-    // This is consistent with how some OBSBOT paths report state when fresh telemetry
-    // isn't continuously available. Real inquiry support can be added later.
+    if (!ensureOpen() || !transport_) {
+        core::Logger::warn("ViscaCamera::getCurrentPtz - transport not open on " + port_ + ", returning cached");
+        return lastPtz_;
+    }
+
+    // Purge any stale data before inquiries
+    transport_->purgeInput();
+
+    // --- Pan/Tilt Position Inquiry ---
+    auto ptInq = ViscaCommands::panTiltPositionInquiry(address_);
+    if (!transport_->write(ptInq)) {
+        core::Logger::error("VISCA pan/tilt inquiry write failed on " + port_);
+        return lastPtz_;
+    }
+    auto ptResp = transport_->readPacket(800);  // generous timeout for response
+
+    uint16_t panVisca = 0, tiltVisca = 0;
+    bool ptOk = false;
+    if (!ptResp.empty() && ptResp.back() == 0xFF && ptResp.size() >= 11 &&
+        ptResp[0] == 0x90 && ptResp[1] == 0x50) {
+        panVisca = (static_cast<uint16_t>(ptResp[2]) << 12) |
+                   (static_cast<uint16_t>(ptResp[3]) << 8) |
+                   (static_cast<uint16_t>(ptResp[4]) << 4) |
+                   ptResp[5];
+        tiltVisca = (static_cast<uint16_t>(ptResp[6]) << 12) |
+                    (static_cast<uint16_t>(ptResp[7]) << 8) |
+                    (static_cast<uint16_t>(ptResp[8]) << 4) |
+                    ptResp[9];
+        ptOk = true;
+    } else if (!ptResp.empty()) {
+        core::Logger::debug("VISCA pan/tilt inquiry bad response on " + port_ +
+                            " (len=" + std::to_string(ptResp.size()) + ")");
+    }
+
+    // --- Zoom Position Inquiry ---
+    transport_->purgeInput();  // fresh for next inquiry
+
+    auto zmInq = ViscaCommands::zoomPositionInquiry(address_);
+    if (!transport_->write(zmInq)) {
+        core::Logger::error("VISCA zoom inquiry write failed on " + port_);
+        // still return what we have for pan/tilt if successful
+        if (ptOk) {
+            lastPtz_.pan = ViscaCommands::viscaToPanDegrees(panVisca);
+            lastPtz_.tilt = ViscaCommands::viscaToTiltDegrees(tiltVisca);
+        }
+        return lastPtz_;
+    }
+    auto zmResp = transport_->readPacket(500);
+
+    uint16_t zoomVisca = 0;
+    bool zmOk = false;
+    if (!zmResp.empty() && zmResp.back() == 0xFF && zmResp.size() >= 7 &&
+        zmResp[0] == 0x90 && zmResp[1] == 0x50) {
+        zoomVisca = (static_cast<uint16_t>(zmResp[2]) << 12) |
+                    (static_cast<uint16_t>(zmResp[3]) << 8) |
+                    (static_cast<uint16_t>(zmResp[4]) << 4) |
+                    zmResp[5];
+        zmOk = true;
+    } else if (!zmResp.empty()) {
+        core::Logger::debug("VISCA zoom inquiry bad response on " + port_ +
+                            " (len=" + std::to_string(zmResp.size()) + ")");
+    }
+
+    // Update cache with whatever we successfully read
+    if (ptOk) {
+        lastPtz_.pan = ViscaCommands::viscaToPanDegrees(panVisca);
+        lastPtz_.tilt = ViscaCommands::viscaToTiltDegrees(tiltVisca);
+    }
+    if (zmOk) {
+        lastPtz_.zoom = ViscaCommands::viscaToZoomPercent(zoomVisca);
+    }
+
+    if (!ptOk && !zmOk) {
+        core::Logger::warn("VISCA getCurrentPtz inquiries failed on " + port_ + ", returning last cached");
+    } else {
+        core::Logger::debug("VISCA read live PTZ on " + getSerialNumber() +
+                            " pan=" + std::to_string(lastPtz_.pan) +
+                            " tilt=" + std::to_string(lastPtz_.tilt) +
+                            " zoom=" + std::to_string(lastPtz_.zoom));
+    }
+
     return lastPtz_;
 }
 

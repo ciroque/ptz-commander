@@ -111,6 +111,58 @@ bool WindowsSerialTransport::write(const std::vector<uint8_t>& data) {
     return true;
 }
 
+void WindowsSerialTransport::purgeInput() {
+    if (isOpen()) {
+        PurgeComm(handle_, PURGE_RXABORT | PURGE_RXCLEAR);
+    }
+}
+
+std::vector<uint8_t> WindowsSerialTransport::readPacket(int timeoutMs) {
+    if (!isOpen()) {
+        return {};
+    }
+
+    // Save and temporarily adjust timeouts for the read
+    COMMTIMEOUTS oldTimeouts = {};
+    GetCommTimeouts(handle_, &oldTimeouts);
+
+    COMMTIMEOUTS to = oldTimeouts;
+    to.ReadIntervalTimeout = 30;                 // allow small gaps between bytes
+    to.ReadTotalTimeoutConstant = timeoutMs;
+    to.ReadTotalTimeoutMultiplier = 0;
+    SetCommTimeouts(handle_, &to);
+
+    std::vector<uint8_t> packet;
+    uint8_t byte = 0;
+    DWORD bytesRead = 0;
+    DWORD startTime = GetTickCount();
+
+    while (GetTickCount() - startTime < static_cast<DWORD>(timeoutMs) + 50) {
+        if (ReadFile(handle_, &byte, 1, &bytesRead, nullptr) && bytesRead == 1) {
+            packet.push_back(byte);
+            if (byte == 0xFF) {
+                // restore timeouts
+                SetCommTimeouts(handle_, &oldTimeouts);
+                return packet;
+            }
+            if (packet.size() > 64) {
+                break; // safety, malformed
+            }
+        } else {
+            // no data or error; small sleep to yield
+            Sleep(1);
+        }
+    }
+
+    SetCommTimeouts(handle_, &oldTimeouts);
+
+    if (!packet.empty()) {
+        core::Logger::debug("readPacket timeout or incomplete on " + portName_ +
+                            " (got " + std::to_string(packet.size()) + " bytes)");
+    }
+    return {};  // timeout or error → empty (caller treats as failure)
+}
+
 } // namespace cameras::visca
 
 #endif // _WIN32

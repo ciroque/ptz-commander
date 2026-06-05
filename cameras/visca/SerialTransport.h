@@ -27,8 +27,13 @@ public:
     // Returns true if all bytes were written.
     virtual bool write(const std::vector<uint8_t>& data) = 0;
 
-    // Optional: could add read() later for ACK/completion/inquiry responses.
-    // For initial implementation we are fire-and-forget on the command path.
+    // Clear any pending input data in the receive buffer.
+    virtual void purgeInput() = 0;
+
+    // Read one complete VISCA response packet (bytes until and including 0xFF).
+    // Returns the packet on success, or empty vector on timeout or error.
+    // Uses an overall timeout.
+    virtual std::vector<uint8_t> readPacket(int timeoutMs = 1000) = 0;
 };
 
 } // namespace cameras::visca
