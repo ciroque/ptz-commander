@@ -4,10 +4,5 @@ cmake-build-debug/
 out/
 .vs/
 
-# Installer build artifacts
-installer/staging/
-installer/*.wixobj
-installer/*.wixpdb
-installer/*.msi
-installer/cab*.cab
-installer/*.log
+# Installer build artifacts (all generated files live under installer/build/)
+installer/build/

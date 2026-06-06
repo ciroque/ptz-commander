@@ -3,6 +3,28 @@
   <Product Id="*" Name="PTZ Commander" Language="1033" Version="1.0.0.0" Manufacturer="PTZ Commander Project" UpgradeCode="6B565268-915A-461E-8EBF-F154B835455D">
     <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64" />
 
+    <!-- Application icon for the exe, shortcuts, and Add/Remove Programs -->
+    <Icon Id="AppIcon" SourceFile="$(var.SourceDir)\ptz-commander.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+
+    <!-- Public property (Secure) to control optional desktop shortcut.
+         Default on. Presented as a checkbox on the Options page of the UI.
+         Can still be forced from command line: msiexec /i PTZCommander.msi DESKTOPSHORTCUT=0 -->
+    <Property Id="DESKTOPSHORTCUT" Value="1" Secure="yes" />
+
+    <!-- INSTALLDIR default under Program Files (64-bit) for WixUI_InstallDir.
+         The RegistrySearch allows remembering a previous *custom* location chosen by the user on upgrade.
+         The SetDirectory provides the safe default (under ProgramFiles64Folder) when no previous
+         location is found in the registry. This prevents installs landing directly on C:\PTZCommander. -->
+    <Property Id="INSTALLDIR">
+      <RegistrySearch Id="PreviousInstallDir"
+                      Root="HKLM"
+                      Key="Software\PTZCommander"
+                      Name="InstallDir"
+                      Type="raw" />
+    </Property>
+    <SetDirectory Id="INSTALLDIR" Value="[ProgramFiles64Folder]\PTZCommander" Sequence="first" />
+
     <MajorUpgrade DowngradeErrorMessage="A newer version is already installed." />
     <MediaTemplate />
 
@@ -12,29 +34,40 @@
           <Component Id="MainExecutable" Guid="FD1A4136-F580-4B86-A949-C9913E293DE6" Win64="yes">
             <File Id="PTZCommanderExe" Source="$(var.SourceDir)\ptz_commander.exe" />
             <File Id="LibDevDll" Source="$(var.SourceDir)\libdev.dll" />
-            <!-- Add to PATH -->
+            <!-- Persist the chosen (or default) install location for the search above on future upgrades -->
+            <RegistryValue Root="HKLM" Key="Software\PTZCommander" Name="InstallDir" Type="string" Value="[INSTALLDIR]" />
+            <!-- Add the install dir to the system PATH -->
             <Environment Id="PATH" Name="PATH" Value="[INSTALLDIR]" Action="set" Part="last" System="yes" />
           </Component>
         </Directory>
       </Directory>
+
       <!-- CommonProgramMenuFolder + HKLM for per-machine all-users Start Menu shortcut. -->
       <Directory Id="CommonProgramMenuFolder">
         <Directory Id="ApplicationProgramsFolder" Name="PTZCommander">
           <Component Id="ProgramMenuDir" Guid="4C3EF0AE-865A-47E1-8288-7BBC08AB73C5" Win64="yes">
-            <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall" />
-            <RegistryValue Root="HKLM" Key="Software\PTZCommander" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-            <Shortcut Id="ApplicationShortcut" Name="PTZ Commander" Description="PTZ Camera Control" Target="[INSTALLDIR]ptz_commander.exe" />
+            <!-- Explicitly create the PTZCommander subfolder under Start Menu\Programs (Common).
+                 The Shortcut installs the .lnk into it. RemoveFolder cleans up on uninstall/upgrade. -->
+            <CreateFolder />
+            <RemoveFolder Id="ApplicationProgramsFolder" On="both" />
+            <RegistryValue Root="HKLM" Key="Software\PTZCommander" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
+            <Shortcut Id="ApplicationShortcut" Name="PTZ Commander" Description="PTZ Camera Control"
+                      Target="[INSTALLDIR]ptz_commander.exe" Directory="ApplicationProgramsFolder"
+                      WorkingDirectory="INSTALLDIR" Icon="AppIcon" IconIndex="0" />
           </Component>
         </Directory>
       </Directory>
       <!-- Use Common* folders + HKLM keypaths for per-machine (all-users) shortcuts.
-           This ensures the desktop shortcut (when enabled via DESKTOPSHORTCUT=1) is installed
-           to the public desktop and available for all users, consistent with InstallScope="perMachine". -->
+           This ensures the desktop shortcut (when enabled) is on the public desktop. -->
       <Directory Id="CommonDesktopFolder" Name="Desktop">
         <Component Id="DesktopShortcut" Guid="9F9B5663-F8A3-49AA-8B20-178FB192FF69" Win64="yes">
           <Condition>DESKTOPSHORTCUT</Condition>
-          <Shortcut Id="DesktopApplicationShortcut" Name="PTZ Commander" Description="PTZ Camera Control" Target="[INSTALLDIR]ptz_commander.exe" />
-          <RegistryValue Root="HKLM" Key="Software\PTZCommander" Name="desktop" Type="integer" Value="1" KeyPath="yes" />
+          <!-- Explicitly ensure the .lnk is created in the Common Desktop folder (per-machine public desktop). -->
+          <CreateFolder />
+          <Shortcut Id="DesktopApplicationShortcut" Name="PTZ Commander" Description="PTZ Camera Control"
+                    Target="[INSTALLDIR]ptz_commander.exe" Directory="CommonDesktopFolder"
+                    WorkingDirectory="INSTALLDIR" Icon="AppIcon" IconIndex="0" />
+          <RegistryValue Root="HKLM" Key="Software\PTZCommander" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes" />
         </Component>
       </Directory>
     </Directory>
@@ -45,12 +78,40 @@
       <ComponentRef Id="DesktopShortcut" />
     </Feature>
 
-    <!-- Standard WixUI_InstallDir. Desktop shortcut creation is controlled by the DESKTOPSHORTCUT property (default: 1 = create).
-         To skip the desktop shortcut:
-           msiexec /i PTZCommander.msi DESKTOPSHORTCUT=0
-         The Start Menu shortcut is always installed. -->
+    <!-- License RTF (no more lorem ipsum) -->
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.SourceDir)\License.rtf" />
+
+    <!-- WixUI_InstallDir with our inserted Options page for the desktop checkbox. -->
     <UIRef Id="WixUI_InstallDir" />
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
-    <Property Id="DESKTOPSHORTCUT" Value="1" />
+
+    <!-- Insert "Options" page (with desktop shortcut checkbox) into the wizard flow. -->
+    <UI>
+      <Dialog Id="OptionsDlg" Width="370" Height="270" Title="[ProductName] Setup" NoMinimize="yes">
+        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="WixUI_Bmp_Banner" />
+        <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" TabSkip="no" Text="{\WixUI_Font_Title}Options" />
+        <Control Id="Description" Type="Text" X="25" Y="23" Width="340" Height="15" TabSkip="no" Text="Configure additional options for [ProductName]." />
+        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+
+        <Control Id="DesktopShortcutCheckBox" Type="CheckBox" X="25" Y="100" Width="320" Height="18"
+                 Property="DESKTOPSHORTCUT" CheckBoxValue="1"
+                 Text="Create a &amp;desktop shortcut (on the public desktop for all users)" />
+
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="&amp;Back">
+          <Publish Event="NewDialog" Value="InstallDirDlg" />
+        </Control>
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="&amp;Next">
+          <Publish Event="NewDialog" Value="VerifyReadyDlg" />
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Text="Cancel">
+          <Publish Event="SpawnDialog" Value="CancelDlg" />
+        </Control>
+      </Dialog>
+
+      <!-- Rewire navigation to place the Options page after directory selection. -->
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="OptionsDlg" Order="5">1</Publish>
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="OptionsDlg" Order="5">1</Publish>
+    </UI>
   </Product>
 </Wix>
