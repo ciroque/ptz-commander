@@ -6,6 +6,7 @@ A C++ command-line tool for controlling PTZ (Pan-Tilt-Zoom) cameras, built with 
 
 - **Build**: Requires C++20, CMake, and `libdev.dll` (OBSBOT SDK). Clone, drop `libdev.dll` in `out/build/x64-Release/`, then configure + build with your generator (the repo uses Ninja + Visual Studio via `CMakeSettings.json`):
   - Example: `cmake -S . -B out/build/x64-Release -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build out/build/x64-Release`
+- **Installer (Windows)**: After building the x64-Release configuration, run `installer\build-installer.bat` (from the `installer` directory). This uses `cmake --install` to stage files and produces `PTZCommander.msi` (using WiX). The installer adds the tool to Program Files, appends the install directory to the system PATH, creates a Start Menu shortcut (always), and creates a Desktop shortcut by default. To skip the desktop shortcut: `msiexec /i PTZCommander.msi DESKTOPSHORTCUT=0`.
 - **Run**: ./out/build/x64-Release/ptz_commander—REPL starts—`> ` prompt—type commands—`exit` to quit.
 - **Camera Detection**: Threaded—`ObsbotCameraAdapter`—auto-adds/removes cameras—logs on connect/disconnect.
 - **Input**: `<serialNumber>`—SN (e.g., `RMOWTHF7211JGR`), alias (e.g., `"LeftCam"`), or name (e.g., `"OWB-2105-CE"`)—`*` for all cameras.
@@ -37,17 +38,18 @@ The `zoom` argument is an integer between 0 and 100, where 0 is the camera's min
 | `preset apply`                 | ```<id|*> <name>```                         | Applies a named preset — moves camera(s) to stored PTZ.                      |
 | `preset discard`               | ```<id|*> <name>```                         | Removes a named preset from memory.                                        |
 | `preset list`                  | None                                    | Lists all presets for all cameras.  |
-| `preset load`                  | `<file>` (optional)                     | Loads a gig from `.ptzc` (per-camera: `{"alias": "...", "presets": { ... }}`). Merges presets, applies aliases. Defaults to `presets.ptzc`. |
-| `preset save`                  | `<file>` (optional)                     | Saves current presets + aliases as a self-contained gig (per-camera: alias + presets). Defaults to `presets.ptzc`. |
+| `preset load`                  | `<file>` (optional)                     | Loads a gig from `.ptzc` (per-camera: `{"alias": "...", "presets": { ... }}`). Merges presets, applies aliases. Bare filenames default to `%LOCALAPPDATA%\PTZCommander\presets.ptzc`. |
+| `preset save`                  | `<file>` (optional)                     | Saves current presets + aliases as a self-contained gig (per-camera: alias + presets). Bare filenames default to `%LOCALAPPDATA%\PTZCommander\presets.ptzc`. |
 | `preset store`                 | ```<id|*> <name>```                         | Stores current PTZ as a named preset in memory—e.g., ```"intro"```.            |
 
 ### Preset Files
 
 Presets are stored in JSON files using the `.ptzc` extension ("PTZ Commander").
 
-- `preset save my-show` → writes `my-show.ptzc`
+- `preset save my-show` → writes `my-show.ptzc` (in the user data directory)
 - `preset load conference` → reads `conference.ptzc` (`.ptzc` is added automatically if omitted)
-- When no filename is given, the default is `presets.ptzc`
+- When no filename is given, the default is `%LOCALAPPDATA%\PTZCommander\presets.ptzc`
+- If you provide a path with directories (e.g. `C:\shows\my-show` or `..\my-show`), it will be used as-is. Bare names are placed in the per-user PTZCommander data folder.
 
 This allows multiple independent preset collections (different shows, venues, camera configurations, etc.). `preset load` merges into the current in-memory presets; use `preset discard` or restart the app to start fresh.
 

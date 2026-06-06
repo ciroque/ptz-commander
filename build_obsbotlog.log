@@ -1,0 +1,4 @@
+[1/31] Scanning C:\Users\steve\source\repos\ptz-commander\cameras\obsbot\ObsbotCameraAdapter.cpp for CXX dependencies
+[2/31] Generating CXX dyndep file CMakeFiles\ptz_commander.dir\CXX.dd
+[3/4] Building CXX object CMakeFiles\ptz_commander.dir\cameras\obsbot\ObsbotCameraAdapter.cpp.obj
+[4/4] Linking CXX executable ptz_commander.exe; Copying libdev.dll to output directory

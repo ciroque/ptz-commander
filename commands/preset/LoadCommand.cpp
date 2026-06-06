@@ -15,7 +15,6 @@ namespace commands::preset {
 		if (!tokens.empty()) {
 			filename = tokens[0];
 		}
-		filename = cameras::PresetStore::normalizeFilename(filename);
 
 		cameras::PresetStore store;
 		if (!store.load(ctx.cameraMgr, filename)) {
