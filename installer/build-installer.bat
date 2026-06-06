@@ -30,17 +30,24 @@ rem Note: the executable icon is embedded at compile time via ptz-commander.rc +
 rem For best "Extra large icons" quality, ptz-commander.ico should contain a 256x256 PNG layer
 rem (see comment in CMakeLists.txt). The .ico here is mainly for the installer (shortcuts/ARP).
 
-echo [3/4] Building WiX objects...
-candle "%SCRIPT_DIR%PTZCommander.wxs" -dSourceDir="%STAGE_DIR%" -out "%INSTALLER_BUILD_DIR%\PTZCommander.wixobj"
+echo [3/4] Restoring WiX tool (v7)...
+dotnet tool restore --tool-manifest "%SCRIPT_DIR%dotnet-tools.json"
 if errorlevel 1 (
-    echo ERROR: candle failed.
+    echo ERROR: dotnet tool restore failed. Make sure .NET SDK is installed.
     exit /b 1
 )
 
-echo [4/4] Linking MSI...
-light "%INSTALLER_BUILD_DIR%\PTZCommander.wixobj" -out "%INSTALLER_BUILD_DIR%\PTZCommander.msi" -ext WixUIExtension
+echo Accepting WiX 7 Open Source Maintenance Fee (OSMF) EULA...
+dotnet wix --accept-osmf >nul 2>&1 || echo "EULA acceptance attempted (run 'dotnet wix --accept-osmf' manually if prompted)."
+
+echo [4/4] Building MSI with WiX v7...
+dotnet wix build "%SCRIPT_DIR%PTZCommander.wxs" ^
+  -d SourceDir="%STAGE_DIR%" ^
+  -arch x64 ^
+  -o "%INSTALLER_BUILD_DIR%\PTZCommander.msi" ^
+  -ext WixToolset.UI.wixext
 if errorlevel 1 (
-    echo ERROR: light failed.
+    echo ERROR: wix build failed.
     exit /b 1
 )
 
