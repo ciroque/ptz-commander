@@ -3,11 +3,12 @@
 
 #include "CameraManager.h"
 #include <string>
+#include <vector>
 
 namespace cameras {
 
     /**
-     * Handles persistence of presets and aliases to .ptzc "gig" files.
+     * Handles persistence of presets and aliases to .ptzc files.
      * Each file contains per-serial camera data:
      * {
      *   "SERIAL": {
@@ -20,7 +21,7 @@ namespace cameras {
      *   ...
      * }
      *
-     * This is the central abstraction for preset/gig persistence.
+     * This is the central abstraction for preset file persistence.
      */
     class PresetStore {
     public:
@@ -50,6 +51,18 @@ namespace cameras {
          * (Path resolution for user data is handled separately in load/save.)
          */
         static std::string normalizeFilename(std::string filename);
+
+        /**
+         * User-writable directory for bare preset filenames
+         * (%LOCALAPPDATA%\PTZCommander, or "." if LOCALAPPDATA is unset).
+         */
+        static std::string homeDirectory();
+
+        /**
+         * Filenames of *.ptzc files in homeDirectory(), sorted.
+         * Missing/unreadable directories yield an empty list.
+         */
+        static std::vector<std::string> listHomeFiles();
 
     private:
         static std::string getDefaultPresetDir();

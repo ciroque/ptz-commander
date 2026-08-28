@@ -23,6 +23,8 @@ target_sources(ptz_commander PRIVATE
 
     preset/ApplyCommand.cpp
     preset/ApplyCommand.h
+    preset/BrowseCommand.cpp
+    preset/BrowseCommand.h
     preset/DiscardCommand.cpp
     preset/DiscardCommand.h
     preset/HelpCommand.h

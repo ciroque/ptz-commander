@@ -1,5 +1,6 @@
 #include "PresetStore.h"
 
+#include <algorithm>
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <filesystem>
@@ -21,6 +22,35 @@ namespace cameras {
         }
         // Fallback (should rarely happen)
         return ".";
+    }
+
+    std::string PresetStore::homeDirectory() {
+        return getDefaultPresetDir();
+    }
+
+    std::vector<std::string> PresetStore::listHomeFiles() {
+        std::vector<std::string> names;
+        const std::filesystem::path dir = getDefaultPresetDir();
+        std::error_code ec;
+        if (!std::filesystem::is_directory(dir, ec)) {
+            return names;
+        }
+
+        for (const auto& entry : std::filesystem::directory_iterator(dir, ec)) {
+            if (ec) {
+                break;
+            }
+            std::error_code fileEc;
+            if (!entry.is_regular_file(fileEc) || fileEc) {
+                continue;
+            }
+            if (entry.path().extension() == ".ptzc") {
+                names.push_back(entry.path().filename().string());
+            }
+        }
+
+        std::sort(names.begin(), names.end());
+        return names;
     }
 
     std::string PresetStore::resolvePresetPath(std::string filename) {

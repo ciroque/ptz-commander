@@ -18,6 +18,7 @@
 #include "console/ClearCommand.h"
 
 #include "preset/ApplyCommand.h"
+#include "preset/BrowseCommand.h"
 #include "preset/DiscardCommand.h"
 #include "preset/HelpCommand.h"
 #include "preset/ListCommand.h"
@@ -48,6 +49,7 @@ namespace commands {
 			addCommand(std::make_unique<console::ClearCommand>());
             
             addCommand(std::make_unique<preset::ApplyCommand>());
+            addCommand(std::make_unique<preset::BrowseCommand>());
             addCommand(std::make_unique<preset::DiscardCommand>());
             addCommand(std::make_unique<preset::ListCommand>());
             addCommand(std::make_unique<preset::LoadCommand>());

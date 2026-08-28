@@ -13,9 +13,10 @@ namespace commands::preset {
             ctx.out << "  preset list                     List all presets\n";
             ctx.out << "  preset apply <id|*> <name>      Apply a named preset to camera(s)\n";
             ctx.out << "  preset discard <id|*> <name>    Remove a named preset\n";
-            ctx.out << "  preset load <file>              Load a gig from .ptzc (per-camera: alias + presets)\n";
-            ctx.out << "  preset save <file>              Save current gig to .ptzc (per-camera: alias + presets object)\n";
             ctx.out << "  preset store <id|*> <name>      Store current position as a named preset\n";
+            ctx.out << "  preset browse                   List preset files in the user data directory\n";
+            ctx.out << "  preset load <file>              Load a .ptzc file (per-camera: alias + presets)\n";
+            ctx.out << "  preset save <file>              Save current presets to a .ptzc file\n";
         }
     };
 }
