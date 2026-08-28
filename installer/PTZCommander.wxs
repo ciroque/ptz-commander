@@ -27,7 +27,7 @@
     <SetDirectory Id="INSTALLDIR" Value="[ProgramFiles64Folder]\PTZCommander" Sequence="first" />
 
     <MajorUpgrade DowngradeErrorMessage="A newer version is already installed." />
-    <MediaTemplate />
+    <MediaTemplate EmbedCab="yes" />
 
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLDIR" Name="PTZCommander">
