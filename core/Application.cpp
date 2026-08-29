@@ -5,7 +5,7 @@ namespace core {
     Application::Application()
         : obsbotAdapter_(std::make_unique<cameras::obsbot::ObsbotCameraAdapter>(cameraMgr_)),
           viscaAdapter_(std::make_unique<cameras::visca::ViscaCameraAdapter>(cameraMgr_)),
-          context_(cameraMgr_),
+          context_(cameraMgr_, sceneStore_),
           commandHandler_(),
           running_(false) {
         // Start OBSBOT adapter (hotplug + network scan) in its own thread

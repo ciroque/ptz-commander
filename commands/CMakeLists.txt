@@ -37,6 +37,20 @@ target_sources(ptz_commander PRIVATE
     preset/StoreCommand.cpp
     preset/StoreCommand.h
 
+    scene/AddCommand.cpp
+    scene/AddCommand.h
+    scene/ApplyCommand.cpp
+    scene/ApplyCommand.h
+    scene/DiscardCommand.cpp
+    scene/DiscardCommand.h
+    scene/HelpCommand.h
+    scene/ListCommand.cpp
+    scene/ListCommand.h
+    scene/RemoveCommand.cpp
+    scene/RemoveCommand.h
+    scene/ShowCommand.cpp
+    scene/ShowCommand.h
+
     snapshot/ApplyCommand.cpp
     snapshot/ApplyCommand.h
     snapshot/HelpCommand.h

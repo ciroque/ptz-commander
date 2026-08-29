@@ -2,6 +2,7 @@
 #define CORE_APPLICATION_H
 
 #include "../cameras/CameraManager.h"
+#include "../cameras/SceneStore.h"
 #include "../cameras/obsbot/ObsbotCameraAdapter.h"
 #include "../cameras/visca/ViscaCameraAdapter.h"
 #include "../commands/CommandHandler.h"
@@ -13,6 +14,7 @@ namespace core {
     class Application {
     private:
         cameras::CameraManager cameraMgr_;
+        cameras::SceneStore sceneStore_;
         std::unique_ptr<cameras::obsbot::ObsbotCameraAdapter> obsbotAdapter_;
         std::unique_ptr<cameras::visca::ViscaCameraAdapter> viscaAdapter_;
         data::Context context_;

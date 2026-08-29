@@ -17,7 +17,7 @@ namespace commands::preset {
         }
 
         cameras::PresetStore store;
-        if (!store.save(ctx.cameraMgr, filename)) {
+        if (!store.save(ctx.cameraMgr, ctx.sceneStore, filename)) {
             ctx.err << "Failed to write to " << filename << std::endl;
             return;
         }

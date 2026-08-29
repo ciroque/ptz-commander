@@ -43,6 +43,19 @@ The `zoom` argument is an integer between 0 and 100, where 0 is the camera's min
 | `preset save`                  | `<file>` (optional)                     | Saves current presets + aliases as a self-contained `.ptzc` file (per-camera: alias + presets). Bare filenames default to `%LOCALAPPDATA%\PTZCommander\presets.ptzc`. |
 | `preset store`                 | ```<id|*> <name>```                         | Stores current PTZ as a named preset in memory—e.g., ```"intro"```.            |
 
+### Scene
+
+A scene is a named set of camera → preset bindings. Bindings are resolved when you apply the scene (they are not baked PTZ values). `*` is not accepted. Persist with `preset save` / `preset load` (reserved top-level `"scenes"` key in the `.ptzc` file).
+
+| Command                        | Arguments                               | Description                                                                 |
+|--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
+| `scene add`                    | ```<name> <id> <preset> [<id> <preset> ...]``` | Adds or replaces bindings. Camera id is alias, serial, or name. Stored as serial. |
+| `scene apply`                  | ```<name>```                            | Moves each bound camera to that camera's named preset. Missing camera/preset is skipped. |
+| `scene discard`                | ```<name>```                            | Deletes the scene.                                                          |
+| `scene list`                   | None                                    | Lists scene names and binding counts.                                       |
+| `scene remove`                 | ```<name> <id>```                       | Removes one camera from a scene.                                            |
+| `scene show`                   | ```<name>```                            | Shows each binding (friendly name, serial, preset).                         |
+
 ### Preset Files
 
 Presets are stored in JSON files using the `.ptzc` extension ("PTZ Commander").
@@ -71,7 +84,7 @@ Example `.ptzc` file structure (per-camera):
 ## Notes
 - **Tech Debt**: Preset name dupes—first match wins—alias collisions—first camera wins—<10 cameras—O(n) lookups.
 - **Dependencies**: `nlohmann/json`—`$PROJ_DIR/include/nlohmann/json.hpp`—CMake—`include_directories(include)`.
-- **Future**: `push/pull/pan`—speed control—Scenes—Pinocchio’d for now!
+- **Future**: `push/pull/pan`—speed control.
 
 ## VISCA Serial Camera Support (Windows)
 Automatic discovery is performed at startup for VISCA-over-serial cameras.

@@ -2,6 +2,7 @@
 #define CAMERAS_PRESETSTORE_H
 
 #include "CameraManager.h"
+#include "SceneStore.h"
 #include <string>
 #include <vector>
 
@@ -18,7 +19,9 @@ namespace cameras {
      *       ...
      *     }
      *   },
-     *   ...
+     *   "scenes": {
+     *     "sermon": { "SERIAL": "presetName", ... }
+     *   }
      * }
      *
      * This is the central abstraction for preset file persistence.
@@ -40,10 +43,13 @@ namespace cameras {
          * Replaces in-memory presets on currently connected cameras (matched by
          * serial). Cameras absent from the file are cleared. Aliases in the file
          * overwrite; missing alias keys are left unchanged.
-         * File contents are fully parsed before any camera is mutated; a parse
-         * failure leaves in-memory state unchanged.
+         * File contents are fully parsed before any camera or scene is mutated;
+         * a parse failure leaves in-memory state unchanged.
+         * Replaces in-memory scenes from the reserved top-level "scenes" key.
+         * A missing "scenes" key clears the scene store.
          */
-        LoadStatus load(CameraManager& mgr, std::string filename = "presets.ptzc");
+        LoadStatus load(CameraManager& mgr, SceneStore& scenes,
+                        std::string filename = "presets.ptzc");
 
         /**
          * Saves the current presets and aliases (if set) for all cameras
@@ -53,7 +59,8 @@ namespace cameras {
          * If filename has no '.', ".ptzc" is appended.
          * Returns true on success.
          */
-        bool save(const CameraManager& mgr, std::string filename = "presets.ptzc") const;
+        bool save(const CameraManager& mgr, const SceneStore& scenes,
+                  std::string filename = "presets.ptzc") const;
 
         /**
          * Normalizes a filename for .ptzc files: appends ".ptzc" if no extension dot is present.

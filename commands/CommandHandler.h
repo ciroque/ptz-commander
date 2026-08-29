@@ -26,6 +26,14 @@
 #include "preset/SaveCommand.h"
 #include "preset/StoreCommand.h"
 
+#include "scene/AddCommand.h"
+#include "scene/ApplyCommand.h"
+#include "scene/DiscardCommand.h"
+#include "scene/HelpCommand.h"
+#include "scene/ListCommand.h"
+#include "scene/RemoveCommand.h"
+#include "scene/ShowCommand.h"
+
 #include "snapshot/ApplyCommand.h"
 #include "snapshot/ListCommand.h"
 #include "snapshot/HelpCommand.h"
@@ -56,12 +64,20 @@ namespace commands {
             addCommand(std::make_unique<preset::SaveCommand>());
             addCommand(std::make_unique<preset::StoreCommand>());
 
+            addCommand(std::make_unique<scene::AddCommand>());
+            addCommand(std::make_unique<scene::ApplyCommand>());
+            addCommand(std::make_unique<scene::DiscardCommand>());
+            addCommand(std::make_unique<scene::ListCommand>());
+            addCommand(std::make_unique<scene::RemoveCommand>());
+            addCommand(std::make_unique<scene::ShowCommand>());
+
             addCommand(std::make_unique<snapshot::ApplyCommand>());
             addCommand(std::make_unique<snapshot::ListCommand>());
 
             addCommand(std::make_unique<HelpCommand>());
             addCommand(std::make_unique<camera::HelpCommand>());
             addCommand(std::make_unique<preset::HelpCommand>());
+            addCommand(std::make_unique<scene::HelpCommand>());
             addCommand(std::make_unique<snapshot::HelpCommand>());
         }
 
