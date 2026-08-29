@@ -4,12 +4,6 @@
 
 namespace commands::setup {
     void LoadCommand::execute(data::Context& ctx, const std::string& args) {
-        auto cameras = ctx.cameraMgr.getCameras();
-        if (cameras.empty()) {
-            ctx.err << "No cameras found to load setup." << std::endl;
-            return;
-        }
-
         std::string filename = "presets.ptzc";
         auto tokens = commands::splitArgs(args);
         if (!tokens.empty()) {
