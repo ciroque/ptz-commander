@@ -1,7 +1,10 @@
 #include "PresetStore.h"
 
+#include <algorithm>
 #include <fstream>
+#include <map>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <filesystem>
 #include <cstdlib>
 
@@ -23,6 +26,35 @@ namespace cameras {
         return ".";
     }
 
+    std::string PresetStore::homeDirectory() {
+        return getDefaultPresetDir();
+    }
+
+    std::vector<std::string> PresetStore::listHomeFiles() {
+        std::vector<std::string> names;
+        const std::filesystem::path dir = getDefaultPresetDir();
+        std::error_code ec;
+        if (!std::filesystem::is_directory(dir, ec)) {
+            return names;
+        }
+
+        for (const auto& entry : std::filesystem::directory_iterator(dir, ec)) {
+            if (ec) {
+                break;
+            }
+            std::error_code fileEc;
+            if (!entry.is_regular_file(fileEc) || fileEc) {
+                continue;
+            }
+            if (entry.path().extension() == ".ptzc") {
+                names.push_back(entry.path().filename().string());
+            }
+        }
+
+        std::sort(names.begin(), names.end());
+        return names;
+    }
+
     std::string PresetStore::resolvePresetPath(std::string filename) {
         filename = normalizeFilename(std::move(filename));
 
@@ -39,12 +71,12 @@ namespace cameras {
         return (dir / p).string();
     }
 
-    bool PresetStore::load(CameraManager& mgr, std::string filename) {
+    LoadStatus PresetStore::load(CameraManager& mgr, std::string filename) {
         filename = resolvePresetPath(std::move(filename));
 
         std::ifstream file(filename);
         if (!file.is_open()) {
-            return false;
+            return LoadStatus::NotFound;
         }
 
         try {
@@ -52,42 +84,67 @@ namespace cameras {
             file >> j;
             file.close();
 
+            struct StagedCamera {
+                std::optional<std::string> alias;
+                std::vector<Preset> presets;
+            };
+
             auto cameras = mgr.getCameras();
-            for (auto& camera : cameras) {
+            std::map<std::string, StagedCamera> staged;
+
+            for (const auto& camera : cameras) {
                 std::string sn = camera->getSerialNumber();
-                if (j.contains(sn)) {
-                    auto camJson = j[sn];
+                if (!j.contains(sn)) {
+                    continue;
+                }
 
-                    // alias (optional)
-                    if (camJson.contains("alias")) {
-                        std::string alias = camJson["alias"].get<std::string>();
-                        if (!alias.empty()) {
-                            camera->setAlias(alias);
-                        }
+                auto camJson = j[sn];
+                StagedCamera entry;
+
+                if (camJson.contains("alias")) {
+                    std::string alias = camJson["alias"].get<std::string>();
+                    if (!alias.empty()) {
+                        entry.alias = std::move(alias);
                     }
+                }
 
-                    // presets
-                    if (camJson.contains("presets") && camJson["presets"].is_object()) {
-                        auto presetsJson = camJson["presets"];
-                        for (auto it = presetsJson.begin(); it != presetsJson.end(); ++it) {
-                            std::string presetName = it.key();
-                            auto presetJson = it.value();
+                if (camJson.contains("presets") && camJson["presets"].is_object()) {
+                    auto presetsJson = camJson["presets"];
+                    for (auto it = presetsJson.begin(); it != presetsJson.end(); ++it) {
+                        auto presetJson = it.value();
 
-                            Preset preset;
-                            preset.name = presetName;
-                            preset.ptz.pan = presetJson["pan"].get<float>();
-                            preset.ptz.tilt = presetJson["tilt"].get<float>();
-                            preset.ptz.zoom = presetJson["zoom"].get<int>();
-                            camera->AddPreset(presetName, preset);
-                        }
+                        Preset preset;
+                        preset.name = it.key();
+                        preset.ptz.pan = presetJson["pan"].get<float>();
+                        preset.ptz.tilt = presetJson["tilt"].get<float>();
+                        preset.ptz.zoom = presetJson["zoom"].get<int>();
+                        entry.presets.push_back(std::move(preset));
                     }
+                }
+
+                staged.emplace(std::move(sn), std::move(entry));
+            }
+
+            for (auto& camera : cameras) {
+                camera->ClearPresets();
+
+                auto it = staged.find(camera->getSerialNumber());
+                if (it == staged.end()) {
+                    continue;
+                }
+
+                if (it->second.alias) {
+                    camera->setAlias(*it->second.alias);
+                }
+                for (const auto& preset : it->second.presets) {
+                    camera->AddPreset(preset.name, preset);
                 }
             }
 
-            return true;
+            return LoadStatus::Ok;
         }
         catch (const std::exception&) {
-            return false;
+            return LoadStatus::ParseError;
         }
     }
 

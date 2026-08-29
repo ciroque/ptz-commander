@@ -3,11 +3,12 @@
 
 #include "CameraManager.h"
 #include <string>
+#include <vector>
 
 namespace cameras {
 
     /**
-     * Handles persistence of presets and aliases to .ptzc "gig" files.
+     * Handles persistence of presets and aliases to .ptzc files.
      * Each file contains per-serial camera data:
      * {
      *   "SERIAL": {
@@ -20,8 +21,14 @@ namespace cameras {
      *   ...
      * }
      *
-     * This is the central abstraction for preset/gig persistence.
+     * This is the central abstraction for preset file persistence.
      */
+    enum class LoadStatus {
+        Ok,
+        NotFound,
+        ParseError
+    };
+
     class PresetStore {
     public:
         /**
@@ -30,10 +37,13 @@ namespace cameras {
          * If filename has no path component, it is resolved relative to the
          * user-writable app data directory (%LOCALAPPDATA%\PTZCommander).
          * If filename has no '.', ".ptzc" is appended.
-         * Presets are merged (AddPreset); aliases are overwritten if present in file.
-         * Returns true on success.
+         * Replaces in-memory presets on currently connected cameras (matched by
+         * serial). Cameras absent from the file are cleared. Aliases in the file
+         * overwrite; missing alias keys are left unchanged.
+         * File contents are fully parsed before any camera is mutated; a parse
+         * failure leaves in-memory state unchanged.
          */
-        bool load(CameraManager& mgr, std::string filename = "presets.ptzc");
+        LoadStatus load(CameraManager& mgr, std::string filename = "presets.ptzc");
 
         /**
          * Saves the current presets and aliases (if set) for all cameras
@@ -50,6 +60,18 @@ namespace cameras {
          * (Path resolution for user data is handled separately in load/save.)
          */
         static std::string normalizeFilename(std::string filename);
+
+        /**
+         * User-writable directory for bare preset filenames
+         * (%LOCALAPPDATA%\PTZCommander, or "." if LOCALAPPDATA is unset).
+         */
+        static std::string homeDirectory();
+
+        /**
+         * Filenames of *.ptzc files in homeDirectory(), sorted.
+         * Missing/unreadable directories yield an empty list.
+         */
+        static std::vector<std::string> listHomeFiles();
 
     private:
         static std::string getDefaultPresetDir();
