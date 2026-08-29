@@ -17,11 +17,11 @@ namespace commands {
             ctx.out << "  scene help          Show scene command help\n";
             ctx.out << "  snapshot help       Show snapshot command help\n";
             ctx.out << "  cls                 Clear the screen\n";
-            ctx.out << "  camera <command>    Camera operations\n";
-            ctx.out << "  preset <command>    Preset operations\n";
-            ctx.out << "  setup <command>     Save/load/browse .ptzc files\n";
-            ctx.out << "  scene <command>     Scene operations\n";
-            ctx.out << "  snapshot <command>  Multi-camera preset operations\n";
+            ctx.out << "  camera <command>      alias, list, move, push, show\n";
+            ctx.out << "  preset <command>      apply, discard, list, store\n";
+            ctx.out << "  setup <command>       browse, load, save\n";
+            ctx.out << "  scene <command>       add, apply, discard, list, remove, show\n";
+            ctx.out << "  snapshot <command>    apply, list\n";
             ctx.out << "  exit                Exit the application\n";
         }
     };
