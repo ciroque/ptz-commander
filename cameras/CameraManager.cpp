@@ -26,6 +26,28 @@ namespace cameras {
         return (it != cameras_.end()) ? *it : nullptr;
     }
 
+    std::optional<std::string> CameraManager::assignAlias(const std::shared_ptr<Camera>& camera,
+                                                          const std::string& alias) {
+        if (!camera || alias.empty() || alias == "*") {
+            return std::string{};
+        }
+
+        std::lock_guard<std::mutex> lock(mutex_);
+        const auto selfSn = camera->getSerialNumber();
+        for (const auto& other : cameras_) {
+            if (other->getSerialNumber() == selfSn) {
+                continue;
+            }
+            if (other->getAlias() == alias
+                || other->getSerialNumber() == alias
+                || other->getName() == alias) {
+                return other->getSerialNumber();
+            }
+        }
+        camera->setAlias(alias);
+        return std::nullopt;
+    }
+
     void CameraManager::addCamera(std::shared_ptr<Camera> camera) {
         std::lock_guard<std::mutex> lock(mutex_);
         if (!camera) return;  // Guard against null
