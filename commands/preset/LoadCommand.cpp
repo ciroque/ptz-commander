@@ -17,7 +17,7 @@ namespace commands::preset {
 		}
 
 		cameras::PresetStore store;
-		switch (store.load(ctx.cameraMgr, filename)) {
+		switch (store.load(ctx.cameraMgr, ctx.sceneStore, filename)) {
 		case cameras::LoadStatus::NotFound:
 			ctx.err << "Failed to open " << filename << std::endl;
 			return;

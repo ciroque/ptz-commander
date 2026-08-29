@@ -71,7 +71,7 @@ namespace cameras {
         return (dir / p).string();
     }
 
-    LoadStatus PresetStore::load(CameraManager& mgr, std::string filename) {
+    LoadStatus PresetStore::load(CameraManager& mgr, SceneStore& scenes, std::string filename) {
         filename = resolvePresetPath(std::move(filename));
 
         std::ifstream file(filename);
@@ -94,7 +94,7 @@ namespace cameras {
 
             for (const auto& camera : cameras) {
                 std::string sn = camera->getSerialNumber();
-                if (!j.contains(sn)) {
+                if (sn == "scenes" || !j.contains(sn)) {
                     continue;
                 }
 
@@ -125,6 +125,25 @@ namespace cameras {
                 staged.emplace(std::move(sn), std::move(entry));
             }
 
+            std::map<std::string, Scene> stagedScenes;
+            if (j.contains("scenes")) {
+                auto scenesJson = j["scenes"];
+                if (!scenesJson.is_object()) {
+                    return LoadStatus::ParseError;
+                }
+                for (auto sceneIt = scenesJson.begin(); sceneIt != scenesJson.end(); ++sceneIt) {
+                    if (!sceneIt.value().is_object()) {
+                        return LoadStatus::ParseError;
+                    }
+                    Scene scene;
+                    scene.name = sceneIt.key();
+                    for (auto bindIt = sceneIt.value().begin(); bindIt != sceneIt.value().end(); ++bindIt) {
+                        scene.bindings[bindIt.key()] = bindIt.value().get<std::string>();
+                    }
+                    stagedScenes.emplace(scene.name, std::move(scene));
+                }
+            }
+
             for (auto& camera : cameras) {
                 camera->ClearPresets();
 
@@ -141,6 +160,7 @@ namespace cameras {
                 }
             }
 
+            scenes.replaceAll(std::move(stagedScenes));
             return LoadStatus::Ok;
         }
         catch (const std::exception&) {
@@ -148,7 +168,7 @@ namespace cameras {
         }
     }
 
-    bool PresetStore::save(const CameraManager& mgr, std::string filename) const {
+    bool PresetStore::save(const CameraManager& mgr, const SceneStore& scenes, std::string filename) const {
         filename = resolvePresetPath(std::move(filename));
 
         nlohmann::json j;
@@ -174,6 +194,18 @@ namespace cameras {
             camEntry["presets"] = presetsObj;
 
             j[camera->getSerialNumber()] = camEntry;
+        }
+
+        if (!scenes.empty()) {
+            nlohmann::json scenesObj;
+            for (const auto& [name, scene] : scenes.all()) {
+                nlohmann::json bindings;
+                for (const auto& [serial, presetName] : scene.bindings) {
+                    bindings[serial] = presetName;
+                }
+                scenesObj[name] = bindings;
+            }
+            j["scenes"] = scenesObj;
         }
 
         std::ofstream file(filename);
