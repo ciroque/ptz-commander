@@ -28,7 +28,7 @@ This ADR is only about scenes inside ptz-commander. OBS (`ProgramSceneChanged` �
 
 1. A scene is a **name plus bindings**: camera serial → preset name.
 2. Bindings are **references**, resolved at apply time. They do not bake pan/tilt/zoom.
-3. Scenes live **in the same `.ptzc` file** as presets, under a reserved top-level key `"scenes"`. They load and save with `preset load` / `preset save` (replace, same as presets).
+3. Scenes live **in the same `.ptzc` file** as presets, under a reserved top-level key `"scenes"`. They load and save with `setup load` / `setup save` (replace, same as presets).
 4. In memory, scenes live in a **`SceneStore` independent of `Camera` objects**, so a scene still exists if a camera is unplugged.
 5. Composition is explicit (`scene add`), not capture (`scene store` of “whatever I’m on now”).
 6. `snapshot *` is left in place for now and is not extended. Scenes are the real cross-camera cue.
@@ -77,8 +77,8 @@ Rules:
 
 - `"scenes"` is a **reserved top-level key**. It is never treated as a camera serial (a camera actually named `scenes` would already be a problem; we do not support that).
 - Scene objects map serial → preset name (strings). No nested PTZ blobs.
-- `preset load` **replaces** in-memory scenes the same way it replaces presets. A file with no `"scenes"` key means “this collection has no scenes” (clear `SceneStore`). A parse error still leaves RAM unchanged (same all-or-nothing rule as presets).
-- `preset save` writes `"scenes"` whenever the store is non-empty. Empty store: omit the key so files that never used scenes stay serial-only.
+- `setup load` **replaces** in-memory scenes the same way it replaces presets. A file with no `"scenes"` key means “this collection has no scenes” (clear `SceneStore`). A parse error still leaves RAM unchanged (same all-or-nothing rule as presets).
+- `setup save` writes `"scenes"` whenever the store is non-empty. Empty store: omit the key so files that never used scenes stay serial-only.
 - Scene bindings for serials that are not currently connected are **kept** in `SceneStore` and round-trip through save. That is the opposite of presets, which can only attach to a live `Camera`.
 
 No sidecar `.ptzs` files. They would drift from the presets they name.
@@ -102,7 +102,7 @@ Notes:
 - `<id>` is the same as everywhere else: alias, serial, or product name via `findById`. The stored binding is always the serial.
 - There is no `scene store`. Cameras do not know “which preset they are on”; inventing capture would mean fuzzy PTZ matching or last-apply tracking. Composition is the feature.
 - `scene add` on an unknown preset name is an error (fail that binding, do not record a dangling name). Unknown camera id is an error.
-- Persistence is still `preset save` / `load` / `browse`. Scenes are part of the collection, not a second file type.
+- Persistence is `setup save` / `load` / `browse`. Scenes are part of the collection, not a second file type.
 
 ## Apply semantics
 
@@ -137,7 +137,7 @@ A later cleanup (not this work) can make `snapshot apply X` sugar for “apply p
 **Positive**
 
 - One-word cues without colliding preset names across cameras.
-- Scenes travel with the collection (`preset save` / `load` / `browse`).
+- Scenes travel with the collection (`setup save` / `load` / `browse`).
 - Scenes can be listed while a camera is dark; apply degrades per missing member.
 - OBS integration, if we do it, is “call `scene apply`,” not a second grouping model.
 
@@ -166,7 +166,7 @@ A later cleanup (not this work) can make `snapshot apply X` sugar for “apply p
 2. Reserved `"scenes"` key in `PresetStore` load/save (replace semantics, all-or-nothing parse).
 3. `scene add` / `remove` / `discard` / `list` / `show` / `help`.
 4. `scene apply` (skip missing members).
-5. README + `preset help` note that save/load include scenes.
+5. README + `setup help` for save/load/browse (presets and scenes).
 6. Leave `snapshot *` untouched.
 
 ## References
