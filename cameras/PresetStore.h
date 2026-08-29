@@ -34,6 +34,8 @@ namespace cameras {
          * Replaces in-memory presets on currently connected cameras (matched by
          * serial). Cameras absent from the file are cleared. Aliases in the file
          * overwrite; missing alias keys are left unchanged.
+         * File contents are fully parsed before any camera is mutated; a parse
+         * failure leaves in-memory state unchanged.
          * Returns true on success.
          */
         bool load(CameraManager& mgr, std::string filename = "presets.ptzc");

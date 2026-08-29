@@ -2,7 +2,9 @@
 
 #include <algorithm>
 #include <fstream>
+#include <map>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <filesystem>
 #include <cstdlib>
 
@@ -82,37 +84,60 @@ namespace cameras {
             file >> j;
             file.close();
 
-            auto cameras = mgr.getCameras();
-            for (auto& camera : cameras) {
-                camera->ClearPresets();
+            struct StagedCamera {
+                std::optional<std::string> alias;
+                std::vector<Preset> presets;
+            };
 
+            auto cameras = mgr.getCameras();
+            std::map<std::string, StagedCamera> staged;
+
+            for (const auto& camera : cameras) {
                 std::string sn = camera->getSerialNumber();
                 if (!j.contains(sn)) {
                     continue;
                 }
 
                 auto camJson = j[sn];
+                StagedCamera entry;
 
                 if (camJson.contains("alias")) {
                     std::string alias = camJson["alias"].get<std::string>();
                     if (!alias.empty()) {
-                        camera->setAlias(alias);
+                        entry.alias = std::move(alias);
                     }
                 }
 
                 if (camJson.contains("presets") && camJson["presets"].is_object()) {
                     auto presetsJson = camJson["presets"];
                     for (auto it = presetsJson.begin(); it != presetsJson.end(); ++it) {
-                        std::string presetName = it.key();
                         auto presetJson = it.value();
 
                         Preset preset;
-                        preset.name = presetName;
+                        preset.name = it.key();
                         preset.ptz.pan = presetJson["pan"].get<float>();
                         preset.ptz.tilt = presetJson["tilt"].get<float>();
                         preset.ptz.zoom = presetJson["zoom"].get<int>();
-                        camera->AddPreset(presetName, preset);
+                        entry.presets.push_back(std::move(preset));
                     }
+                }
+
+                staged.emplace(std::move(sn), std::move(entry));
+            }
+
+            for (auto& camera : cameras) {
+                camera->ClearPresets();
+
+                auto it = staged.find(camera->getSerialNumber());
+                if (it == staged.end()) {
+                    continue;
+                }
+
+                if (it->second.alias) {
+                    camera->setAlias(*it->second.alias);
+                }
+                for (const auto& preset : it->second.presets) {
+                    camera->AddPreset(preset.name, preset);
                 }
             }
 
