@@ -18,13 +18,15 @@
 #include "console/ClearCommand.h"
 
 #include "preset/ApplyCommand.h"
-#include "preset/BrowseCommand.h"
 #include "preset/DiscardCommand.h"
 #include "preset/HelpCommand.h"
 #include "preset/ListCommand.h"
-#include "preset/LoadCommand.h"
-#include "preset/SaveCommand.h"
 #include "preset/StoreCommand.h"
+
+#include "setup/BrowseCommand.h"
+#include "setup/HelpCommand.h"
+#include "setup/LoadCommand.h"
+#include "setup/SaveCommand.h"
 
 #include "scene/AddCommand.h"
 #include "scene/ApplyCommand.h"
@@ -57,12 +59,13 @@ namespace commands {
 			addCommand(std::make_unique<console::ClearCommand>());
             
             addCommand(std::make_unique<preset::ApplyCommand>());
-            addCommand(std::make_unique<preset::BrowseCommand>());
             addCommand(std::make_unique<preset::DiscardCommand>());
             addCommand(std::make_unique<preset::ListCommand>());
-            addCommand(std::make_unique<preset::LoadCommand>());
-            addCommand(std::make_unique<preset::SaveCommand>());
             addCommand(std::make_unique<preset::StoreCommand>());
+
+            addCommand(std::make_unique<setup::BrowseCommand>());
+            addCommand(std::make_unique<setup::LoadCommand>());
+            addCommand(std::make_unique<setup::SaveCommand>());
 
             addCommand(std::make_unique<scene::AddCommand>());
             addCommand(std::make_unique<scene::ApplyCommand>());
@@ -77,6 +80,7 @@ namespace commands {
             addCommand(std::make_unique<HelpCommand>());
             addCommand(std::make_unique<camera::HelpCommand>());
             addCommand(std::make_unique<preset::HelpCommand>());
+            addCommand(std::make_unique<setup::HelpCommand>());
             addCommand(std::make_unique<scene::HelpCommand>());
             addCommand(std::make_unique<snapshot::HelpCommand>());
         }

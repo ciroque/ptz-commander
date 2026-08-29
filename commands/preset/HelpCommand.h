@@ -14,9 +14,6 @@ namespace commands::preset {
             ctx.out << "  preset apply <id|*> <name>      Apply a named preset to camera(s)\n";
             ctx.out << "  preset discard <id|*> <name>    Remove a named preset\n";
             ctx.out << "  preset store <id|*> <name>      Store current position as a named preset\n";
-            ctx.out << "  preset browse                   List preset files in the user data directory\n";
-            ctx.out << "  preset load [file]              Replace in-memory presets and scenes from a .ptzc file (default: presets.ptzc)\n";
-            ctx.out << "  preset save [file]              Save current presets and scenes to a .ptzc file (default: presets.ptzc)\n";
         }
     };
 }

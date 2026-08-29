@@ -2,11 +2,11 @@
 #include "../../cameras/PresetStore.h"
 #include <iostream>
 
-namespace commands::preset {
+namespace commands::setup {
     void SaveCommand::execute(data::Context& ctx, const std::string& args) {
         auto cameras = ctx.cameraMgr.getCameras();
         if (cameras.empty()) {
-            ctx.err << "No cameras found to save presets." << std::endl;
+            ctx.err << "No cameras found to save setup." << std::endl;
             return;
         }
 
@@ -22,6 +22,6 @@ namespace commands::preset {
             return;
         }
 
-        ctx.out << "Saved presets to " << filename << " for " << cameras.size() << " cameras" << std::endl;
+        ctx.out << "Saved setup to " << filename << " for " << cameras.size() << " cameras" << std::endl;
     }
 }

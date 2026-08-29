@@ -1,6 +1,6 @@
 ﻿# PTZ Commander
 
-A C++ command-line tool for controlling PTZ (Pan-Tilt-Zoom) cameras, built with extensibility in mind. Supports OBSBOT Tiny 2/4K cameras via the OBSBOT SDK (`libdev.dll`), with plans for Lumens, VISCA, PELCO-D, and PELCO-P. Run from a REPL—type commands, move cameras, store presets, and save/load presets to named `.ptzc` files (e.g. `presets.ptzc`, `my-show.ptzc`).
+A C++ command-line tool for controlling PTZ (Pan-Tilt-Zoom) cameras, built with extensibility in mind. Supports OBSBOT Tiny 2/4K cameras via the OBSBOT SDK (`libdev.dll`), with plans for Lumens, VISCA, PELCO-D, and PELCO-P. Run from a REPL—type commands, move cameras, store presets, compose scenes, and save/load setups to named `.ptzc` files (e.g. `presets.ptzc`, `my-show.ptzc`).
 
 ## Basic Operation
 
@@ -36,16 +36,13 @@ The `zoom` argument is an integer between 0 and 100, where 0 is the camera's min
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
 | `preset apply`                 | ```<id|*> <name>```                         | Applies a named preset — moves camera(s) to stored PTZ.                      |
-| `preset browse`                | None                                    | Lists `.ptzc` files in `%LOCALAPPDATA%\PTZCommander`.                       |
 | `preset discard`               | ```<id|*> <name>```                         | Removes a named preset from memory.                                        |
 | `preset list`                  | None                                    | Lists all presets for all cameras.  |
-| `preset load`                  | `<file>` (optional)                     | Replaces in-memory presets from a `.ptzc` file (per-camera: `{"alias": "...", "presets": { ... }}`). Cameras not in the file are cleared. Bare filenames default to `%LOCALAPPDATA%\PTZCommander\presets.ptzc`. |
-| `preset save`                  | `<file>` (optional)                     | Saves current presets + aliases as a self-contained `.ptzc` file (per-camera: alias + presets). Bare filenames default to `%LOCALAPPDATA%\PTZCommander\presets.ptzc`. |
 | `preset store`                 | ```<id|*> <name>```                         | Stores current PTZ as a named preset in memory—e.g., ```"intro"```.            |
 
 ### Scene
 
-A scene is a named set of camera → preset bindings. Bindings are resolved when you apply the scene (they are not baked PTZ values). `*` is not accepted. Persist with `preset save` / `preset load` (reserved top-level `"scenes"` key in the `.ptzc` file).
+A scene is a named set of camera → preset bindings. Bindings are resolved when you apply the scene (they are not baked PTZ values). `*` is not accepted. Persist with `setup save` / `setup load` (reserved top-level `"scenes"` key in the `.ptzc` file).
 
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
@@ -56,17 +53,22 @@ A scene is a named set of camera → preset bindings. Bindings are resolved when
 | `scene remove`                 | ```<name> <id>```                       | Removes one camera from a scene.                                            |
 | `scene show`                   | ```<name>```                            | Shows each binding (friendly name, serial, preset).                         |
 
-### Preset Files
+### Setup
 
-Presets are stored in JSON files using the `.ptzc` extension ("PTZ Commander").
+A setup is the on-disk collection: per-camera aliases and presets plus scenes. Files use the `.ptzc` extension ("PTZ Commander").
 
-- `preset browse` → lists `*.ptzc` files in the user data directory
-- `preset save my-show` → writes `my-show.ptzc` (in the user data directory)
-- `preset load conference` → reads `conference.ptzc` (`.ptzc` is added automatically if omitted)
+| Command                        | Arguments                               | Description                                                                 |
+|--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
+| `setup browse`                 | None                                    | Lists `.ptzc` files in `%LOCALAPPDATA%\PTZCommander`.                       |
+| `setup load`                   | `[file]`                                | Replaces in-memory presets and scenes from a `.ptzc` file. Cameras not in the file are cleared of presets; a missing `"scenes"` key clears scenes. Default: `%LOCALAPPDATA%\PTZCommander\presets.ptzc`. |
+| `setup save`                   | `[file]`                                | Writes current aliases, presets, and scenes to a `.ptzc` file. Default: `%LOCALAPPDATA%\PTZCommander\presets.ptzc`. |
+
+- `setup save my-show` → writes `my-show.ptzc` (in the user data directory)
+- `setup load conference` → reads `conference.ptzc` (`.ptzc` is added automatically if omitted)
 - When no filename is given, the default is `%LOCALAPPDATA%\PTZCommander\presets.ptzc`
 - If you provide a path with directories (e.g. `C:\shows\my-show` or `..\my-show`), it will be used as-is. Bare names are placed in the per-user PTZCommander data folder.
 
-This allows multiple independent preset collections (different shows, venues, camera configurations, etc.). `preset load` replaces the in-memory presets (it does not merge with whatever was already stored).
+`setup load` replaces in-memory presets and scenes (it does not merge).
 
 Example `.ptzc` file structure (per-camera):
 ```json
