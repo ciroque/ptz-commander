@@ -158,7 +158,7 @@ namespace cameras {
                     if (takenBy) {
                         core::Logger::warn("Skipped alias '" + *it->second.alias
                             + "' for " + camera->getSerialNumber()
-                            + (takenBy->empty() ? "" : (": already used by " + *takenBy)));
+                            + (takenBy->empty() ? ": invalid alias" : (": already used by " + *takenBy)));
                     }
                 }
                 for (const auto& preset : it->second.presets) {
