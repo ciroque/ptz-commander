@@ -26,7 +26,7 @@ namespace commands::scene {
         int skipped = 0;
 
         for (const auto& [serial, presetName] : scene->bindings) {
-            auto camera = ctx.cameraMgr.findById(serial);
+            auto camera = ctx.cameraMgr.findBySerial(serial);
             if (!camera) {
                 ctx.err << "Camera not connected: " << serial << " (skipping)" << std::endl;
                 skipped++;

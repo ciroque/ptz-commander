@@ -15,6 +15,7 @@ namespace cameras {  // Note: Using 'cameras' namespace per directory structure
         // Get the current list of cameras (thread-safe)
         std::list<std::shared_ptr<Camera>> getCameras() const;
         std::shared_ptr<Camera> findById(const std::string& sn) const;
+        std::shared_ptr<Camera> findBySerial(const std::string& serialNumber) const;
 
         // Methods for adapters to update the camera list
         void addCamera(std::shared_ptr<Camera> camera);

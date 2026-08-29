@@ -1,5 +1,6 @@
 #include "CameraManager.h"
 #include "../core/Logger.h"
+#include <algorithm>
 
 namespace cameras {
     std::list<std::shared_ptr<Camera>> CameraManager::getCameras() const {
@@ -12,6 +13,15 @@ namespace cameras {
         auto it = std::find_if(cameras_.begin(), cameras_.end(),
             [&id](const auto& cam) {
                 return cam->getAlias() == id || cam->getSerialNumber() == id || cam->getName() == id;
+            });
+        return (it != cameras_.end()) ? *it : nullptr;
+    }
+
+    std::shared_ptr<Camera> CameraManager::findBySerial(const std::string& serialNumber) const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = std::find_if(cameras_.begin(), cameras_.end(),
+            [&serialNumber](const auto& cam) {
+                return cam->getSerialNumber() == serialNumber;
             });
         return (it != cameras_.end()) ? *it : nullptr;
     }

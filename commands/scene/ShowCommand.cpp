@@ -33,7 +33,7 @@ namespace commands::scene {
                 << std::string(12, '-') << std::endl;
 
         for (const auto& [serial, presetName] : scene->bindings) {
-            auto camera = ctx.cameraMgr.findById(serial);
+            auto camera = ctx.cameraMgr.findBySerial(serial);
             const std::string label = camera ? camera->getFriendlyName() : "(not connected)";
             ctx.out << std::left
                     << std::setw(20) << label << " | "
