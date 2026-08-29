@@ -115,6 +115,9 @@ namespace commands {
             }
 
             auto it = commands.find(objectVerb);
+            if (it == commands.end()) {
+                it = commands.find(objectVerb + " help");
+            }
             if (it != commands.end()) {
                 it->second->execute(ctx, args);
             }
