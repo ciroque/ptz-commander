@@ -25,8 +25,8 @@ namespace commands::scene {
             const std::string& id = tokens[i];
             const std::string& presetName = tokens[i + 1];
 
-            if (id == "*") {
-                ctx.err << "scene add does not accept *" << std::endl;
+            if (id == "*" || presetName == "*") {
+                ctx.err << "scene add does not accept '*' for camera id or preset name" << std::endl;
                 return;
             }
 
