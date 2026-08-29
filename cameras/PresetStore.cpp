@@ -71,12 +71,12 @@ namespace cameras {
         return (dir / p).string();
     }
 
-    bool PresetStore::load(CameraManager& mgr, std::string filename) {
+    LoadStatus PresetStore::load(CameraManager& mgr, std::string filename) {
         filename = resolvePresetPath(std::move(filename));
 
         std::ifstream file(filename);
         if (!file.is_open()) {
-            return false;
+            return LoadStatus::NotFound;
         }
 
         try {
@@ -141,10 +141,10 @@ namespace cameras {
                 }
             }
 
-            return true;
+            return LoadStatus::Ok;
         }
         catch (const std::exception&) {
-            return false;
+            return LoadStatus::ParseError;
         }
     }
 

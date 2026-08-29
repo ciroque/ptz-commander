@@ -17,9 +17,15 @@ namespace commands::preset {
 		}
 
 		cameras::PresetStore store;
-		if (!store.load(ctx.cameraMgr, filename)) {
+		switch (store.load(ctx.cameraMgr, filename)) {
+		case cameras::LoadStatus::NotFound:
 			ctx.err << "Failed to open " << filename << std::endl;
 			return;
+		case cameras::LoadStatus::ParseError:
+			ctx.err << "Failed to parse " << filename << std::endl;
+			return;
+		case cameras::LoadStatus::Ok:
+			break;
 		}
 
 		ctx.out << "Loaded presets from " << filename << std::endl;

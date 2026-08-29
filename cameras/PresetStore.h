@@ -23,6 +23,12 @@ namespace cameras {
      *
      * This is the central abstraction for preset file persistence.
      */
+    enum class LoadStatus {
+        Ok,
+        NotFound,
+        ParseError
+    };
+
     class PresetStore {
     public:
         /**
@@ -36,9 +42,8 @@ namespace cameras {
          * overwrite; missing alias keys are left unchanged.
          * File contents are fully parsed before any camera is mutated; a parse
          * failure leaves in-memory state unchanged.
-         * Returns true on success.
          */
-        bool load(CameraManager& mgr, std::string filename = "presets.ptzc");
+        LoadStatus load(CameraManager& mgr, std::string filename = "presets.ptzc");
 
         /**
          * Saves the current presets and aliases (if set) for all cameras
