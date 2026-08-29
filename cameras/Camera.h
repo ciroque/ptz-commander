@@ -50,6 +50,10 @@ namespace cameras {
         void RemovePreset(const std::string& name) {
             presets_.erase(name);
         }
+
+        void ClearPresets() {
+            presets_.clear();
+        }
     };
 }
 

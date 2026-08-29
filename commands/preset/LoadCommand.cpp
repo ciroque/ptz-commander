@@ -22,7 +22,6 @@ namespace commands::preset {
 			return;
 		}
 
-		ctx.out << "Loaded presets from " << filename << " for "
-			<< cameras.size() << " cameras" << std::endl;
+		ctx.out << "Loaded presets from " << filename << std::endl;
 	}
 }

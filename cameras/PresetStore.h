@@ -31,7 +31,9 @@ namespace cameras {
          * If filename has no path component, it is resolved relative to the
          * user-writable app data directory (%LOCALAPPDATA%\PTZCommander).
          * If filename has no '.', ".ptzc" is appended.
-         * Presets are merged (AddPreset); aliases are overwritten if present in file.
+         * Replaces in-memory presets on currently connected cameras (matched by
+         * serial). Cameras absent from the file are cleared. Aliases in the file
+         * overwrite; missing alias keys are left unchanged.
          * Returns true on success.
          */
         bool load(CameraManager& mgr, std::string filename = "presets.ptzc");

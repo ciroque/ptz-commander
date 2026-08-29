@@ -84,32 +84,34 @@ namespace cameras {
 
             auto cameras = mgr.getCameras();
             for (auto& camera : cameras) {
+                camera->ClearPresets();
+
                 std::string sn = camera->getSerialNumber();
-                if (j.contains(sn)) {
-                    auto camJson = j[sn];
+                if (!j.contains(sn)) {
+                    continue;
+                }
 
-                    // alias (optional)
-                    if (camJson.contains("alias")) {
-                        std::string alias = camJson["alias"].get<std::string>();
-                        if (!alias.empty()) {
-                            camera->setAlias(alias);
-                        }
+                auto camJson = j[sn];
+
+                if (camJson.contains("alias")) {
+                    std::string alias = camJson["alias"].get<std::string>();
+                    if (!alias.empty()) {
+                        camera->setAlias(alias);
                     }
+                }
 
-                    // presets
-                    if (camJson.contains("presets") && camJson["presets"].is_object()) {
-                        auto presetsJson = camJson["presets"];
-                        for (auto it = presetsJson.begin(); it != presetsJson.end(); ++it) {
-                            std::string presetName = it.key();
-                            auto presetJson = it.value();
+                if (camJson.contains("presets") && camJson["presets"].is_object()) {
+                    auto presetsJson = camJson["presets"];
+                    for (auto it = presetsJson.begin(); it != presetsJson.end(); ++it) {
+                        std::string presetName = it.key();
+                        auto presetJson = it.value();
 
-                            Preset preset;
-                            preset.name = presetName;
-                            preset.ptz.pan = presetJson["pan"].get<float>();
-                            preset.ptz.tilt = presetJson["tilt"].get<float>();
-                            preset.ptz.zoom = presetJson["zoom"].get<int>();
-                            camera->AddPreset(presetName, preset);
-                        }
+                        Preset preset;
+                        preset.name = presetName;
+                        preset.ptz.pan = presetJson["pan"].get<float>();
+                        preset.ptz.tilt = presetJson["tilt"].get<float>();
+                        preset.ptz.zoom = presetJson["zoom"].get<int>();
+                        camera->AddPreset(presetName, preset);
                     }
                 }
             }

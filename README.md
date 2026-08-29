@@ -39,7 +39,7 @@ The `zoom` argument is an integer between 0 and 100, where 0 is the camera's min
 | `preset browse`                | None                                    | Lists `.ptzc` files in `%LOCALAPPDATA%\PTZCommander`.                       |
 | `preset discard`               | ```<id|*> <name>```                         | Removes a named preset from memory.                                        |
 | `preset list`                  | None                                    | Lists all presets for all cameras.  |
-| `preset load`                  | `<file>` (optional)                     | Loads a `.ptzc` file (per-camera: `{"alias": "...", "presets": { ... }}`). Merges presets, applies aliases. Bare filenames default to `%LOCALAPPDATA%\PTZCommander\presets.ptzc`. |
+| `preset load`                  | `<file>` (optional)                     | Replaces in-memory presets from a `.ptzc` file (per-camera: `{"alias": "...", "presets": { ... }}`). Cameras not in the file are cleared. Bare filenames default to `%LOCALAPPDATA%\PTZCommander\presets.ptzc`. |
 | `preset save`                  | `<file>` (optional)                     | Saves current presets + aliases as a self-contained `.ptzc` file (per-camera: alias + presets). Bare filenames default to `%LOCALAPPDATA%\PTZCommander\presets.ptzc`. |
 | `preset store`                 | ```<id|*> <name>```                         | Stores current PTZ as a named preset in memory—e.g., ```"intro"```.            |
 
@@ -53,7 +53,7 @@ Presets are stored in JSON files using the `.ptzc` extension ("PTZ Commander").
 - When no filename is given, the default is `%LOCALAPPDATA%\PTZCommander\presets.ptzc`
 - If you provide a path with directories (e.g. `C:\shows\my-show` or `..\my-show`), it will be used as-is. Bare names are placed in the per-user PTZCommander data folder.
 
-This allows multiple independent preset collections (different shows, venues, camera configurations, etc.). `preset load` merges into the current in-memory presets; use `preset discard` or restart the app to start fresh.
+This allows multiple independent preset collections (different shows, venues, camera configurations, etc.). `preset load` replaces the in-memory presets (it does not merge with whatever was already stored).
 
 Example `.ptzc` file structure (per-camera):
 ```json
