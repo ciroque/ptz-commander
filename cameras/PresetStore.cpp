@@ -1,4 +1,5 @@
 #include "PresetStore.h"
+#include "../core/Logger.h"
 
 #include <algorithm>
 #include <fstream>
@@ -153,7 +154,12 @@ namespace cameras {
                 }
 
                 if (it->second.alias) {
-                    camera->setAlias(*it->second.alias);
+                    auto takenBy = mgr.assignAlias(camera, *it->second.alias);
+                    if (takenBy) {
+                        core::Logger::warn("Skipped alias '" + *it->second.alias
+                            + "' for " + camera->getSerialNumber()
+                            + (takenBy->empty() ? "" : (": already used by " + *takenBy)));
+                    }
                 }
                 for (const auto& preset : it->second.presets) {
                     camera->AddPreset(preset.name, preset);

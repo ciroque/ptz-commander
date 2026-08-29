@@ -23,7 +23,22 @@ namespace commands::camera {
             return;
         }
 
-        camera->setAlias(alias);
+        if (alias == "*") {
+            ctx.err << "Alias cannot be '*'" << std::endl;
+            return;
+        }
+
+        auto takenBy = ctx.cameraMgr.assignAlias(camera, alias);
+        if (takenBy) {
+            if (takenBy->empty()) {
+                ctx.err << "Invalid alias" << std::endl;
+            }
+            else {
+                ctx.err << "Alias '" << alias << "' is already used by " << *takenBy << std::endl;
+            }
+            return;
+        }
+
         ctx.out << "Set alias '" << alias << "' for camera " << serialNumber << std::endl;
     }
 }

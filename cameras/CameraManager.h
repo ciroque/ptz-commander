@@ -5,6 +5,8 @@
 #include <list>
 #include <memory>
 #include <mutex>
+#include <optional>
+#include <string>
 
 namespace cameras {  // Note: Using 'cameras' namespace per directory structure
     class CameraManager {
@@ -16,6 +18,12 @@ namespace cameras {  // Note: Using 'cameras' namespace per directory structure
         std::list<std::shared_ptr<Camera>> getCameras() const;
         std::shared_ptr<Camera> findById(const std::string& sn) const;
         std::shared_ptr<Camera> findBySerial(const std::string& serialNumber) const;
+
+        // Sets alias if it is not empty, not "*", and not already used as another
+        // camera's alias, serial, or product name. Returns nullopt on success,
+        // or a label for the camera that already owns that id.
+        std::optional<std::string> assignAlias(const std::shared_ptr<Camera>& camera,
+                                               const std::string& alias);
 
         // Methods for adapters to update the camera list
         void addCamera(std::shared_ptr<Camera> camera);
