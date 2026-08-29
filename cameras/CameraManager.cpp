@@ -41,8 +41,7 @@ namespace cameras {
             if (other->getAlias() == alias
                 || other->getSerialNumber() == alias
                 || other->getName() == alias) {
-                const auto label = other->getFriendlyName();
-                return label.empty() ? other->getSerialNumber() : label;
+                return other->getSerialNumber();
             }
         }
         camera->setAlias(alias);
