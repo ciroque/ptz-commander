@@ -20,8 +20,9 @@ namespace cameras {  // Note: Using 'cameras' namespace per directory structure
         std::shared_ptr<Camera> findBySerial(const std::string& serialNumber) const;
 
         // Sets alias if it is not empty, not "*", and not already used as another
-        // camera's alias, serial, or product name. Returns nullopt on success,
-        // or a label for the camera that already owns that id.
+        // camera's alias, serial, or product name. Returns nullopt on success.
+        // On failure, returns an engaged optional: empty string means invalid input,
+        // otherwise the value is a label for the camera that already owns that id.
         std::optional<std::string> assignAlias(const std::shared_ptr<Camera>& camera,
                                                const std::string& alias);
 
