@@ -41,7 +41,7 @@ jobs:
           path: installer/build/PTZCommander.msi
 
       - name: Attach MSI to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: installer/build/PTZCommander.msi
