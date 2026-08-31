@@ -6,5 +6,6 @@ out/
 
 # Installer build artifacts (all generated files live under installer/build/)
 installer/build/
+installer/.wix/
 installer/*.log
 installer/build_output.txt

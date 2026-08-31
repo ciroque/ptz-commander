@@ -50,6 +50,13 @@ if errorlevel 1 (
     echo EULA acceptance attempted. Run "dotnet wix --acceptEula" from the installer directory if prompted.
 )
 
+echo Adding WixToolset.UI.wixext (required for WixUI_InstallDir)...
+dotnet wix extension add WixToolset.UI.wixext/7.0.0
+if errorlevel 1 (
+    echo ERROR: failed to add WixToolset.UI.wixext. Check network access to nuget.org.
+    exit /b 1
+)
+
 echo [4/4] Building MSI with WiX v7...
 dotnet wix build "%SCRIPT_DIR%PTZCommander.wxs" ^
   -d SourceDir="%STAGE_DIR%" ^
