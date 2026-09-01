@@ -44,10 +44,11 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo Accepting WiX 7 EULA if needed...
-dotnet wix --acceptEula >nul 2>&1
+echo Accepting WiX 7 OSMF EULA (https://wixtoolset.org/osmf/)...
+dotnet wix eula accept wix7
 if errorlevel 1 (
-    echo EULA acceptance attempted. Run "dotnet wix --acceptEula" from the installer directory if prompted.
+    echo ERROR: failed to accept WiX OSMF EULA. See https://wixtoolset.org/osmf/
+    exit /b 1
 )
 
 echo Adding WixToolset.UI.wixext (required for WixUI_InstallDir)...
