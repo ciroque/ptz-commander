@@ -52,6 +52,12 @@ namespace cameras {
                         std::string filename = "presets.ptzc");
 
         /**
+         * In-memory setup as the same JSON object written by save() to .ptzc.
+         * Compact dump (no indent); save() pretty-prints with indent 2.
+         */
+        std::string toJsonString(const CameraManager& mgr, const SceneStore& scenes) const;
+
+        /**
          * Saves the current presets and aliases (if set) for all cameras
          * in the manager to the given file.
          * If filename has no path component, it is resolved relative to the

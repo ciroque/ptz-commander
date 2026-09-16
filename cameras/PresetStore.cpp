@@ -72,6 +72,53 @@ namespace cameras {
         return (dir / p).string();
     }
 
+    namespace {
+        nlohmann::json serializeSetup(const CameraManager& mgr, const SceneStore& scenes) {
+            nlohmann::json j = nlohmann::json::object();
+            auto cameras = mgr.getCameras();
+
+            for (const auto& camera : cameras) {
+                nlohmann::json camEntry;
+
+                std::string alias = camera->getAlias();
+                if (!alias.empty()) {
+                    camEntry["alias"] = alias;
+                }
+
+                nlohmann::json presetsObj;
+                for (const auto& preset : camera->getPresets()) {
+                    nlohmann::json presetJson;
+                    presetJson["name"] = preset->name;
+                    presetJson["pan"] = preset->ptz.pan;
+                    presetJson["tilt"] = preset->ptz.tilt;
+                    presetJson["zoom"] = preset->ptz.zoom;
+                    presetsObj[preset->name] = presetJson;
+                }
+                camEntry["presets"] = presetsObj;
+
+                j[camera->getSerialNumber()] = camEntry;
+            }
+
+            if (!scenes.empty()) {
+                nlohmann::json scenesObj;
+                for (const auto& [name, scene] : scenes.all()) {
+                    nlohmann::json bindings;
+                    for (const auto& [serial, presetName] : scene.bindings) {
+                        bindings[serial] = presetName;
+                    }
+                    scenesObj[name] = bindings;
+                }
+                j["scenes"] = scenesObj;
+            }
+
+            return j;
+        }
+    }
+
+    std::string PresetStore::toJsonString(const CameraManager& mgr, const SceneStore& scenes) const {
+        return serializeSetup(mgr, scenes).dump();
+    }
+
     LoadStatus PresetStore::load(CameraManager& mgr, SceneStore& scenes, std::string filename) {
         filename = resolvePresetPath(std::move(filename));
 
@@ -177,49 +224,12 @@ namespace cameras {
     bool PresetStore::save(const CameraManager& mgr, const SceneStore& scenes, std::string filename) const {
         filename = resolvePresetPath(std::move(filename));
 
-        nlohmann::json j;
-        auto cameras = mgr.getCameras();
-
-        for (const auto& camera : cameras) {
-            nlohmann::json camEntry;
-
-            std::string alias = camera->getAlias();
-            if (!alias.empty()) {
-                camEntry["alias"] = alias;
-            }
-
-            nlohmann::json presetsObj;
-            for (const auto& preset : camera->getPresets()) {
-                nlohmann::json presetJson;
-                presetJson["name"] = preset->name;
-                presetJson["pan"] = preset->ptz.pan;
-                presetJson["tilt"] = preset->ptz.tilt;
-                presetJson["zoom"] = preset->ptz.zoom;
-                presetsObj[preset->name] = presetJson;
-            }
-            camEntry["presets"] = presetsObj;
-
-            j[camera->getSerialNumber()] = camEntry;
-        }
-
-        if (!scenes.empty()) {
-            nlohmann::json scenesObj;
-            for (const auto& [name, scene] : scenes.all()) {
-                nlohmann::json bindings;
-                for (const auto& [serial, presetName] : scene.bindings) {
-                    bindings[serial] = presetName;
-                }
-                scenesObj[name] = bindings;
-            }
-            j["scenes"] = scenesObj;
-        }
-
         std::ofstream file(filename);
         if (!file.is_open()) {
             return false;
         }
 
-        file << j.dump(2);
+        file << serializeSetup(mgr, scenes).dump(2);
         file.close();
         return true;
     }
