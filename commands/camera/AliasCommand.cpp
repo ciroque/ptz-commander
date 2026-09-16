@@ -39,6 +39,7 @@ namespace commands::camera {
             return;
         }
 
+        ctx.notifySetupChanged();
         ctx.out << "Set alias '" << alias << "' for camera " << serialNumber << std::endl;
     }
 }

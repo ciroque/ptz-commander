@@ -16,6 +16,7 @@ namespace commands::scene {
             return;
         }
 
+        ctx.notifySetupChanged();
         ctx.out << "Discarded scene '" << sceneName << "'" << std::endl;
     }
 

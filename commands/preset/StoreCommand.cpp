@@ -41,6 +41,7 @@ namespace commands::preset {
             camera->AddPreset(presetName, preset);
         }
 
+        ctx.notifySetupChanged();
         ctx.out << "Stored preset '" << presetName << "' for "
             << (serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber)
             << std::endl;

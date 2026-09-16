@@ -27,6 +27,7 @@ namespace commands::scene {
             return;
         }
 
+        ctx.notifySetupChanged();
         ctx.out << "Removed " << serial << " from scene '" << sceneName << "'" << std::endl;
     }
 
