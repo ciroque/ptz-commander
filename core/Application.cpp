@@ -7,7 +7,10 @@ namespace core {
           viscaAdapter_(std::make_unique<cameras::visca::ViscaCameraAdapter>(cameraMgr_)),
           context_(cameraMgr_, sceneStore_),
           commandHandler_(),
+          setupDumpServer_(cameraMgr_, sceneStore_),
           running_(false) {
+        context_.onSetupChanged = [this] { setupDumpServer_.broadcast(); };
+
         // Start OBSBOT adapter (hotplug + network scan) in its own thread
         obsbotAdapterThread_ = std::thread(&cameras::obsbot::ObsbotCameraAdapter::start, obsbotAdapter_.get());
 
@@ -16,6 +19,8 @@ namespace core {
     }
 
     Application::~Application() {
+        setupDumpServer_.stop();
+
         if (viscaAdapter_) {
             viscaAdapter_->stop();
         }
@@ -32,6 +37,7 @@ namespace core {
     }
 
     void Application::start() {
+        setupDumpServer_.start();
         running_ = true;
         context_.out << StartMessage;
         std::string input;
