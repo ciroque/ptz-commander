@@ -35,6 +35,7 @@
 #include "scene/ListCommand.h"
 #include "scene/RemoveCommand.h"
 #include "scene/ShowCommand.h"
+#include "scene/TourCommand.h"
 
 #include "snapshot/ApplyCommand.h"
 #include "snapshot/ListCommand.h"
@@ -73,6 +74,7 @@ namespace commands {
             addCommand(std::make_unique<scene::ListCommand>());
             addCommand(std::make_unique<scene::RemoveCommand>());
             addCommand(std::make_unique<scene::ShowCommand>());
+            addCommand(std::make_unique<scene::TourCommand>());
 
             addCommand(std::make_unique<snapshot::ApplyCommand>());
             addCommand(std::make_unique<snapshot::ListCommand>());

@@ -16,6 +16,7 @@ namespace commands::scene {
             ctx.out << "  scene remove <name> <id>                        Remove a camera from a scene\n";
             ctx.out << "  scene discard <name>                            Delete a scene\n";
             ctx.out << "  scene apply <name>                              Apply each binding (setPosition)\n";
+            ctx.out << "  scene tour [seconds]                            Apply every scene in list order; wait between (default 7s)\n";
         }
     };
 }

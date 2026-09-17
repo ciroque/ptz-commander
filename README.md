@@ -52,6 +52,7 @@ A scene is a named set of camera → preset bindings. Bindings are resolved when
 | `scene list`                   | None                                    | Lists scene names and binding counts.                                       |
 | `scene remove`                 | ```<name> <id>```                       | Removes one camera from a scene.                                            |
 | `scene show`                   | ```<name>```                            | Shows each binding (friendly name, serial, preset).                         |
+| `scene tour`                   | ```[seconds]```                         | Applies every scene in `scene list` order, waiting between them (not after the last). Default: 7 seconds. REPL is blocked until the tour finishes. |
 
 ### Setup
 
