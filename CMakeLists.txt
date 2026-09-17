@@ -11,11 +11,36 @@ add_subdirectory(data)
 add_subdirectory(cameras)
 add_subdirectory(commands)
 
+# IXWebSocket (plain ws:// dump server). TLS/zlib off: we only need an unencrypted
+# localhost socket, and Windows agents do not ship zlib/OpenSSL by default.
+include(FetchContent)
+set(USE_TLS OFF CACHE BOOL "IXWebSocket TLS" FORCE)
+set(USE_ZLIB OFF CACHE BOOL "IXWebSocket zlib" FORCE)
+set(IXWEBSOCKET_INSTALL OFF CACHE BOOL "Install IXWebSocket" FORCE)
+FetchContent_Declare(
+    ixwebsocket
+    GIT_REPOSITORY https://github.com/machinezone/IXWebSocket.git
+    GIT_TAG v12.0.1
+    GIT_SHALLOW TRUE
+)
+# IXWebSocket's CMakeLists sets CMAKE_CXX_STANDARD 11; keep our C++20.
+set(_ptz_cxx_standard ${CMAKE_CXX_STANDARD})
+FetchContent_MakeAvailable(ixwebsocket)
+set(CMAKE_CXX_STANDARD ${_ptz_cxx_standard})
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# Static ixwebsocket keeps Winsock as PRIVATE; pull them through to the exe.
+if(WIN32)
+    target_link_libraries(ixwebsocket PUBLIC wsock32 ws2_32 shlwapi)
+endif()
+
 # Include directories for third-party headers (nlohmann/json, obsbot SDK, spdlog)
 target_include_directories(ptz_commander PRIVATE "${CMAKE_SOURCE_DIR}/include/" "${CMAKE_SOURCE_DIR}")
 
-# Link against obsbot SDK
-target_link_libraries(ptz_commander PRIVATE "${CMAKE_SOURCE_DIR}/lib/obsbot/libdev.lib")
+# Link against obsbot SDK and IXWebSocket
+target_link_libraries(ptz_commander PRIVATE
+    "${CMAKE_SOURCE_DIR}/lib/obsbot/libdev.lib"
+    ixwebsocket
+)
 
 # VISCA serial discovery uses SetupAPI on Windows (VID/PID enumeration for Keyspan etc.)
 if(WIN32)

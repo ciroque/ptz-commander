@@ -56,6 +56,7 @@ namespace commands::scene {
             ctx.sceneStore.upsertBinding(sceneName, pair.serial, pair.presetName);
         }
 
+        ctx.notifySetupChanged();
         ctx.out << "Added " << pairs.size() << " binding"
                 << (pairs.size() == 1 ? "" : "s")
                 << " to scene '" << sceneName << "'" << std::endl;

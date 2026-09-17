@@ -7,6 +7,7 @@
 #include "../cameras/visca/ViscaCameraAdapter.h"
 #include "../commands/CommandHandler.h"
 #include "../data/Context.h"
+#include "SetupDumpServer.h"
 #include <memory>
 #include <thread>
 
@@ -21,6 +22,7 @@ namespace core {
         commands::CommandHandler commandHandler_;
         std::thread obsbotAdapterThread_;
         std::thread viscaAdapterThread_;
+        SetupDumpServer setupDumpServer_;
         bool running_;
         const std::string StartMessage = "PTZ Commander (type 'exit' to quit)\n> ";
         const std::string Prompt = "> ";

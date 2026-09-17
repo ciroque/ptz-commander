@@ -22,6 +22,7 @@ namespace commands::setup {
             break;
         }
 
+        ctx.notifySetupChanged();
         ctx.out << "Loaded setup from " << filename << std::endl;
     }
 }

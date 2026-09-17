@@ -35,6 +35,7 @@ namespace commands::preset {
         }
 
         bool allFound = true;
+        bool changed = false;
         for (auto& camera : cameras) {
             if (!camera->GetPresetByName(presetName)) {
                 ctx.err << "Preset not found: " << presetName << " for " << camera->getSerialNumber() << std::endl;
@@ -42,6 +43,11 @@ namespace commands::preset {
                 continue;
             }
             camera->RemovePreset(presetName);
+            changed = true;
+        }
+
+        if (changed) {
+            ctx.notifySetupChanged();
         }
 
         if (allFound) {
