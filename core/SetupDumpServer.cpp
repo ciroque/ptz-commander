@@ -10,7 +10,7 @@ namespace core {
                                      cameras::SceneStore& sceneStore)
         : cameraMgr_(cameraMgr),
           sceneStore_(sceneStore),
-          server_(7420, "127.0.0.1") {
+          server_(port_, host_) {
         server_.disablePerMessageDeflate();
         server_.setOnClientMessageCallback(
             [this](std::shared_ptr<ix::ConnectionState>,
@@ -39,7 +39,8 @@ namespace core {
 
         auto res = server_.listen();
         if (!res.first) {
-            Logger::error("Setup WebSocket listen failed on 127.0.0.1:7420: " + res.second);
+            Logger::error("Setup WebSocket listen failed on " + host_ + ":"
+                          + std::to_string(port_) + ": " + res.second);
             ix::uninitNetSystem();
             netInitialized_ = false;
             return false;
@@ -47,7 +48,8 @@ namespace core {
 
         server_.start();
         started_ = true;
-        Logger::info("Setup WebSocket listening on ws://127.0.0.1:7420");
+        Logger::info("Setup WebSocket listening on ws://" + host_ + ":"
+                     + std::to_string(port_));
         return true;
     }
 

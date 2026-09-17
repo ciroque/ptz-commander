@@ -5,6 +5,7 @@
 #include "../cameras/SceneStore.h"
 #include <ixwebsocket/IXWebSocketServer.h>
 #include <atomic>
+#include <string>
 
 namespace core {
     class SetupDumpServer {
@@ -24,6 +25,8 @@ namespace core {
 
         cameras::CameraManager& cameraMgr_;
         cameras::SceneStore& sceneStore_;
+        const std::string host_{"127.0.0.1"};
+        const int port_{7420};
         ix::WebSocketServer server_;
         std::atomic<bool> started_{false};
         bool netInitialized_{false};
