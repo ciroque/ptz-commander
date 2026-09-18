@@ -28,8 +28,8 @@ target_sources(ptz_commander PRIVATE
     preset/StoreCommand.cpp
     preset/StoreCommand.h
 
-    setup/BrowseCommand.cpp
-    setup/BrowseCommand.h
+    setup/ListCommand.cpp
+    setup/ListCommand.h
     setup/LoadCommand.cpp
     setup/LoadCommand.h
     setup/SaveCommand.cpp

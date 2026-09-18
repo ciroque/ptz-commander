@@ -13,7 +13,7 @@
 #include "preset/ListCommand.h"
 #include "preset/StoreCommand.h"
 
-#include "setup/BrowseCommand.h"
+#include "setup/ListCommand.h"
 #include "setup/LoadCommand.h"
 #include "setup/SaveCommand.h"
 
@@ -43,7 +43,7 @@ namespace commands {
         addCommand(std::make_unique<preset::DiscardCommand>());
         addCommand(std::make_unique<preset::StoreCommand>());
 
-        addCommand(std::make_unique<setup::BrowseCommand>());
+        addCommand(std::make_unique<setup::ListCommand>());
         addCommand(std::make_unique<setup::LoadCommand>());
         addCommand(std::make_unique<setup::SaveCommand>());
 

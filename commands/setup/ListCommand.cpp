@@ -1,8 +1,8 @@
-#include "BrowseCommand.h"
+#include "ListCommand.h"
 #include "../../cameras/PresetStore.h"
 
 namespace commands::setup {
-    void BrowseCommand::execute(data::Context& ctx, const std::string&) {
+    void ListCommand::execute(data::Context& ctx, const std::string&) {
         const std::string dir = cameras::PresetStore::homeDirectory();
         const auto files = cameras::PresetStore::listHomeFiles();
 
