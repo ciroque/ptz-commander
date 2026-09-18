@@ -6,7 +6,7 @@
 namespace commands::scene {
     class DiscardCommand : public Command {
     public:
-        DiscardCommand() { name = "scene discard"; }
+        DiscardCommand() : Command("scene", "discard", "scene discard <name>", "Delete a scene") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 }

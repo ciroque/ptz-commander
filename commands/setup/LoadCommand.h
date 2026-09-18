@@ -7,7 +7,8 @@
 namespace commands::setup {
     class LoadCommand : public Command {
     public:
-        LoadCommand() { name = "setup load"; }
+        LoadCommand() : Command("setup", "load", "setup load [file]",
+                                "Replace in-memory presets and scenes from a .ptzc file (default: presets.ptzc)") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 }

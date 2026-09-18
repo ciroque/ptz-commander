@@ -8,7 +8,7 @@ namespace commands::camera {
 
 class ListCommand : public Command {
 public:
-    ListCommand() { name = "camera list"; }
+    ListCommand() : Command("camera", "list", "camera list", "List all cameras") {}
     void execute(data::Context& ctx, const std::string& args) override;
 };
 

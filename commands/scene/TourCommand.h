@@ -6,7 +6,8 @@
 namespace commands::scene {
     class TourCommand : public Command {
     public:
-        TourCommand() { name = "scene tour"; }
+        TourCommand() : Command("scene", "tour", "scene tour [seconds]",
+                                "Apply every scene in list order; wait between (default 7s)") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 }

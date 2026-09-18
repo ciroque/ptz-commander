@@ -1,124 +1,34 @@
 #ifndef COMMANDHANDLER_H
 #define COMMANDHANDLER_H
 
-#include <iostream>
+#include "Command.h"
 #include <map>
 #include <memory>
 #include <string>
-
-#include "Command.h"
-
-#include "camera/AliasCommand.h"
-#include "camera/HelpCommand.h"
-#include "camera/ListCommand.h"
-#include "camera/MoveCommand.h"
-#include "camera/PushCommand.h"
-#include "camera/ShowCommand.h"
-
-#include "console/ClearCommand.h"
-
-#include "preset/ApplyCommand.h"
-#include "preset/DiscardCommand.h"
-#include "preset/HelpCommand.h"
-#include "preset/ListCommand.h"
-#include "preset/StoreCommand.h"
-
-#include "setup/BrowseCommand.h"
-#include "setup/HelpCommand.h"
-#include "setup/LoadCommand.h"
-#include "setup/SaveCommand.h"
-
-#include "scene/AddCommand.h"
-#include "scene/ApplyCommand.h"
-#include "scene/DiscardCommand.h"
-#include "scene/HelpCommand.h"
-#include "scene/ListCommand.h"
-#include "scene/RemoveCommand.h"
-#include "scene/ShowCommand.h"
-#include "scene/TourCommand.h"
-
-#include "HelpCommand.h"
+#include <vector>
 
 namespace commands {
     class CommandHandler {
-        std::map<std::string, std::unique_ptr<Command>> commands;
-
     public:
-        CommandHandler() {
+        CommandHandler();
+        void execute(data::Context& ctx, const std::string& input);
 
-            addCommand(std::make_unique<camera::AliasCommand>());
-            addCommand(std::make_unique<camera::ListCommand>());
-            addCommand(std::make_unique<camera::MoveCommand>());
-			addCommand(std::make_unique<camera::PushCommand>());
+    private:
+        void addCommand(std::unique_ptr<Command> cmd);
+        bool isFamily(const std::string& name) const;
+        void printRootHelp(data::Context& ctx) const;
+        void printFamilyHelp(data::Context& ctx, const std::string& family) const;
+        void printHelpUsage(data::Context& ctx) const;
 
-            addCommand(std::make_unique<camera::ShowCommand>());
+        static std::vector<std::string> tokenize(const std::string& input);
+        static std::string joinArgs(const std::vector<std::string>& tokens, size_t start);
 
-			addCommand(std::make_unique<console::ClearCommand>());
-            
-            addCommand(std::make_unique<preset::ApplyCommand>());
-            addCommand(std::make_unique<preset::DiscardCommand>());
-            addCommand(std::make_unique<preset::ListCommand>());
-            addCommand(std::make_unique<preset::StoreCommand>());
-
-            addCommand(std::make_unique<setup::BrowseCommand>());
-            addCommand(std::make_unique<setup::LoadCommand>());
-            addCommand(std::make_unique<setup::SaveCommand>());
-
-            addCommand(std::make_unique<scene::AddCommand>());
-            addCommand(std::make_unique<scene::ApplyCommand>());
-            addCommand(std::make_unique<scene::DiscardCommand>());
-            addCommand(std::make_unique<scene::ListCommand>());
-            addCommand(std::make_unique<scene::RemoveCommand>());
-            addCommand(std::make_unique<scene::ShowCommand>());
-            addCommand(std::make_unique<scene::TourCommand>());
-
-            addCommand(std::make_unique<HelpCommand>());
-            addCommand(std::make_unique<camera::HelpCommand>());
-            addCommand(std::make_unique<preset::HelpCommand>());
-            addCommand(std::make_unique<setup::HelpCommand>());
-            addCommand(std::make_unique<scene::HelpCommand>());
-        }
-
-        void addCommand(std::unique_ptr<Command> cmd) {
-            commands[cmd->getName()] = std::move(cmd);
-        }
-
-        void execute(data::Context& ctx, const std::string& input) {
-            if (input.empty()) {
-                ctx.err << "No command provided." << std::endl;
-                return;
-            }
-
-            // Split input: "camera move RMOWTHF7211JGR 35.0 90.0 1.1"
-            std::string objectVerb, args;
-            size_t firstSpace = input.find(' ');
-            if (firstSpace == std::string::npos) {
-                objectVerb = input;  // e.g., "list" (for flat commands, if any)
-            }
-            else {
-                objectVerb = input.substr(0, firstSpace);  // "camera"
-                std::string rest = input.substr(firstSpace + 1);
-                size_t secondSpace = rest.find(' ');
-                if (secondSpace != std::string::npos) {
-                    objectVerb += " " + rest.substr(0, secondSpace);  // "camera move"
-                    args = rest.substr(secondSpace + 1);  // "RMOWTHF7211JGR 35.0 90.0 1.1"
-                }
-                else {
-                    objectVerb += " " + rest;  // "camera list"
-                }
-            }
-
-            auto it = commands.find(objectVerb);
-            if (it == commands.end()) {
-                it = commands.find(objectVerb + " help");
-            }
-            if (it != commands.end()) {
-                it->second->execute(ctx, args);
-            }
-            else {
-                ctx.err << "Unknown command: " << objectVerb << std::endl;
-            }
-        }
+        std::vector<std::unique_ptr<Command>> owned_;
+        std::vector<std::string> familyOrder_;
+        std::map<std::string, std::vector<Command*>> familyCommands_;
+        std::map<std::string, std::map<std::string, Command*>> verbs_;
+        std::vector<Command*> rootOrder_;
+        std::map<std::string, Command*> rootVerbs_;
     };
 } // commands
 

@@ -6,7 +6,8 @@
 namespace commands::setup {
     class BrowseCommand : public Command {
     public:
-        BrowseCommand() { name = "setup browse"; }
+        BrowseCommand() : Command("setup", "browse", "setup browse",
+                                  "List .ptzc files in the user data directory") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 }

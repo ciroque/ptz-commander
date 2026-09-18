@@ -6,7 +6,7 @@
 namespace commands::console {
     class ClearCommand : public Command {
     public:
-        ClearCommand() { name = "cls"; }
+        ClearCommand() : Command("", "cls", "cls", "Clear the screen") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 }
