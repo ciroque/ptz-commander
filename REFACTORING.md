@@ -154,7 +154,7 @@ See [docs/adr/0001-scenes.md](docs/adr/0001-scenes.md).
 - Create a small, reusable argument parsing library (support for flags, quoted strings, typed parsing).
 - ~~Clean up the multiple `HelpCommand` classes (root + per domain)~~ — partially addressed (see Recently Completed section).
 - Consider extracting common camera lookup logic (`*` vs specific ID) into a helper.
-- ~~Review and potentially remove or properly integrate `cameras/utils.h`~~ (removed from CMakeLists.txt as part of duplicate extraction; file itself can be deleted).
+- ~~Review and potentially remove or properly integrate `cameras/utils.h`~~ (file deleted; `scaleToRange` lived in StrategyUtils).
 - Add a `.clang-format` / consistent code style (indentation, bracing, etc. are currently inconsistent between files).
 - Document the coordinate system assumptions per camera family (especially after the recent Tail Air fix).
 
