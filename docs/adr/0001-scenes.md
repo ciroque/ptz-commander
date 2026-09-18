@@ -31,7 +31,7 @@ This ADR is only about scenes inside ptz-commander. OBS (`ProgramSceneChanged` �
 3. Scenes live **in the same `.ptzc` file** as presets, under a reserved top-level key `"scenes"`. They load and save with `setup load` / `setup save` (replace, same as presets).
 4. In memory, scenes live in a **`SceneStore` independent of `Camera` objects**, so a scene still exists if a camera is unplugged.
 5. Composition is explicit (`scene add`), not capture (`scene store` of “whatever I’m on now”).
-6. `snapshot *` is left in place for now and is not extended. Scenes are the real cross-camera cue.
+6. `snapshot *` was left in place at v1 and is not extended. Scenes are the real cross-camera cue. The `snapshot` command family was later removed.
 
 ## Data model
 
@@ -119,9 +119,7 @@ Reference resolution is **at apply time**. Edit `house-left`’s `close` PTZ, th
 
 ## Snapshots
 
-`snapshot apply` / `snapshot list` stay as the old “same name on all cameras” shortcut. Do not add snapshot store, files, or help that competes with scenes.
-
-A later cleanup (not this work) can make `snapshot apply X` sugar for “apply preset X on every camera that has it,” or remove the family once scenes cover the real workflow.
+`snapshot apply` / `snapshot list` were the old “same name on all cameras” shortcut. They were not extended alongside scenes, and the command family has since been removed. Use `scene apply` for cross-camera cues.
 
 ## Non-goals
 
@@ -167,11 +165,10 @@ A later cleanup (not this work) can make `snapshot apply X` sugar for “apply p
 3. `scene add` / `remove` / `discard` / `list` / `show` / `help`.
 4. `scene apply` (skip missing members).
 5. README + `setup help` for save/load/browse (presets and scenes).
-6. Leave `snapshot *` untouched.
+6. Leave `snapshot *` untouched (later removed once scenes covered the workflow).
 
 ## References
 
 - [README.md](../../README.md) — current preset file format and load-replace behavior
 - [cameras/PresetStore.h](../../cameras/PresetStore.h) — persistence
-- [commands/snapshot/ApplyCommand.cpp](../../commands/snapshot/ApplyCommand.cpp) — today’s same-name cue
 - [REFACTORING.md](../../REFACTORING.md) — item 7

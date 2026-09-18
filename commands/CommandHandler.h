@@ -37,10 +37,6 @@
 #include "scene/ShowCommand.h"
 #include "scene/TourCommand.h"
 
-#include "snapshot/ApplyCommand.h"
-#include "snapshot/ListCommand.h"
-#include "snapshot/HelpCommand.h"
-
 #include "HelpCommand.h"
 
 namespace commands {
@@ -76,15 +72,11 @@ namespace commands {
             addCommand(std::make_unique<scene::ShowCommand>());
             addCommand(std::make_unique<scene::TourCommand>());
 
-            addCommand(std::make_unique<snapshot::ApplyCommand>());
-            addCommand(std::make_unique<snapshot::ListCommand>());
-
             addCommand(std::make_unique<HelpCommand>());
             addCommand(std::make_unique<camera::HelpCommand>());
             addCommand(std::make_unique<preset::HelpCommand>());
             addCommand(std::make_unique<setup::HelpCommand>());
             addCommand(std::make_unique<scene::HelpCommand>());
-            addCommand(std::make_unique<snapshot::HelpCommand>());
         }
 
         void addCommand(std::unique_ptr<Command> cmd) {

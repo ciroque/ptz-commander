@@ -15,7 +15,6 @@ namespace commands {
             ctx.out << "  preset                Show preset command help\n";
             ctx.out << "  setup                 Show setup command help\n";
             ctx.out << "  scene                 Show scene command help\n";
-            ctx.out << "  snapshot              Show snapshot command help\n";
             ctx.out << "  cls                   Clear the screen\n";
             ctx.out << "  exit                  Exit the application\n";
         }

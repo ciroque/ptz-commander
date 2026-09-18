@@ -138,16 +138,13 @@ The Context is now the central place for I/O in command execution.
 
 ---
 
-### 7. Better Handling of Preset vs Snapshot Concepts
+### ~~7. Better Handling of Preset vs Snapshot Concepts~~ (COMPLETED)
 
-Currently there are two overlapping concepts:
-- Per-camera named presets (`preset store/apply/discard`)
-- Cross-camera "snapshots" (`snapshot apply`)
+**Status**: Completed.
+- Scenes are the cross-camera cue (`scene apply`).
+- The overlapping `snapshot` command family (`snapshot apply` / `snapshot list` / `snapshot help`) was removed.
 
-The relationship between them is not very clear in the code or architecture.
-
-**Impact**: Medium (clarity + future features)
-**Effort**: Medium
+See [docs/adr/0001-scenes.md](docs/adr/0001-scenes.md).
 
 ---
 

@@ -1,4 +1,4 @@
-# Command system: camera, console, preset, setup, scene, snapshot
+# Command system: camera, console, preset, setup, scene
 target_sources(ptz_commander PRIVATE
     Arguments.h
     Command.cpp
@@ -54,10 +54,4 @@ target_sources(ptz_commander PRIVATE
     scene/ShowCommand.h
     scene/TourCommand.cpp
     scene/TourCommand.h
-
-    snapshot/ApplyCommand.cpp
-    snapshot/ApplyCommand.h
-    snapshot/HelpCommand.h
-    snapshot/ListCommand.cpp
-    snapshot/ListCommand.h
 )
