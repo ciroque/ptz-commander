@@ -1,6 +1,7 @@
 # Command system: camera, console, preset, setup, scene
 target_sources(ptz_commander PRIVATE
     Arguments.h
+    ResolveCameras.h
     Command.h
     CommandHandler.cpp
     CommandHandler.h

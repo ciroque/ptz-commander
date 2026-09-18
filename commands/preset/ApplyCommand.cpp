@@ -1,4 +1,5 @@
 #include "ApplyCommand.h"
+#include "../ResolveCameras.h"
 #include <iostream>
 #include <iterator>
 #include <thread>
@@ -43,21 +44,9 @@ namespace commands::preset {
             }
         }
 
-        std::list<std::shared_ptr<cameras::Camera>> cameras;
-        if (serialNumber == "*") {
-            cameras = ctx.cameraMgr.getCameras();
-            if (cameras.empty()) {
-                ctx.err << "No cameras found to apply preset." << std::endl;
-                return;
-            }
-        }
-        else {
-            auto camera = ctx.cameraMgr.findById(serialNumber);
-            if (!camera) {
-                ctx.err << "Camera not found: " << serialNumber << std::endl;
-                return;
-            }
-            cameras.push_back(camera);
+        auto cameras = commands::resolveCameras(ctx, serialNumber);
+        if (cameras.empty()) {
+            return;
         }
 
         bool allGood = true;

@@ -1,4 +1,5 @@
 #include "ShowCommand.h"
+#include "../ResolveCameras.h"
 #include <iostream>
 #include <iomanip>
 
@@ -17,22 +18,9 @@ namespace commands::camera {
         }
 
         std::string serialNumber = tokens[0];
-        std::list<std::shared_ptr<cameras::Camera>> cameras;
-
-        if (serialNumber == "*") {
-            cameras = ctx.cameraMgr.getCameras();
-            if (cameras.empty()) {
-                ctx.err << "No cameras found." << std::endl;
-                return;
-            }
-        }
-        else {
-            auto camera = ctx.cameraMgr.findById(serialNumber);
-            if (!camera) {
-                ctx.err << "Camera not found: " << serialNumber << std::endl;
-                return;
-            }
-            cameras.push_back(camera);
+        auto cameras = commands::resolveCameras(ctx, serialNumber);
+        if (cameras.empty()) {
+            return;
         }
 
         // Table output for all cameras
