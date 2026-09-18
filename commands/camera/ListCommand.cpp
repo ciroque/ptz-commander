@@ -1,17 +1,13 @@
 #include "ListCommand.h"
+#include "../ResolveCameras.h"
 
 #include <iostream>
-#include <ostream>
-#include <thread>
-
-
-#include <iomanip>  // For table magic
+#include <iomanip>
 
 namespace commands::camera {
     void ListCommand::execute(data::Context& ctx, const std::string& args) {
-        auto cameras = ctx.cameraMgr.getCameras();
+        auto cameras = commands::resolveCameras(ctx, "*");
         if (cameras.empty()) {
-            ctx.err << "No cameras found." << std::endl;
             return;
         }
 

@@ -150,7 +150,7 @@ See [docs/adr/0001-scenes.md](docs/adr/0001-scenes.md).
 - Add basic unit test infrastructure (even a minimal Catch2 or doctest setup would help).
 - Create a small, reusable argument parsing library (support for flags, quoted strings, typed parsing).
 - ~~Clean up the multiple `HelpCommand` classes (root + per domain)~~ — completed with item 6 (help is generated from the command table).
-- Consider extracting common camera lookup logic (`*` vs specific ID) into a helper.
+- ~~Consider extracting common camera lookup logic (`*` vs specific ID) into a helper.~~ (`commands/ResolveCameras.h`; alias and scene add/remove stay single-id).
 - ~~Review and potentially remove or properly integrate `cameras/utils.h`~~ (file deleted; `scaleToRange` lived in StrategyUtils).
 - Add a `.clang-format` / consistent code style (indentation, bracing, etc. are currently inconsistent between files).
 - Document the coordinate system assumptions per camera family (especially after the recent Tail Air fix).
