@@ -11,7 +11,7 @@ namespace commands::preset {
         void execute(data::Context& ctx, const std::string&) override {
             ctx.out << "Preset commands:\n";
             ctx.out << "  preset list                     List all presets\n";
-            ctx.out << "  preset apply <id|*> <name>      Apply a named preset to camera(s)\n";
+            ctx.out << "  preset apply <id|*> <name|*> [delay_ms]  Apply a named preset, or cycle all (*)\n";
             ctx.out << "  preset discard <id|*> <name>    Remove a named preset\n";
             ctx.out << "  preset store <id|*> <name>      Store current position as a named preset\n";
         }
