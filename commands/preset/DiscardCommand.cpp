@@ -4,13 +4,13 @@
 namespace commands::preset {
     void DiscardCommand::execute(data::Context& ctx, const std::string& args) {
         if (args.empty()) {
-            ctx.err << "Usage: preset discard <serialNumber|*> <name>" << std::endl;
+            ctx.err << "Usage: preset discard <id|*> <name>" << std::endl;
             return;
         }
 
         auto tokens = commands::splitArgs(args);
         if (tokens.size() < 2) {
-            ctx.err << "Usage: preset discard <serialNumber|*> <name>" << std::endl;
+            ctx.err << "Usage: preset discard <id|*> <name>" << std::endl;
             return;
         }
 

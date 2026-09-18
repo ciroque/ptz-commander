@@ -4,13 +4,13 @@
 namespace commands::camera {
     void AliasCommand::execute(data::Context& ctx, const std::string& args) {
         if (args.empty()) {
-            ctx.err << "Usage: camera alias <serialNumber> <alias>" << std::endl;
+            ctx.err << "Usage: camera alias <id> <alias>" << std::endl;
             return;
         }
 
         auto tokens = commands::splitArgs(args);
         if (tokens.size() < 2) {
-            ctx.err << "Usage: camera alias <serialNumber> <alias>" << std::endl;
+            ctx.err << "Usage: camera alias <id> <alias>" << std::endl;
             return;
         }
 

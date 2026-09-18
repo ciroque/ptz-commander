@@ -22,13 +22,13 @@ namespace commands::camera {
 
     void MoveCommand::execute(data::Context& ctx, const std::string& args) {
         if (args.empty()) {
-            ctx.err << "Usage: camera move <serialNumber> <pan> <tilt> <zoom>" << std::endl;
+            ctx.err << "Usage: camera move <id|*> <pan> <tilt> <zoom>" << std::endl;
             return;
         }
 
         auto tokens = commands::splitArgs(args);
         if (tokens.size() < 4) {
-            ctx.err << "Usage: camera move <serialNumber> <pan> <tilt> <zoom>" << std::endl;
+            ctx.err << "Usage: camera move <id|*> <pan> <tilt> <zoom>" << std::endl;
             return;
         }
 
