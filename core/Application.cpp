@@ -1,6 +1,13 @@
 #include "Application.h"
 #include <iostream>
 
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#endif
+
 namespace core {
     Application::Application()
         : obsbotAdapter_(std::make_unique<cameras::obsbot::ObsbotCameraAdapter>(cameraMgr_)),
@@ -41,7 +48,19 @@ namespace core {
         running_ = true;
         context_.out << StartMessage;
         std::string input;
-        while (running_ && std::getline(std::cin, input)) {
+        while (running_) {
+            if (!std::getline(std::cin, input)) {
+#ifdef _WIN32
+                DWORD consoleMode = 0;
+                const bool stdinIsConsole =
+                    GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &consoleMode) != 0;
+                if (stdinIsConsole) {
+                    std::cin.clear();
+                    continue;
+                }
+#endif
+                break;
+            }
             if (input == StopToken) {
                 running_ = false;
             }
