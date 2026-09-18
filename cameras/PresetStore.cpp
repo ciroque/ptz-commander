@@ -12,7 +12,7 @@
 namespace cameras {
 
     std::string PresetStore::normalizeFilename(std::string filename) {
-        if (filename.find('.') == std::string::npos) {
+        if (std::filesystem::path(filename).extension().empty()) {
             filename += ".ptzc";
         }
         return filename;

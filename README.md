@@ -65,7 +65,7 @@ A setup is the on-disk collection: per-camera aliases and presets plus scenes. F
 | `setup save`                   | `[file]`                                | Writes current aliases, presets, and scenes to a `.ptzc` file. Default: `%LOCALAPPDATA%\PTZCommander\presets.ptzc`. |
 
 - `setup save my-show` → writes `my-show.ptzc` (in the user data directory)
-- `setup load conference` → reads `conference.ptzc` (`.ptzc` is added automatically if omitted)
+- `setup load conference` → reads `conference.ptzc` (`.ptzc` is added automatically if the path has no extension)
 - When no filename is given, the default is `%LOCALAPPDATA%\PTZCommander\presets.ptzc`
 - If you provide a path with directories (e.g. `C:\shows\my-show` or `..\my-show`), it will be used as-is. Bare names are placed in the per-user PTZCommander data folder.
 

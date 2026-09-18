@@ -69,7 +69,7 @@ namespace cameras {
                   std::string filename = "presets.ptzc") const;
 
         /**
-         * Normalizes a filename for .ptzc files: appends ".ptzc" if no extension dot is present.
+         * Normalizes a filename for .ptzc files: appends ".ptzc" if the path has no extension.
          * (Path resolution for user data is handled separately in load/save.)
          */
         static std::string normalizeFilename(std::string filename);
