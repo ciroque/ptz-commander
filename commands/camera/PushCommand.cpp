@@ -1,16 +1,11 @@
-#define NOMINMAX  // Prevent windows.h from defining min/max macros
 #include "PushCommand.h"
 #include <iostream>
-#include <thread>
-#include <chrono>
-#include <windows.h>  // For Sleep
-#include <algorithm>  // For std::min, std::max
 
 namespace commands::camera {
     void PushCommand::execute(data::Context& ctx, const std::string& args) {
         auto tokens = commands::splitArgs(args);
         if (tokens.size() < 2) {
-            ctx.err << "Usage: camera push <serialNumber|*> <targetZoom> [speed]" << std::endl;
+            ctx.err << "Usage: camera push <id|*> <targetZoom> [speed]" << std::endl;
             return;
         }
 
@@ -56,7 +51,6 @@ namespace commands::camera {
 			auto currentPtz = camera->getCurrentPtz();
             if (currentPtz.zoom >= targetZoom) {
 				ctx.out << "Camera " << camera->getSerialNumber() << " already at or past target zoom." << std::endl;
-				allGood = false;
 				continue;
 			}
 

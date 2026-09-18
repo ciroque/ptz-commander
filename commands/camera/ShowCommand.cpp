@@ -5,14 +5,14 @@
 namespace commands::camera {
     void ShowCommand::execute(data::Context& ctx, const std::string& args) {
         if (args.empty()) {
-            ctx.err << "Usage: camera show <serialNumber> (or * for all)" << std::endl;
+            ctx.err << "Usage: camera show <id|*>" << std::endl;
             return;
         }
 
         // Split args to get serial number or wildcard
         auto tokens = commands::splitArgs(args);
         if (tokens.empty()) {
-            ctx.err << "Usage: camera show <serialNumber> (or * for all)" << std::endl;
+            ctx.err << "Usage: camera show <id|*>" << std::endl;
             return;
         }
 
@@ -67,7 +67,7 @@ namespace commands::camera {
                 << std::setw(30) << ptz.pan << std::endl;
 
             ctx.out << std::left
-                << std::setw(20) << "Pitch" << " | "
+                << std::setw(20) << "Tilt" << " | "
                 << std::setw(30) << ptz.tilt << std::endl;
 
             ctx.out << std::left

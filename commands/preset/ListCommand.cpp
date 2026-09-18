@@ -3,10 +3,6 @@
 namespace commands::preset {
     void ListCommand::execute(data::Context& ctx, const std::string& args) {
         auto cameras = ctx.cameraMgr.getCameras();
-        if (cameras.empty()) {
-            ctx.err << "No cameras found." << std::endl;
-            return;
-        }
 
         bool anyPresets = false;
         for (const auto& camera : cameras) {

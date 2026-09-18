@@ -1,34 +1,45 @@
 #include "ApplyCommand.h"
 #include <iostream>
-#include <vector>  // for std::vector in execute()
+#include <iterator>
 #include <thread>
 #include <chrono>
 
 namespace commands::preset {
+    namespace {
+        constexpr int kDefaultDelayMs = 2000;
+
+        void printUsage(data::Context& ctx) {
+            ctx.err << "Usage: preset apply <id|*> <name|*> [delay_ms]" << std::endl;
+        }
+    }
+
     void ApplyCommand::execute(data::Context& ctx, const std::string& args) {
         if (args.empty()) {
-            ctx.err << "Usage: preset apply <serialNumber|*> <name|*> [delay_ms]" << std::endl;
+            printUsage(ctx);
             return;
         }
 
         auto tokens = commands::splitArgs(args);
         if (tokens.size() < 2) {
-            ctx.err << "Usage: preset apply <serialNumber|*> <name|*> [delay_ms]" << std::endl;
+            printUsage(ctx);
             return;
         }
 
         std::string serialNumber = tokens[0];
         std::string presetNameOrWildcard = tokens[1];
-        int delayMs = 2000;  // Default 2000ms (2 seconds)
+        int delayMs = kDefaultDelayMs;
 
-        // Parse optional delay (if present)
         if (tokens.size() > 2) {
             try {
                 delayMs = std::stoi(tokens[2]);
-                if (delayMs < 0) delayMs = 5000;  // Minimum 2s
+                if (delayMs < 0) {
+                    ctx.err << "Invalid delay_ms, using default " << kDefaultDelayMs << "ms" << std::endl;
+                    delayMs = kDefaultDelayMs;
+                }
             }
             catch (const std::exception&) {
-                ctx.err << "Invalid delay_ms, using default 2000ms" << std::endl;
+                ctx.err << "Invalid delay_ms, using default " << kDefaultDelayMs << "ms" << std::endl;
+                delayMs = kDefaultDelayMs;
             }
         }
 
@@ -60,7 +71,8 @@ namespace commands::preset {
                     continue;
                 }
 
-                for (const auto& preset : presets) {
+                for (auto it = presets.begin(); it != presets.end(); ++it) {
+                    const auto& preset = *it;
                     if (!camera->setPosition(preset->ptz.pan, preset->ptz.tilt, preset->ptz.zoom)) {
                         ctx.err << "Failed to apply preset '" << preset->name << "' to " << camera->getSerialNumber() << std::endl;
                         allGood = false;
@@ -68,7 +80,9 @@ namespace commands::preset {
                     else {
                         ctx.out << "Applied preset '" << preset->name << "' to " << camera->getSerialNumber() << std::endl;
                     }
-                    std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
+                    if (std::next(it) != presets.end() && delayMs > 0) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
+                    }
                 }
             }
             else {
@@ -90,13 +104,18 @@ namespace commands::preset {
             }
         }
 
+        const std::string target =
+            serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber;
         if (allGood) {
-            ctx.out << "Applied preset" << (presetNameOrWildcard == "*" ? "s" : " '") << presetNameOrWildcard
-                << "' to " << (serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber)
-                << std::endl;
+            if (presetNameOrWildcard == "*") {
+                ctx.out << "Applied presets to " << target << std::endl;
+            }
+            else {
+                ctx.out << "Applied preset '" << presetNameOrWildcard << "' to " << target << std::endl;
+            }
         }
         else {
-            ctx.err << "Some presets failed to apply for " << (serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber) << "." << std::endl;
+            ctx.err << "Some presets failed to apply for " << target << "." << std::endl;
         }
     }
 }
