@@ -9,7 +9,8 @@
 namespace commands::camera {
     class MoveCommand : public Command {
     public:
-        MoveCommand() { name = "camera move"; }
+        MoveCommand() : Command("camera", "move", "camera move <id|*> <pan> <tilt> <zoom>",
+                                "Move camera(s) to a PTZ position") {}
         void execute(data::Context& ctx, const std::string& args) override;
 
     private:

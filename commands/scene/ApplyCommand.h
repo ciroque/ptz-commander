@@ -6,7 +6,8 @@
 namespace commands::scene {
     class ApplyCommand : public Command {
     public:
-        ApplyCommand() { name = "scene apply"; }
+        ApplyCommand() : Command("scene", "apply", "scene apply <name>",
+                                 "Apply each binding (setPosition)") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 }

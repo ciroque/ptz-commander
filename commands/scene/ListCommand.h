@@ -6,7 +6,7 @@
 namespace commands::scene {
     class ListCommand : public Command {
     public:
-        ListCommand() { name = "scene list"; }
+        ListCommand() : Command("scene", "list", "scene list", "List scenes") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 }

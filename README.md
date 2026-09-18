@@ -60,7 +60,7 @@ A setup is the on-disk collection: per-camera aliases and presets plus scenes. F
 
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
-| `setup browse`                 | None                                    | Lists `.ptzc` files in `%LOCALAPPDATA%\PTZCommander`.                       |
+| `setup list`                   | None                                    | Lists `.ptzc` files in `%LOCALAPPDATA%\PTZCommander`.                       |
 | `setup load`                   | `[file]`                                | Replaces in-memory presets and scenes from a `.ptzc` file. Cameras not in the file are cleared of presets; a missing `"scenes"` key clears scenes. Default: `%LOCALAPPDATA%\PTZCommander\presets.ptzc`. |
 | `setup save`                   | `[file]`                                | Writes current aliases, presets, and scenes to a `.ptzc` file. Default: `%LOCALAPPDATA%\PTZCommander\presets.ptzc`. |
 

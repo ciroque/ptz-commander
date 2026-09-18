@@ -1,14 +1,12 @@
 # Command system: camera, console, preset, setup, scene
 target_sources(ptz_commander PRIVATE
     Arguments.h
-    Command.cpp
     Command.h
+    CommandHandler.cpp
     CommandHandler.h
-    HelpCommand.h
 
     camera/AliasCommand.cpp
     camera/AliasCommand.h
-    camera/HelpCommand.h
     camera/ListCommand.cpp
     camera/ListCommand.h
     camera/MoveCommand.cpp
@@ -25,15 +23,13 @@ target_sources(ptz_commander PRIVATE
     preset/ApplyCommand.h
     preset/DiscardCommand.cpp
     preset/DiscardCommand.h
-    preset/HelpCommand.h
     preset/ListCommand.cpp
     preset/ListCommand.h
     preset/StoreCommand.cpp
     preset/StoreCommand.h
 
-    setup/BrowseCommand.cpp
-    setup/BrowseCommand.h
-    setup/HelpCommand.h
+    setup/ListCommand.cpp
+    setup/ListCommand.h
     setup/LoadCommand.cpp
     setup/LoadCommand.h
     setup/SaveCommand.cpp
@@ -45,7 +41,6 @@ target_sources(ptz_commander PRIVATE
     scene/ApplyCommand.h
     scene/DiscardCommand.cpp
     scene/DiscardCommand.h
-    scene/HelpCommand.h
     scene/ListCommand.cpp
     scene/ListCommand.h
     scene/RemoveCommand.cpp

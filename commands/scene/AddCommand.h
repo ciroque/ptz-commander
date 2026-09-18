@@ -6,7 +6,9 @@
 namespace commands::scene {
     class AddCommand : public Command {
     public:
-        AddCommand() { name = "scene add"; }
+        AddCommand() : Command("scene", "add",
+                               "scene add <name> <id> <preset> [<id> <preset> ...]",
+                               "Add camera/preset bindings") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 }

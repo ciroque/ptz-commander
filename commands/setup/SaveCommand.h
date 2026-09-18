@@ -7,7 +7,8 @@
 namespace commands::setup {
     class SaveCommand : public Command {
     public:
-        SaveCommand() { name = "setup save"; }
+        SaveCommand() : Command("setup", "save", "setup save [file]",
+                                "Save current presets and scenes to a .ptzc file (default: presets.ptzc)") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 }

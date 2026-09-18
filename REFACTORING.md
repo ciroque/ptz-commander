@@ -125,16 +125,13 @@ The Context is now the central place for I/O in command execution.
 
 ---
 
-### 6. Improve Command Registration and Dispatch
+### ~~6. Improve Command Registration and Dispatch~~ (COMPLETED)
 
-**Current state**: `CommandHandler` constructor manually `addCommand()`s every single command. Very repetitive.
-
-**Impact**: Medium
-**Effort**: Low–Medium
-**Ideas**:
-- Use a registration macro or a static registry.
-- Or use a simple dependency injection / service locator for commands.
-- Consider moving toward a more data-driven command table.
+**Status**: Completed.
+- Commands describe themselves (`family`, `verb`, `usage`, `summary`).
+- `CommandHandler` dispatches family + verb (trim/collapse spaces, `help <family>`, bare family → family help).
+- Root and family help are generated from the command table; the `HelpCommand` classes are gone.
+- `exit` stays in `Application`. Constructor still `addCommand()`s each type (no static registry).
 
 ---
 
@@ -152,7 +149,7 @@ See [docs/adr/0001-scenes.md](docs/adr/0001-scenes.md).
 
 - Add basic unit test infrastructure (even a minimal Catch2 or doctest setup would help).
 - Create a small, reusable argument parsing library (support for flags, quoted strings, typed parsing).
-- ~~Clean up the multiple `HelpCommand` classes (root + per domain)~~ — partially addressed (see Recently Completed section).
+- ~~Clean up the multiple `HelpCommand` classes (root + per domain)~~ — completed with item 6 (help is generated from the command table).
 - Consider extracting common camera lookup logic (`*` vs specific ID) into a helper.
 - ~~Review and potentially remove or properly integrate `cameras/utils.h`~~ (file deleted; `scaleToRange` lived in StrategyUtils).
 - Add a `.clang-format` / consistent code style (indentation, bracing, etc. are currently inconsistent between files).

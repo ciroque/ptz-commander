@@ -10,7 +10,7 @@
 namespace commands::preset {
     class ListCommand : public Command {
     public:
-        ListCommand() { name = "preset list"; }
+        ListCommand() : Command("preset", "list", "preset list", "List all presets") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 }

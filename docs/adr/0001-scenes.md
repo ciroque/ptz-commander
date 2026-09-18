@@ -102,7 +102,7 @@ Notes:
 - `<id>` is the same as everywhere else: alias, serial, or product name via `findById`. The stored binding is always the serial.
 - There is no `scene store`. Cameras do not know “which preset they are on”; inventing capture would mean fuzzy PTZ matching or last-apply tracking. Composition is the feature.
 - `scene add` on an unknown preset name is an error (fail that binding, do not record a dangling name). Unknown camera id is an error.
-- Persistence is `setup save` / `load` / `browse`. Scenes are part of the collection, not a second file type.
+- Persistence is `setup save` / `load` / `list`. Scenes are part of the collection, not a second file type.
 
 ## Apply semantics
 
@@ -135,7 +135,7 @@ Reference resolution is **at apply time**. Edit `house-left`’s `close` PTZ, th
 **Positive**
 
 - One-word cues without colliding preset names across cameras.
-- Scenes travel with the collection (`setup save` / `load` / `browse`).
+- Scenes travel with the collection (`setup save` / `load` / `list`).
 - Scenes can be listed while a camera is dark; apply degrades per missing member.
 - OBS integration, if we do it, is “call `scene apply`,” not a second grouping model.
 
@@ -164,7 +164,7 @@ Reference resolution is **at apply time**. Edit `house-left`’s `close` PTZ, th
 2. Reserved `"scenes"` key in `PresetStore` load/save (replace semantics, all-or-nothing parse).
 3. `scene add` / `remove` / `discard` / `list` / `show` / `help`.
 4. `scene apply` (skip missing members).
-5. README + `setup help` for save/load/browse (presets and scenes).
+5. README + `setup help` for save/load/list (presets and scenes).
 6. Leave `snapshot *` untouched (later removed once scenes covered the workflow).
 
 ## References
