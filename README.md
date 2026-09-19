@@ -71,6 +71,18 @@ A setup is the on-disk collection: per-camera aliases and presets plus scenes. F
 
 `setup load` replaces in-memory presets and scenes (it does not merge).
 
+## WebSocket
+
+On start the REPL listens on `ws://127.0.0.1:7420`. A client receives the current setup JSON on connect (and again whenever setup changes). Clients may apply a scene — the same cue as `scene apply <name>`:
+
+```json
+{ "op": "scene.apply", "name": "sermon" }
+```
+
+Plain text `scene apply sermon` is also accepted. Scene names cannot contain spaces. The reply is `{ "ok": true, "op": "scene.apply", "name": "sermon" }` or `{ "ok": false, "error": "..." }`. Apply still prints on the REPL. Other commands are not accepted over the socket.
+
+A small dump/apply page lives in `web/index.html`.
+
 Example `.ptzc` file structure (per-camera):
 ```json
 {

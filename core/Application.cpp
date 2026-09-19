@@ -17,6 +17,10 @@ namespace core {
           setupDumpServer_(cameraMgr_, sceneStore_),
           running_(false) {
         context_.onSetupChanged = [this] { setupDumpServer_.broadcast(); };
+        setupDumpServer_.setOnSceneApply([this](const std::string& name) {
+            std::lock_guard<std::mutex> lock(commandMutex_);
+            commandHandler_.execute(context_, "scene apply " + name);
+        });
 
         // Start OBSBOT adapter (hotplug + network scan) in its own thread
         obsbotAdapterThread_ = std::thread(&cameras::obsbot::ObsbotCameraAdapter::start, obsbotAdapter_.get());
@@ -65,6 +69,7 @@ namespace core {
                 running_ = false;
             }
             else if (!input.empty()) {
+                std::lock_guard<std::mutex> lock(commandMutex_);
                 commandHandler_.execute(context_, input);
             }
             context_.out << Prompt;
