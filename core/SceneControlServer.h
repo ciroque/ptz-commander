@@ -1,5 +1,5 @@
-#ifndef CORE_SETUPDUMPSERVER_H
-#define CORE_SETUPDUMPSERVER_H
+#ifndef CORE_SCENECONTROLSERVER_H
+#define CORE_SCENECONTROLSERVER_H
 
 #include "../cameras/CameraManager.h"
 #include "../cameras/SceneStore.h"
@@ -9,13 +9,13 @@
 #include <string>
 
 namespace core {
-    class SetupDumpServer {
+    class SceneControlServer {
     public:
-        SetupDumpServer(cameras::CameraManager& cameraMgr, cameras::SceneStore& sceneStore);
-        ~SetupDumpServer();
+        SceneControlServer(cameras::CameraManager& cameraMgr, cameras::SceneStore& sceneStore);
+        ~SceneControlServer();
 
-        SetupDumpServer(const SetupDumpServer&) = delete;
-        SetupDumpServer& operator=(const SetupDumpServer&) = delete;
+        SceneControlServer(const SceneControlServer&) = delete;
+        SceneControlServer& operator=(const SceneControlServer&) = delete;
 
         void setOnSceneApply(std::function<void(const std::string&)> cb);
 
@@ -24,7 +24,7 @@ namespace core {
         void broadcast();
 
     private:
-        std::string dumpJson() const;
+        std::string stateJson() const;
         void onClientMessage(ix::WebSocket& webSocket, const ix::WebSocketMessagePtr& msg);
         void handleInbound(ix::WebSocket& webSocket, const std::string& payload);
         bool applyScene(ix::WebSocket& webSocket, const std::string& name);
@@ -40,4 +40,4 @@ namespace core {
     };
 }
 
-#endif // CORE_SETUPDUMPSERVER_H
+#endif // CORE_SCENECONTROLSERVER_H

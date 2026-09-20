@@ -1,4 +1,4 @@
-#include "SetupDumpServer.h"
+#include "SceneControlServer.h"
 #include "Logger.h"
 #include "../cameras/PresetStore.h"
 #include "../commands/Arguments.h"
@@ -28,7 +28,7 @@ namespace core {
         }
     }
 
-    SetupDumpServer::SetupDumpServer(cameras::CameraManager& cameraMgr,
+    SceneControlServer::SceneControlServer(cameras::CameraManager& cameraMgr,
                                      cameras::SceneStore& sceneStore)
         : cameraMgr_(cameraMgr),
           sceneStore_(sceneStore),
@@ -42,28 +42,28 @@ namespace core {
             });
     }
 
-    SetupDumpServer::~SetupDumpServer() {
+    SceneControlServer::~SceneControlServer() {
         stop();
     }
 
-    void SetupDumpServer::setOnSceneApply(std::function<void(const std::string&)> cb) {
+    void SceneControlServer::setOnSceneApply(std::function<void(const std::string&)> cb) {
         onSceneApply_ = std::move(cb);
     }
 
-    bool SetupDumpServer::start() {
+    bool SceneControlServer::start() {
         if (started_) {
             return true;
         }
 
         if (!ix::initNetSystem()) {
-            Logger::error("Setup WebSocket: failed to initialize network");
+            Logger::error("SceneControlServer: failed to initialize network");
             return false;
         }
         netInitialized_ = true;
 
         auto res = server_.listen();
         if (!res.first) {
-            Logger::error("Setup WebSocket listen failed on " + host_ + ":"
+            Logger::error("SceneControlServer listen failed on " + host_ + ":"
                           + std::to_string(port_) + ": " + res.second);
             ix::uninitNetSystem();
             netInitialized_ = false;
@@ -72,12 +72,12 @@ namespace core {
 
         server_.start();
         started_ = true;
-        Logger::info("Setup WebSocket listening on ws://" + host_ + ":"
+        Logger::info("SceneControlServer listening on ws://" + host_ + ":"
                      + std::to_string(port_));
         return true;
     }
 
-    void SetupDumpServer::stop() {
+    void SceneControlServer::stop() {
         if (started_) {
             server_.stop();
             started_ = false;
@@ -88,11 +88,11 @@ namespace core {
         }
     }
 
-    void SetupDumpServer::broadcast() {
+    void SceneControlServer::broadcast() {
         if (!started_) {
             return;
         }
-        const std::string payload = dumpJson();
+        const std::string payload = stateJson();
         for (const auto& client : server_.getClients()) {
             if (client) {
                 client->sendText(payload);
@@ -100,15 +100,15 @@ namespace core {
         }
     }
 
-    std::string SetupDumpServer::dumpJson() const {
+    std::string SceneControlServer::stateJson() const {
         cameras::PresetStore store;
         return store.toJsonString(cameraMgr_, sceneStore_);
     }
 
-    void SetupDumpServer::onClientMessage(ix::WebSocket& webSocket,
+    void SceneControlServer::onClientMessage(ix::WebSocket& webSocket,
                                           const ix::WebSocketMessagePtr& msg) {
         if (msg->type == ix::WebSocketMessageType::Open) {
-            webSocket.sendText(dumpJson());
+            webSocket.sendText(stateJson());
             return;
         }
         if (msg->type != ix::WebSocketMessageType::Message) {
@@ -117,7 +117,7 @@ namespace core {
         handleInbound(webSocket, msg->str);
     }
 
-    bool SetupDumpServer::applyScene(ix::WebSocket& webSocket, const std::string& name) {
+    bool SceneControlServer::applyScene(ix::WebSocket& webSocket, const std::string& name) {
         if (name.empty() || hasWhitespace(name)) {
             webSocket.sendText(replyError("invalid scene name"));
             return false;
@@ -136,7 +136,7 @@ namespace core {
         return true;
     }
 
-    void SetupDumpServer::handleInbound(ix::WebSocket& webSocket, const std::string& payload) {
+    void SceneControlServer::handleInbound(ix::WebSocket& webSocket, const std::string& payload) {
         const auto start = payload.find_first_not_of(" \t\r\n");
         if (start == std::string::npos) {
             webSocket.sendText(replyError("empty message"));
