@@ -11,7 +11,7 @@ add_subdirectory(data)
 add_subdirectory(cameras)
 add_subdirectory(commands)
 
-# IXWebSocket (plain ws:// dump server). TLS/zlib off: we only need an unencrypted
+# IXWebSocket (localhost scene list/apply). TLS/zlib off: we only need an unencrypted
 # localhost socket, and Windows agents do not ship zlib/OpenSSL by default.
 include(FetchContent)
 set(USE_TLS OFF CACHE BOOL "IXWebSocket TLS" FORCE)

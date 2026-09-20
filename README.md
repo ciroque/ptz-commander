@@ -81,7 +81,7 @@ On start the REPL listens on `ws://127.0.0.1:7420`. A client receives the curren
 
 Plain text `scene apply sermon` is also accepted. Scene names cannot contain spaces. The reply is `{ "ok": true, "op": "scene.apply", "name": "sermon" }` or `{ "ok": false, "error": "..." }`. Apply still prints on the REPL. Other commands are not accepted over the socket.
 
-A small dump/apply page lives in `web/index.html`.
+A small list/apply page lives in `web/index.html`.
 
 Example `.ptzc` file structure (per-camera):
 ```json

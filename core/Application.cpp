@@ -14,10 +14,10 @@ namespace core {
           viscaAdapter_(std::make_unique<cameras::visca::ViscaCameraAdapter>(cameraMgr_)),
           context_(cameraMgr_, sceneStore_),
           commandHandler_(),
-          setupDumpServer_(cameraMgr_, sceneStore_),
+          sceneControlServer_(cameraMgr_, sceneStore_),
           running_(false) {
-        context_.onSetupChanged = [this] { setupDumpServer_.broadcast(); };
-        setupDumpServer_.setOnSceneApply([this](const std::string& name) {
+        context_.onSetupChanged = [this] { sceneControlServer_.broadcast(); };
+        sceneControlServer_.setOnSceneApply([this](const std::string& name) {
             std::lock_guard<std::mutex> lock(commandMutex_);
             commandHandler_.execute(context_, "scene apply " + name);
         });
@@ -30,7 +30,7 @@ namespace core {
     }
 
     Application::~Application() {
-        setupDumpServer_.stop();
+        sceneControlServer_.stop();
 
         if (viscaAdapter_) {
             viscaAdapter_->stop();
@@ -48,7 +48,7 @@ namespace core {
     }
 
     void Application::start() {
-        setupDumpServer_.start();
+        sceneControlServer_.start();
         running_ = true;
         context_.out << StartMessage;
         std::string input;
