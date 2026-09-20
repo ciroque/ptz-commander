@@ -9,6 +9,7 @@
 #include "../data/Context.h"
 #include "SetupDumpServer.h"
 #include <memory>
+#include <mutex>
 #include <thread>
 
 namespace core {
@@ -23,6 +24,7 @@ namespace core {
         std::thread obsbotAdapterThread_;
         std::thread viscaAdapterThread_;
         SetupDumpServer setupDumpServer_;
+        std::mutex commandMutex_;
         bool running_;
         const std::string StartMessage = "PTZ Commander (type 'exit' to quit)\n> ";
         const std::string Prompt = "> ";

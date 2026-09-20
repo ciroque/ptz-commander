@@ -5,6 +5,7 @@
 #include "../cameras/SceneStore.h"
 #include <ixwebsocket/IXWebSocketServer.h>
 #include <atomic>
+#include <functional>
 #include <string>
 
 namespace core {
@@ -16,15 +17,21 @@ namespace core {
         SetupDumpServer(const SetupDumpServer&) = delete;
         SetupDumpServer& operator=(const SetupDumpServer&) = delete;
 
+        void setOnSceneApply(std::function<void(const std::string&)> cb);
+
         bool start();
         void stop();
         void broadcast();
 
     private:
         std::string dumpJson() const;
+        void onClientMessage(ix::WebSocket& webSocket, const ix::WebSocketMessagePtr& msg);
+        void handleInbound(ix::WebSocket& webSocket, const std::string& payload);
+        bool applyScene(ix::WebSocket& webSocket, const std::string& name);
 
         cameras::CameraManager& cameraMgr_;
         cameras::SceneStore& sceneStore_;
+        std::function<void(const std::string&)> onSceneApply_;
         const std::string host_{"127.0.0.1"};
         const int port_{7420};
         ix::WebSocketServer server_;

@@ -46,6 +46,16 @@
       cursor: pointer;
     }
     button:hover { filter: brightness(1.08); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
+    #scenes {
+      list-style: none;
+      padding-left: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    #scenes button { font-weight: 600; }
+    #last-apply { color: var(--muted); font-size: 0.85rem; }
     h2 {
       font-size: 0.8rem;
       text-transform: uppercase;
@@ -83,6 +93,7 @@
 
   <h2>Scenes</h2>
   <ul id="scenes"><li class="empty">No message yet</li></ul>
+  <p id="last-apply"></p>
 
   <h2>Setup JSON</h2>
   <pre id="dump">(waiting for connection)</pre>
@@ -92,13 +103,27 @@
     const statusEl = document.getElementById("status");
     const dumpEl = document.getElementById("dump");
     const scenesEl = document.getElementById("scenes");
+    const lastApplyEl = document.getElementById("last-apply");
     const reconnectBtn = document.getElementById("reconnect");
 
     let socket = null;
+    let connected = false;
 
-    function setStatus(connected) {
-      statusEl.textContent = connected ? "Connected" : "Disconnected";
-      statusEl.className = connected ? "connected" : "disconnected";
+    function setStatus(isConnected) {
+      connected = isConnected;
+      statusEl.textContent = isConnected ? "Connected" : "Disconnected";
+      statusEl.className = isConnected ? "connected" : "disconnected";
+      scenesEl.querySelectorAll("button").forEach((btn) => {
+        btn.disabled = !isConnected;
+      });
+    }
+
+    function applyScene(name) {
+      if (!socket || socket.readyState !== WebSocket.OPEN) {
+        lastApplyEl.textContent = "Not connected";
+        return;
+      }
+      socket.send(JSON.stringify({ op: "scene.apply", name }));
     }
 
     function renderScenes(data) {
@@ -113,7 +138,12 @@
       }
       names.forEach((name) => {
         const li = document.createElement("li");
-        li.textContent = name;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = name;
+        btn.disabled = !connected;
+        btn.addEventListener("click", () => applyScene(name));
+        li.appendChild(btn);
         scenesEl.appendChild(li);
       });
     }
@@ -122,6 +152,14 @@
       const raw = event.data;
       try {
         const data = JSON.parse(raw);
+        if (data && typeof data === "object" && (data.op || data.ok !== undefined)) {
+          if (data.ok) {
+            lastApplyEl.textContent = "Applied " + data.name;
+          } else {
+            lastApplyEl.textContent = data.error || "Apply failed";
+          }
+          return;
+        }
         dumpEl.textContent = JSON.stringify(data, null, 2);
         renderScenes(data);
       } catch (err) {
