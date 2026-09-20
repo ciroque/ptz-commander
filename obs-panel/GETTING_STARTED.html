@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>PTZ Commander — Getting Started</title>
+  <style>
+    body {
+      margin: 0 auto;
+      max-width: 42rem;
+      padding: 1.5rem 1.25rem 3rem;
+      font-family: Segoe UI, system-ui, sans-serif;
+      line-height: 1.45;
+      color: #1b1b1b;
+    }
+    h1 { font-size: 1.45rem; margin: 0 0 0.75rem; }
+    h2 { font-size: 1.05rem; margin: 1.4rem 0 0.45rem; }
+    p, li { font-size: 0.95rem; }
+    code, .path {
+      font-family: Consolas, ui-monospace, monospace;
+      font-size: 0.88em;
+      background: #f3f3f3;
+      padding: 0.05em 0.3em;
+    }
+    .path { display: block; margin: 0.5rem 0; padding: 0.55rem 0.65rem; word-break: break-all; }
+    ol { padding-left: 1.3rem; }
+  </style>
+</head>
+<body>
+  <h1>PTZ Commander — Getting Started</h1>
+  <p>
+    This is the operator guide that ships with the installer. It is not the project README.
+    Use it after install to put the scene panel in OBS.
+  </p>
+
+  <h2>What you need</h2>
+  <ul>
+    <li>PTZ Commander running (Start Menu or the desktop shortcut).</li>
+    <li>A setup loaded in Commander so scenes exist (the REPL <code>setup load</code> command).</li>
+    <li>OBS Studio with Custom Browser Docks (built in; no extra OBS plugin).</li>
+  </ul>
+
+  <h2>Add the dock in OBS</h2>
+  <ol>
+    <li>Start PTZ Commander first. Leave it running.</li>
+    <li>In OBS: <strong>Docks → Custom Browser Docks…</strong></li>
+    <li>Give it a name such as PTZ Commander.</li>
+    <li>Set the URL to the panel file (default install):</li>
+  </ol>
+  <p class="path">file:///C:/Program Files/PTZCommander/obs-panel/index.html</p>
+  <p>
+    If you installed somewhere else, use that folder’s <code>obs-panel\index.html</code> instead.
+    Spaces in the path are fine in a <code>file:///</code> URL; OBS should accept the path as shown.
+  </p>
+  <ol start="5">
+    <li>Apply. Dock the panel wherever you like.</li>
+  </ol>
+
+  <h2>Using it</h2>
+  <p>
+    The dock lists scenes from Commander’s in-memory setup. Click a name to apply it
+    (same as <code>scene apply</code> in the REPL). Status shows Connected when Commander is
+    listening on this PC. Disconnected means Commander is not running; start it and wait,
+    or press Reconnect.
+  </p>
+  <p>
+    The socket is localhost only. The dock is an HTML file on disk talking to Commander;
+    it is not an OBS plugin DLL.
+  </p>
+
+  <h2>If the list is empty</h2>
+  <p>
+    Connected with no scenes means nothing is loaded yet. Load a setup in Commander, then
+    the dock updates. If OBS was open before the first install, reload the dock
+    (click it and press Ctrl+R) after you confirm the file path.
+  </p>
+</body>
+</html>
