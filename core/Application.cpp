@@ -19,7 +19,9 @@ namespace core {
         context_.onSetupChanged = [this] { sceneControlServer_.broadcast(); };
         sceneControlServer_.setOnSceneApply([this](const std::string& name) {
             std::lock_guard<std::mutex> lock(commandMutex_);
+            context_.out << std::endl;
             commandHandler_.execute(context_, "scene apply " + name);
+            context_.out << Prompt << std::flush;
         });
 
         // Start OBSBOT adapter (hotplug + network scan) in its own thread
@@ -68,11 +70,13 @@ namespace core {
             if (input == StopToken) {
                 running_ = false;
             }
-            else if (!input.empty()) {
+            else {
                 std::lock_guard<std::mutex> lock(commandMutex_);
-                commandHandler_.execute(context_, input);
+                if (!input.empty()) {
+                    commandHandler_.execute(context_, input);
+                }
+                context_.out << Prompt << std::flush;
             }
-            context_.out << Prompt;
         }
     }
 }
