@@ -90,7 +90,7 @@
       <ComponentRef Id="DesktopShortcut" />
     </Feature>
 
-    <!-- ExitDlg (after install): optional Getting Started launch, default checked. -->
+    <!-- Finished page (after install): optional Getting Started launch, default checked. -->
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Show the Getting Started guide" />
     <CustomAction Id="LaunchGettingStarted"
@@ -133,8 +133,8 @@
       <!-- Rewire navigation to place the Options page after directory selection. -->
       <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="OptionsDlg" Order="5" Condition="1" />
       <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="OptionsDlg" Order="5" Condition="1" />
-      <Publish Dialog="ExitDlg" Control="Finish" Event="DoAction" Value="LaunchGettingStarted"
-               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT REMOVE" />
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchGettingStarted"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
     </UI>
   </Package>
 </Wix>
