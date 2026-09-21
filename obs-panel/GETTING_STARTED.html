@@ -27,15 +27,11 @@
 </head>
 <body>
   <h1>PTZ Commander — Getting Started</h1>
-  <p>
-    This is the operator guide that ships with the installer. It is not the project README.
-    Use it after install to put the scene panel in OBS.
-  </p>
 
   <h2>What you need</h2>
   <ul>
     <li>PTZ Commander running (Start Menu or the desktop shortcut).</li>
-    <li>A setup loaded in Commander so scenes exist (the REPL <code>setup load</code> command).</li>
+    <li>A setup loaded in PTZ Commander so scenes exist (the REPL <code>setup load</code> command).</li>
     <li>OBS Studio with Custom Browser Docks (built in; no extra OBS plugin).</li>
   </ul>
 
@@ -57,21 +53,21 @@
 
   <h2>Using it</h2>
   <p>
-    The dock lists scenes from Commander’s in-memory setup. Click a name to apply it
-    (same as <code>scene apply</code> in the REPL). Status shows Connected when Commander is
-    listening on this PC. Disconnected means Commander is not running; start it and wait,
-    or press Reconnect.
+      The dock lists scenes from Commander’s in-memory setup. Click a name to apply it
+      (same as <code>scene apply</code> in the REPL). Status shows Connected when PTZ Commander is
+      listening on this PC. Disconnected means Commander is not running; start it and wait,
+      or press Reconnect.
   </p>
   <p>
-    The socket is localhost only. The dock is an HTML file on disk talking to Commander;
-    it is not an OBS plugin DLL.
+      The socket is localhost only. The dock is an HTML file on disk talking to PTZ Commander;
+      it is not an OBS plugin DLL.
   </p>
 
   <h2>If the list is empty</h2>
   <p>
-    Connected with no scenes means nothing is loaded yet. Load a setup in Commander, then
-    the dock updates. If OBS was open before the first install, reload the dock
-    (click it and press Ctrl+R) after you confirm the file path.
+      Connected with no scenes means nothing is loaded yet. Load a setup in PTZ Commander, then
+      the dock updates. If OBS was open before the first install, reload the dock
+      (click it and press Ctrl+R) after you confirm the file path.
   </p>
 </body>
 </html>
