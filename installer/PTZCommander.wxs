@@ -133,8 +133,8 @@
       <!-- Rewire navigation to place the Options page after directory selection. -->
       <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="OptionsDlg" Order="5" Condition="1" />
       <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="OptionsDlg" Order="5" Condition="1" />
-      <Publish Dialog="ExitDlg" Control="Finish" Event="DoAction" Value="LaunchGettingStarted"
-               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT REMOVE" />
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchGettingStarted"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
     </UI>
   </Package>
 </Wix>
