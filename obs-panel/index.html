@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>PTZ Commander</title>
+  <style>
+    :root {
+      --obs-background: #3a393a;
+      --obs-panel: #4c4c4c;
+      --obs-text: #f2f2f2;
+      --obs-muted: #b8b8b8;
+      --ok: #7dcc7d;
+      --bad: #e07070;
+      --btn: #6f6f6f;
+      --btn-border: #f3f3f3;
+      --active: #0f0f0f;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--obs-background);
+      color: var(--obs-text);
+      font-family: Segoe UI, system-ui, sans-serif;
+      font-size: 13px;
+    }
+    body { padding: 0.6rem 0.7rem 0.8rem; }
+    h1 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.45rem 0.6rem;
+      margin-bottom: 0.65rem;
+    }
+    #status.connected { color: var(--ok); }
+    #status.disconnected { color: var(--bad); }
+    button {
+      background: var(--btn);
+      color: var(--obs-text);
+      border: outset 1px var(--btn-border);
+      padding: 0.35rem 0.65rem;
+      cursor: pointer;
+    }
+    button:hover { filter: brightness(1.08); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
+    button.active {
+      background: var(--active);
+      color: #ffe566;
+      border-style: inset;
+    }
+    #reconnect { font-weight: 600; }
+    #scenes {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    #scenes button { width: 100%; text-align: left; font-weight: 600; }
+    .empty { color: var(--obs-muted); font-style: italic; }
+    #last-apply {
+      color: var(--obs-muted);
+      margin: 0.55rem 0 0;
+      min-height: 1.1em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Scenes</h1>
+  <div class="row">
+    <span id="status" class="disconnected">Disconnected</span>
+    <button id="reconnect" type="button">Reconnect</button>
+  </div>
+  <ul id="scenes"><li class="empty">Waiting for PTZ Commander</li></ul>
+  <p id="last-apply"></p>
+  <script>
+    const WS_URL = "ws://127.0.0.1:7420";
+    const RETRY_MS = 2000;
+
+    const statusEl = document.getElementById("status");
+    const scenesEl = document.getElementById("scenes");
+    const lastApplyEl = document.getElementById("last-apply");
+    const reconnectBtn = document.getElementById("reconnect");
+
+    let socket = null;
+    let connected = false;
+    let lastApplied = "";
+    let retryTimer = null;
+
+    function setStatus(isConnected) {
+      connected = isConnected;
+      statusEl.textContent = isConnected ? "Connected" : "Disconnected";
+      statusEl.className = isConnected ? "connected" : "disconnected";
+      scenesEl.querySelectorAll("button").forEach((btn) => {
+        btn.disabled = !isConnected;
+      });
+    }
+
+    function scheduleRetry() {
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+      }
+      retryTimer = setTimeout(connect, RETRY_MS);
+    }
+
+    function applyScene(name) {
+      if (!socket || socket.readyState !== WebSocket.OPEN) {
+        lastApplyEl.textContent = "Not connected — start PTZ Commander";
+        return;
+      }
+      socket.send(JSON.stringify({ op: "scene.apply", name: name }));
+    }
+
+    function renderScenes(data) {
+      const names = Object.keys((data && data.scenes) || {});
+      scenesEl.replaceChildren();
+      if (names.length === 0) {
+        const li = document.createElement("li");
+        li.className = "empty";
+        li.textContent = "No scenes in the loaded setup";
+        scenesEl.appendChild(li);
+        return;
+      }
+      names.forEach((name) => {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = name;
+        btn.disabled = !connected;
+        if (name === lastApplied) {
+          btn.className = "active";
+        }
+        btn.addEventListener("click", () => applyScene(name));
+        li.appendChild(btn);
+        scenesEl.appendChild(li);
+      });
+    }
+
+    function markApplied(name) {
+      lastApplied = name;
+      scenesEl.querySelectorAll("button").forEach((btn) => {
+        if (btn.textContent === name) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+    }
+
+    function onMessage(event) {
+      let data;
+      try {
+        data = JSON.parse(event.data);
+      } catch (err) {
+        lastApplyEl.textContent = "Unexpected message from Commander";
+        return;
+      }
+      if (data && (data.op || data.ok !== undefined)) {
+        if (data.ok) {
+          lastApplyEl.textContent = "Applied " + data.name;
+          markApplied(data.name);
+        } else {
+          lastApplyEl.textContent = data.error || "Apply failed";
+        }
+        return;
+      }
+      renderScenes(data);
+    }
+
+    function connect() {
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+        retryTimer = null;
+      }
+      if (socket) {
+        socket.onopen = null;
+        socket.onclose = null;
+        socket.onerror = null;
+        socket.onmessage = null;
+        try { socket.close(); } catch (err) {}
+        socket = null;
+      }
+
+      setStatus(false);
+      const ws = new WebSocket(WS_URL);
+      socket = ws;
+
+      ws.onopen = () => {
+        if (socket === ws) {
+          setStatus(true);
+        }
+      };
+      ws.onclose = () => {
+        if (socket === ws) {
+          setStatus(false);
+          socket = null;
+          scheduleRetry();
+        }
+      };
+      ws.onerror = () => {
+        if (socket === ws) {
+          setStatus(false);
+        }
+      };
+      ws.onmessage = onMessage;
+    }
+
+    reconnectBtn.addEventListener("click", connect);
+    connect();
+  </script>
+</body>
+</html>

@@ -39,6 +39,14 @@
           <!-- Add the install dir to the system PATH -->
           <Environment Id="PATH" Name="PATH" Value="[INSTALLDIR]" Action="set" Part="last" System="yes" />
         </Component>
+        <Directory Id="ObsPanelDir" Name="obs-panel">
+          <Component Id="ObsPanel" Guid="441B4FE8-499A-4F7C-A3AE-FB70B7666DF0">
+            <File Id="ObsPanelHtml" Source="$(var.SourceDir)\obs-panel\index.html" />
+            <File Id="GettingStartedHtml" Source="$(var.SourceDir)\obs-panel\GETTING_STARTED.html" />
+            <RemoveFolder Id="RemoveObsPanelDir" On="uninstall" />
+            <RegistryValue Root="HKLM" Key="Software\PTZCommander" Name="ObsPanel" Type="integer" Value="1" KeyPath="yes" />
+          </Component>
+        </Directory>
       </Directory>
     </StandardDirectory>
 
@@ -54,6 +62,10 @@
           <Shortcut Id="ApplicationShortcut" Name="PTZ Commander" Description="PTZ Camera Control"
                     Target="[INSTALLDIR]ptz_commander.exe" Directory="ApplicationProgramsFolder"
                     WorkingDirectory="INSTALLDIR" Icon="AppIcon" IconIndex="0" />
+          <Shortcut Id="GettingStartedShortcut" Name="PTZ Commander Getting Started"
+                    Description="Operator guide for the OBS scene dock"
+                    Target="[#GettingStartedHtml]" Directory="ApplicationProgramsFolder"
+                    WorkingDirectory="ObsPanelDir" />
         </Component>
       </Directory>
     </StandardDirectory>
@@ -73,9 +85,19 @@
 
     <Feature Id="ProductFeature" Title="PTZ Commander" Level="1">
       <ComponentRef Id="MainExecutable" />
+      <ComponentRef Id="ObsPanel" />
       <ComponentRef Id="ProgramMenuDir" />
       <ComponentRef Id="DesktopShortcut" />
     </Feature>
+
+    <!-- ExitDlg (after install): optional Getting Started launch, default checked. -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Show the Getting Started guide" />
+    <CustomAction Id="LaunchGettingStarted"
+                  Directory="WindowsFolder"
+                  ExeCommand="explorer.exe &quot;[INSTALLDIR]obs-panel\GETTING_STARTED.html&quot;"
+                  Return="asyncNoWait"
+                  Impersonate="yes" />
 
     <!-- License RTF (no more lorem ipsum) -->
     <WixVariable Id="WixUILicenseRtf" Value="$(var.SourceDir)\License.rtf" />
@@ -111,6 +133,8 @@
       <!-- Rewire navigation to place the Options page after directory selection. -->
       <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="OptionsDlg" Order="5" Condition="1" />
       <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="OptionsDlg" Order="5" Condition="1" />
+      <Publish Dialog="ExitDlg" Control="Finish" Event="DoAction" Value="LaunchGettingStarted"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT REMOVE" />
     </UI>
   </Package>
 </Wix>

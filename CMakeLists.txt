@@ -79,6 +79,11 @@ install(TARGETS ptz_commander RUNTIME DESTINATION .)
 install(FILES "${CMAKE_SOURCE_DIR}/lib/obsbot/libdev.dll" DESTINATION .)
 install(FILES "${CMAKE_SOURCE_DIR}/ptz-commander.ico" DESTINATION .)
 install(FILES "${CMAKE_SOURCE_DIR}/installer/License.rtf" DESTINATION .)
+install(FILES
+    "${CMAKE_SOURCE_DIR}/obs-panel/index.html"
+    "${CMAKE_SOURCE_DIR}/obs-panel/GETTING_STARTED.html"
+    DESTINATION obs-panel
+)
 
 # CPack configuration for Windows (WiX MSI generator).
 # This block is guarded so it has no effect on non-Windows platforms.

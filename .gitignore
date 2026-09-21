@@ -9,3 +9,6 @@ installer/build/
 installer/.wix/
 installer/*.log
 installer/build_output.txt
+
+# Local scratch (setup files, notes); never ship
+misc/
