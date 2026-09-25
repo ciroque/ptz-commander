@@ -26,7 +26,6 @@ namespace core {
         SceneControlServer sceneControlServer_;
         std::mutex commandMutex_;
         bool running_;
-        const std::string StartMessage = "PTZ Commander (type 'exit' to quit)\n> ";
         const std::string Prompt = "> ";
         const std::string StopToken = "exit";
 

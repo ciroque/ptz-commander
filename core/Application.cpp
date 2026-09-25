@@ -1,4 +1,6 @@
 #include "Application.h"
+#include "ptz_version.h"
+
 #include <iostream>
 
 #ifdef _WIN32
@@ -52,7 +54,8 @@ namespace core {
     void Application::start() {
         sceneControlServer_.start();
         running_ = true;
-        context_.out << StartMessage;
+        context_.out << "PTZ Commander " << PTZ_VERSION_STRING
+                     << " (type 'exit' to quit)\n> ";
         std::string input;
         while (running_) {
             if (!std::getline(std::cin, input)) {

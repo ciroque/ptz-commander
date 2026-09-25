@@ -6,12 +6,21 @@ A C++ command-line tool for controlling PTZ (Pan-Tilt-Zoom) cameras, built with 
 
 - **Build**: Requires C++20, CMake, and `libdev.dll` (OBSBOT SDK). Clone, drop `libdev.dll` in `out/build/x64-Release/`, then configure + build with your generator (the repo uses Ninja + Visual Studio via `CMakeSettings.json`; the `x64-Release` configuration is **RelWithDebInfo**):
   - Example: `cmake -S . -B out/build/x64-Release -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo && cmake --build out/build/x64-Release`
-- **Installer (Windows)**: After building RelWithDebInfo into `out/build/x64-Release`, run `installer\build-installer.bat` (from the `installer` directory). This uses `cmake --install ... --config RelWithDebInfo` to stage files and produces `PTZCommander.msi` (using WiX). The installer adds the tool to Program Files, appends the install directory to the system PATH, and always creates a Start Menu entry (under "PTZCommander"). A checkbox on the Options page controls whether a desktop shortcut (public desktop) is also created (default: checked). You can still force it from the command line: `msiexec /i PTZCommander.msi DESKTOPSHORTCUT=0`. The MSI also installs `obs-panel\` (OBS Custom Browser Dock HTML plus an operator Getting Started guide) and offers to open that guide when setup finishes (default: checked). Pushing a version tag (`v1.2.3`) runs a GitHub Action that builds the MSI and attaches it to a GitHub Release. Operators should use the installed Getting Started document, not this README.
-- **Run**: ./out/build/x64-Release/ptz_commander—REPL starts—`> ` prompt—type commands—`exit` to quit.
+- **Installer (Windows)**: After building RelWithDebInfo into `out/build/x64-Release`, run `installer\build-installer.bat` (from the `installer` directory). This uses `cmake --install ... --config RelWithDebInfo` to stage files and produces `PTZCommander.msi` (using WiX). The installer adds the tool to Program Files, appends the install directory to the system PATH, and always creates a Start Menu entry (under "PTZCommander"). A checkbox on the Options page controls whether a desktop shortcut (public desktop) is also created (default: checked). You can still force it from the command line: `msiexec /i PTZCommander.msi DESKTOPSHORTCUT=0`. The MSI also installs `obs-panel\` (OBS Custom Browser Dock HTML plus an operator Getting Started guide) and offers to open that guide when setup finishes (default: checked). Pushing a version tag (`v1.2.3`) runs a GitHub Action that builds the MSI and attaches it to a GitHub Release. The MSI product version is that tag as four numbers (`v0.3.1` becomes `0.3.1.0`). Installers built before this stamp all reported `1.0.0.0`, which Windows treats as newer than `0.x`, so those copies must be uninstalled once before a tag-stamped MSI will replace them. Operators should use the installed Getting Started document, not this README.
+- **Run**: ./out/build/x64-Release/ptz_commander—REPL starts and prints the build version—`> ` prompt—type commands—`exit` to quit.
 - **Camera Detection**: Threaded—`ObsbotCameraAdapter`—auto-adds/removes cameras—logs on connect/disconnect.
 - **Input**: `<serialNumber>`—SN (e.g., `RMOWTHF7211JGR`), alias (e.g., `"LeftCam"`), or name (e.g., `"OWB-2105-CE"`)—`*` for all cameras.
 
 ## Commands
+
+### Version
+
+| Command          | Arguments | Description                                                                 |
+|------------------|-----------|-----------------------------------------------------------------------------|
+| `version`        | None      | Prints this build. A release prints the tag (`0.3.1`). Any other build prints the `git describe` text. |
+| `version check`  | None      | Compares this build with the latest GitHub release and prints the release page when a newer one exists. Does not download or install. |
+
+A build that is not the tagged commit says how many commits past that tag it is. If GitHub cannot be reached, the check says so and still prints the local version.
 
 ### Camera
 

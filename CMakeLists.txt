@@ -72,7 +72,7 @@ target_link_libraries(ptz_commander PRIVATE
 
 # VISCA serial discovery uses SetupAPI on Windows (VID/PID enumeration for Keyspan etc.)
 if(WIN32)
-    target_link_libraries(ptz_commander PRIVATE setupapi)
+    target_link_libraries(ptz_commander PRIVATE setupapi winhttp)
 
     # Embed the application icon into the executable (ptz-commander.rc references ptz-commander.ico).
     # We copy the .ico into the build dir because the resource compiler runs out-of-source
@@ -94,6 +94,12 @@ if(WIN32)
     set_source_files_properties(ptz-commander.rc PROPERTIES
         OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/ptz-commander.ico;${CMAKE_BINARY_DIR}/generated/ptz_version.h"
         COMPILE_FLAGS "/I\"${CMAKE_BINARY_DIR}/generated\""
+    )
+    set_source_files_properties(
+        "${CMAKE_SOURCE_DIR}/commands/console/VersionCommand.cpp"
+        "${CMAKE_SOURCE_DIR}/commands/console/ClearCommand.cpp"
+        "${CMAKE_SOURCE_DIR}/core/Application.cpp"
+        PROPERTIES OBJECT_DEPENDS "${CMAKE_BINARY_DIR}/generated/ptz_version.h"
     )
 endif()
 

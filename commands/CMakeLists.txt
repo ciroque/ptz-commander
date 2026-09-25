@@ -19,6 +19,8 @@ target_sources(ptz_commander PRIVATE
 
     console/ClearCommand.cpp
     console/ClearCommand.h
+    console/VersionCommand.cpp
+    console/VersionCommand.h
 
     preset/ApplyCommand.cpp
     preset/ApplyCommand.h
