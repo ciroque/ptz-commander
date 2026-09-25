@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 3.28)
-project(ptz_commander VERSION 1.0.0)
+
+# Stamp before project() so PROJECT_VERSION matches the git tag, not a hardcoded 1.0.0.
+set(PTZ_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(PTZ_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/StampVersion.cmake")
+ptz_stamp_version()
+
+project(ptz_commander VERSION ${PTZ_VERSION_MAJOR}.${PTZ_VERSION_MINOR}.${PTZ_VERSION_PATCH})
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -34,7 +41,28 @@ if(WIN32)
 endif()
 
 # Include directories for third-party headers (nlohmann/json, obsbot SDK, spdlog)
-target_include_directories(ptz_commander PRIVATE "${CMAKE_SOURCE_DIR}/include/" "${CMAKE_SOURCE_DIR}")
+# and the generated version stamp (ptz_version.h).
+target_include_directories(ptz_commander PRIVATE
+    "${CMAKE_SOURCE_DIR}/include/"
+    "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_BINARY_DIR}/generated"
+)
+
+# Refresh the stamp every build so the binary tracks HEAD without a reconfigure.
+# copy_if_different keeps the header timestamp stable when the version did not change.
+add_custom_target(ptz_version_stamp
+    COMMAND ${CMAKE_COMMAND}
+        -DPTZ_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+        -DPTZ_BINARY_DIR=${CMAKE_BINARY_DIR}
+        -DPTZ_VERSION_OVERRIDE=${PTZ_VERSION}
+        -P ${CMAKE_SOURCE_DIR}/cmake/StampVersion.cmake
+    BYPRODUCTS
+        ${CMAKE_BINARY_DIR}/generated/ptz_version.h
+        ${CMAKE_BINARY_DIR}/ptz_product_version.txt
+    COMMENT "Stamping PTZ Commander version"
+    VERBATIM
+)
+add_dependencies(ptz_commander ptz_version_stamp)
 
 # Link against obsbot SDK and IXWebSocket
 target_link_libraries(ptz_commander PRIVATE
@@ -61,8 +89,11 @@ if(WIN32)
     # quality you saw when directly referencing the PNG.
     target_sources(ptz_commander PRIVATE ptz-commander.rc)
     configure_file(ptz-commander.ico ptz-commander.ico COPYONLY)
+    # rc.exe looks up the icon relative to the build dir, and does not reliably
+    # inherit the target include path for the generated version header.
     set_source_files_properties(ptz-commander.rc PROPERTIES
-        OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/ptz-commander.ico"
+        OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/ptz-commander.ico;${CMAKE_BINARY_DIR}/generated/ptz_version.h"
+        COMPILE_FLAGS "/I\"${CMAKE_BINARY_DIR}/generated\""
     )
 endif()
 
@@ -92,7 +123,7 @@ if(WIN32)
     set(CPACK_PACKAGE_NAME "PTZ Commander")
     set(CPACK_PACKAGE_VENDOR "PTZ Commander Project")
     set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Command-line tool for controlling PTZ cameras via VISCA and OBSBOT SDK")
-    set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+    set(CPACK_PACKAGE_VERSION "${PTZ_VERSION_MSI}")
     set(CPACK_PACKAGE_INSTALL_DIRECTORY "PTZCommander")
 
     # WiX-specific options. These only matter when you actually generate an MSI.
