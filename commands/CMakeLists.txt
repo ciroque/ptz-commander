@@ -6,6 +6,8 @@ target_sources(ptz_commander PRIVATE
     CommandHandler.cpp
     CommandHandler.h
 
+    camera/AddIpCommand.cpp
+    camera/AddIpCommand.h
     camera/AliasCommand.cpp
     camera/AliasCommand.h
     camera/ListCommand.cpp

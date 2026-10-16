@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <fstream>
 #include <map>
+#include <vector>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <filesystem>
@@ -113,6 +114,26 @@ namespace cameras {
 
             return j;
         }
+
+        bool parseViscaIp(const nlohmann::json& j, std::vector<visca::ViscaIpEndpoint>& out) {
+            if (!j.contains("visca_ip")) {
+                return true;
+            }
+            if (!j["visca_ip"].is_array()) {
+                return false;
+            }
+            for (const auto& item : j["visca_ip"]) {
+                if (!item.is_object() || !item.contains("host") || !item["host"].is_string()) {
+                    return false;
+                }
+                visca::ViscaIpEndpoint ep;
+                ep.host = item["host"].get<std::string>();
+                ep.port = item.value("port", 52381);
+                ep.profile = item.value("profile", std::string("tenveo-30x"));
+                out.push_back(std::move(ep));
+            }
+            return true;
+        }
     }
 
     std::string PresetStore::toJsonString(const CameraManager& mgr, const SceneStore& scenes) const {
@@ -142,7 +163,7 @@ namespace cameras {
 
             for (const auto& camera : cameras) {
                 std::string sn = camera->getSerialNumber();
-                if (sn == "scenes" || !j.contains(sn)) {
+                if (sn == "scenes" || sn == "visca_ip" || !j.contains(sn)) {
                     continue;
                 }
 
@@ -221,7 +242,9 @@ namespace cameras {
         }
     }
 
-    bool PresetStore::save(const CameraManager& mgr, const SceneStore& scenes, std::string filename) const {
+    bool PresetStore::save(const CameraManager& mgr, const SceneStore& scenes,
+                           const std::vector<visca::ViscaIpEndpoint>& viscaIp,
+                           std::string filename) const {
         filename = resolvePresetPath(std::move(filename));
 
         std::ofstream file(filename);
@@ -229,9 +252,43 @@ namespace cameras {
             return false;
         }
 
-        file << serializeSetup(mgr, scenes).dump(2);
+        nlohmann::json j = serializeSetup(mgr, scenes);
+        if (!viscaIp.empty()) {
+            nlohmann::json arr = nlohmann::json::array();
+            for (const auto& ep : viscaIp) {
+                arr.push_back({
+                    {"host", ep.host},
+                    {"port", ep.port},
+                    {"profile", ep.profile}
+                });
+            }
+            j["visca_ip"] = std::move(arr);
+        }
+
+        file << j.dump(2);
         file.close();
         return true;
+    }
+
+    LoadStatus PresetStore::peekViscaIp(std::string filename,
+                                        std::vector<visca::ViscaIpEndpoint>& viscaIp) const {
+        filename = resolvePresetPath(std::move(filename));
+        std::ifstream file(filename);
+        if (!file.is_open()) {
+            return LoadStatus::NotFound;
+        }
+        try {
+            nlohmann::json j;
+            file >> j;
+            viscaIp.clear();
+            if (!parseViscaIp(j, viscaIp)) {
+                return LoadStatus::ParseError;
+            }
+            return LoadStatus::Ok;
+        }
+        catch (const std::exception&) {
+            return LoadStatus::ParseError;
+        }
     }
 
 } // namespace cameras

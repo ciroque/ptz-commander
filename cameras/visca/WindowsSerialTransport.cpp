@@ -10,18 +10,21 @@
 
 namespace cameras::visca {
 
-WindowsSerialTransport::WindowsSerialTransport() = default;
+WindowsSerialTransport::WindowsSerialTransport(std::string port, int baud)
+    : portName_(std::move(port)), baud_(baud) {}
 
 WindowsSerialTransport::~WindowsSerialTransport() {
     close();
 }
 
-bool WindowsSerialTransport::open(const std::string& port, int baud) {
+bool WindowsSerialTransport::open() {
     close();  // ensure clean state
+
+    const std::string& port = portName_;
+    const int baud = baud_;
 
     // Windows serial ports are addressed as \\.\COMn to support > COM9
     std::string target = "\\\\.\\" + port;
-    portName_ = port;
 
     handle_ = CreateFileA(target.c_str(),
                           GENERIC_READ | GENERIC_WRITE,

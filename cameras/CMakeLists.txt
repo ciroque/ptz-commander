@@ -28,9 +28,13 @@ target_sources(ptz_commander PRIVATE
     visca/ViscaCameraAdapter.h
     visca/ViscaCommands.cpp
     visca/ViscaCommands.h
+    visca/ViscaProfile.h
     visca/ViscaDiscovery.cpp
     visca/ViscaDiscovery.h
-    visca/SerialTransport.h
+    visca/ViscaIpEndpoint.h
+    visca/UdpViscaTransport.cpp
+    visca/UdpViscaTransport.h
+    visca/ViscaTransport.h
     visca/WindowsSerialTransport.cpp
     visca/WindowsSerialTransport.h
 )

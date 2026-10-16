@@ -72,7 +72,7 @@ target_link_libraries(ptz_commander PRIVATE
 
 # VISCA serial discovery uses SetupAPI on Windows (VID/PID enumeration for Keyspan etc.)
 if(WIN32)
-    target_link_libraries(ptz_commander PRIVATE setupapi winhttp)
+    target_link_libraries(ptz_commander PRIVATE setupapi ws2_32 winhttp)
 
     # Library names on the link line have no directory. The linker then uses LIB,
     # and a 32-bit LIB (this machine's ambient environment) supplies x86 import

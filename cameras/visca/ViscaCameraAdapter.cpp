@@ -2,11 +2,14 @@
 
 #include "ViscaCamera.h"
 #include "ViscaDiscovery.h"
+#include "UdpViscaTransport.h"
+#include "ViscaProfile.h"
 #include "../../core/Logger.h"
 
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <memory>
 
 namespace cameras::visca {
 
@@ -88,6 +91,36 @@ void ViscaCameraAdapter::discoverAndAdd() {
     }
 
     core::Logger::info("ViscaCameraAdapter discovery pass complete");
+}
+
+bool ViscaCameraAdapter::addIpCamera(const ViscaIpEndpoint& endpoint) {
+    if (endpoint.host.empty()) {
+        return false;
+    }
+    const int port = endpoint.port > 0 ? endpoint.port : 52381;
+    const std::string profileName = endpoint.profile.empty() ? "tenveo-30x" : endpoint.profile;
+    const std::string id = "VISCA-IP:" + endpoint.host + ":" + std::to_string(port);
+    if (manager_.findBySerial(id)) {
+        core::Logger::warn("VISCA-IP camera already present: " + id);
+        return false;
+    }
+
+    auto transport = std::make_unique<UdpViscaTransport>(endpoint.host, port);
+    auto camera = std::make_shared<ViscaCamera>(
+        std::move(transport),
+        id,
+        "VISCA IP (" + endpoint.host + ")",
+        static_cast<uint8_t>(1),
+        profileByName(profileName));
+    manager_.addCamera(camera);
+
+    ViscaIpEndpoint stored = endpoint;
+    stored.port = port;
+    stored.profile = profileName;
+    ipEndpoints_.push_back(std::move(stored));
+
+    core::Logger::info("Added VISCA-IP camera: " + id + " profile=" + profileName);
+    return true;
 }
 
 } // namespace cameras::visca

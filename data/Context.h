@@ -3,8 +3,10 @@
 
 #include "../cameras/CameraManager.h"
 #include "../cameras/SceneStore.h"
+#include "../cameras/visca/ViscaIpEndpoint.h"
 #include <functional>
 #include <iostream>
+#include <vector>
 
 namespace data {
     class Context {
@@ -14,6 +16,8 @@ namespace data {
         std::ostream& out;
         std::ostream& err;
         std::function<void()> onSetupChanged;
+        std::function<bool(const cameras::visca::ViscaIpEndpoint&)> addViscaIp;
+        std::vector<cameras::visca::ViscaIpEndpoint> viscaIpEndpoints;
 
         Context(cameras::CameraManager& mgr,
                 cameras::SceneStore& scenes,

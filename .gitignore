@@ -3,6 +3,7 @@ cmake-build-debug/
 .idea/
 out/
 .vs/
+CppProperties.json
 
 # Installer build artifacts (all generated files live under installer/build/)
 installer/build/
