@@ -8,6 +8,7 @@
 #include "camera/ShowCommand.h"
 
 #include "console/ClearCommand.h"
+#include "console/VersionCommand.h"
 
 #include "preset/ApplyCommand.h"
 #include "preset/DiscardCommand.h"
@@ -58,6 +59,7 @@ namespace commands {
         addCommand(std::make_unique<scene::TourCommand>());
 
         addCommand(std::make_unique<console::ClearCommand>());
+        addCommand(std::make_unique<console::VersionCommand>());
     }
 
     void CommandHandler::addCommand(std::unique_ptr<Command> cmd) {
