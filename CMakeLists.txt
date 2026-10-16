@@ -44,7 +44,7 @@ target_link_libraries(ptz_commander PRIVATE
 
 # VISCA serial discovery uses SetupAPI on Windows (VID/PID enumeration for Keyspan etc.)
 if(WIN32)
-    target_link_libraries(ptz_commander PRIVATE setupapi)
+    target_link_libraries(ptz_commander PRIVATE setupapi ws2_32)
 
     # Embed the application icon into the executable (ptz-commander.rc references ptz-commander.ico).
     # We copy the .ico into the build dir because the resource compiler runs out-of-source
