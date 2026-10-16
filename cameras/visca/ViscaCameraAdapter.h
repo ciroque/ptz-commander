@@ -2,9 +2,12 @@
 #define CAMERAS_VISCA_VISCA_CAMERA_ADAPTER_H
 
 #include "../CameraManager.h"
+#include "ViscaIpEndpoint.h"
 
 #include <atomic>
+#include <string>
 #include <thread>
+#include <vector>
 
 namespace cameras::visca {
 
@@ -16,10 +19,14 @@ public:
     void start();
     void stop();
 
+    bool addIpCamera(const ViscaIpEndpoint& endpoint);
+    const std::vector<ViscaIpEndpoint>& ipEndpoints() const { return ipEndpoints_; }
+
 private:
     void discoverAndAdd();
 
     CameraManager& manager_;
+    std::vector<ViscaIpEndpoint> ipEndpoints_;
     std::atomic<bool> running_{false};
     std::thread worker_;
 };

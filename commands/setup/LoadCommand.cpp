@@ -1,6 +1,7 @@
 #include "LoadCommand.h"
 #include "../../cameras/PresetStore.h"
 #include <iostream>
+#include <vector>
 
 namespace commands::setup {
     void LoadCommand::execute(data::Context& ctx, const std::string& args) {
@@ -11,6 +12,18 @@ namespace commands::setup {
         }
 
         cameras::PresetStore store;
+        std::vector<cameras::visca::ViscaIpEndpoint> viscaIp;
+        const auto peek = store.peekViscaIp(filename, viscaIp);
+        if (peek == cameras::LoadStatus::ParseError) {
+            ctx.err << "Failed to parse " << filename << std::endl;
+            return;
+        }
+        if (peek == cameras::LoadStatus::Ok && ctx.addViscaIp) {
+            for (const auto& ep : viscaIp) {
+                ctx.addViscaIp(ep);
+            }
+        }
+
         switch (store.load(ctx.cameraMgr, ctx.sceneStore, filename)) {
         case cameras::LoadStatus::NotFound:
             ctx.err << "Failed to open " << filename << std::endl;

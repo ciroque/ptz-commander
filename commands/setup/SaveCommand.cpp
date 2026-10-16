@@ -11,7 +11,7 @@ namespace commands::setup {
         }
 
         cameras::PresetStore store;
-        if (!store.save(ctx.cameraMgr, ctx.sceneStore, filename)) {
+        if (!store.save(ctx.cameraMgr, ctx.sceneStore, ctx.viscaIpEndpoints, filename)) {
             ctx.err << "Failed to write to " << filename << std::endl;
             return;
         }

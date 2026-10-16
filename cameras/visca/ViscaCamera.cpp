@@ -3,25 +3,33 @@
 #include "WindowsSerialTransport.h"
 #include "../../core/Logger.h"
 
-#include <sstream>
+#include <memory>
 
 namespace cameras::visca {
 
 ViscaCamera::ViscaCamera(const std::string& port, int baud, uint8_t address)
-    : port_(port)
-    , baud_(baud)
+    : ViscaCamera(std::make_unique<WindowsSerialTransport>(port, baud),
+                  "VISCA:" + port + ":" + std::to_string(static_cast<int>(address)),
+                  "VISCA Serial (" + port + " @" + std::to_string(baud) + ")",
+                  address,
+                  lumensVcA51p()) {}
+
+ViscaCamera::ViscaCamera(std::unique_ptr<ViscaTransport> transport,
+                         std::string serial,
+                         std::string name,
+                         uint8_t address,
+                         ViscaProfile profile)
+    : transport_(std::move(transport))
+    , serial_(std::move(serial))
+    , name_(std::move(name))
     , address_(address)
+    , profile_(profile)
 {
-    transport_ = std::make_unique<WindowsSerialTransport>(port, baud);
-
-    // Try to open eagerly so isConnected() is truthful early.
-    // If it fails we stay disconnected until a command forces a retry.
     connected_ = ensureOpen();
-
     if (connected_) {
-        core::Logger::info("ViscaCamera ready on " + getSerialNumber());
+        core::Logger::info("ViscaCamera ready on " + serial_);
     } else {
-        core::Logger::warn("ViscaCamera created but could not open " + port_ + " immediately");
+        core::Logger::warn("ViscaCamera created but could not open " + serial_ + " immediately");
     }
 }
 
@@ -32,17 +40,11 @@ ViscaCamera::~ViscaCamera() {
 }
 
 std::string ViscaCamera::getSerialNumber() const {
-    // Synthetic but stable ID so that presets, aliases, findById, etc. continue to work.
-    // Example: VISCA:COM3:1
-    std::ostringstream oss;
-    oss << "VISCA:" << port_ << ":" << static_cast<int>(address_);
-    return oss.str();
+    return serial_;
 }
 
 std::string ViscaCamera::getName() const {
-    std::ostringstream oss;
-    oss << "VISCA Serial (" << port_ << " @" << baud_ << ")";
-    return oss.str();
+    return name_;
 }
 
 bool ViscaCamera::isConnected() const {
@@ -62,7 +64,7 @@ bool ViscaCamera::ensureOpen() const {
 
 bool ViscaCamera::setPosition(float pan, float tilt, int zoom) {
     if (!ensureOpen() || !transport_) {
-        core::Logger::error("ViscaCamera::setPosition - transport not open on " + port_);
+        core::Logger::error("ViscaCamera::setPosition - transport not open on " + serial_);
         return false;
     }
 
@@ -88,7 +90,7 @@ bool ViscaCamera::setPosition(float pan, float tilt, int zoom) {
                            " tilt=" + std::to_string(clampedTilt) +
                            " zoom=" + std::to_string(clampedZoom));
     } else {
-        core::Logger::error("VISCA failed to send absolute PTZ on " + port_);
+        core::Logger::error("VISCA failed to send absolute PTZ on " + serial_);
     }
 
     return ok;
@@ -98,7 +100,7 @@ bool ViscaCamera::setZoom(int zoom, int /*speed*/) {
     // Speed is accepted for interface compatibility but ignored for absolute direct zoom.
     // (VISCA direct zoom command does not take a speed parameter.)
     if (!ensureOpen() || !transport_) {
-        core::Logger::error("ViscaCamera::setZoom - transport not open on " + port_);
+        core::Logger::error("ViscaCamera::setZoom - transport not open on " + serial_);
         return false;
     }
 
@@ -111,7 +113,7 @@ bool ViscaCamera::setZoom(int zoom, int /*speed*/) {
         lastPtz_.zoom = clampedZoom;  // use clamped value because ViscaCommands clamps caller-provided zoom to [0,100]
         core::Logger::info("VISCA sent absolute zoom " + std::to_string(clampedZoom) + " to " + getSerialNumber());
     } else {
-        core::Logger::error("VISCA zoom command failed on " + port_);
+        core::Logger::error("VISCA zoom command failed on " + serial_);
     }
 
     return ok;
@@ -119,7 +121,7 @@ bool ViscaCamera::setZoom(int zoom, int /*speed*/) {
 
 Ptz ViscaCamera::getCurrentPtz() const {
     if (!ensureOpen() || !transport_) {
-        core::Logger::warn("ViscaCamera::getCurrentPtz - transport not open on " + port_ + ", returning cached");
+        core::Logger::warn("ViscaCamera::getCurrentPtz - transport not open on " + serial_ + ", returning cached");
         return lastPtz_;
     }
 
@@ -129,7 +131,7 @@ Ptz ViscaCamera::getCurrentPtz() const {
     // --- Pan/Tilt Position Inquiry ---
     auto ptInq = ViscaCommands::panTiltPositionInquiry(address_);
     if (!transport_->write(ptInq)) {
-        core::Logger::error("VISCA pan/tilt inquiry write failed on " + port_);
+        core::Logger::error("VISCA pan/tilt inquiry write failed on " + serial_);
         return lastPtz_;
     }
     auto ptResp = transport_->readPacket(800);  // generous timeout for response
@@ -148,7 +150,7 @@ Ptz ViscaCamera::getCurrentPtz() const {
                     ptResp[9];
         ptOk = true;
     } else if (!ptResp.empty()) {
-        core::Logger::debug("VISCA pan/tilt inquiry bad response on " + port_ +
+        core::Logger::debug("VISCA pan/tilt inquiry bad response on " + serial_ +
                             " (len=" + std::to_string(ptResp.size()) + ")");
     }
 
@@ -157,7 +159,7 @@ Ptz ViscaCamera::getCurrentPtz() const {
 
     auto zmInq = ViscaCommands::zoomPositionInquiry(address_);
     if (!transport_->write(zmInq)) {
-        core::Logger::error("VISCA zoom inquiry write failed on " + port_);
+        core::Logger::error("VISCA zoom inquiry write failed on " + serial_);
         // still return what we have for pan/tilt if successful
         if (ptOk) {
             lastPtz_.pan = ViscaCommands::viscaToPanDegrees(panVisca, profile_);
@@ -177,21 +179,21 @@ Ptz ViscaCamera::getCurrentPtz() const {
                     zmResp[5];
         zmOk = true;
     } else if (!zmResp.empty()) {
-        core::Logger::debug("VISCA zoom inquiry bad response on " + port_ +
+        core::Logger::debug("VISCA zoom inquiry bad response on " + serial_ +
                             " (len=" + std::to_string(zmResp.size()) + ")");
     }
 
     // Update cache with whatever we successfully read
     if (ptOk) {
-        lastPtz_.pan = ViscaCommands::viscaToPanDegrees(panVisca);
-        lastPtz_.tilt = ViscaCommands::viscaToTiltDegrees(tiltVisca);
+        lastPtz_.pan = ViscaCommands::viscaToPanDegrees(panVisca, profile_);
+        lastPtz_.tilt = ViscaCommands::viscaToTiltDegrees(tiltVisca, profile_);
     }
     if (zmOk) {
         lastPtz_.zoom = ViscaCommands::viscaToZoomPercent(zoomVisca, profile_);
     }
 
     if (!ptOk && !zmOk) {
-        core::Logger::warn("VISCA getCurrentPtz inquiries failed on " + port_ + ", returning last cached");
+        core::Logger::warn("VISCA getCurrentPtz inquiries failed on " + serial_ + ", returning last cached");
     } else {
         core::Logger::debug("VISCA read live PTZ on " + getSerialNumber() +
                             " pan=" + std::to_string(lastPtz_.pan) +

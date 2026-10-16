@@ -3,6 +3,7 @@
 
 #include "CameraManager.h"
 #include "SceneStore.h"
+#include "visca/ViscaIpEndpoint.h"
 #include <string>
 #include <vector>
 
@@ -66,7 +67,16 @@ namespace cameras {
          * Returns true on success.
          */
         bool save(const CameraManager& mgr, const SceneStore& scenes,
+                  std::string filename = "presets.ptzc") const {
+            return save(mgr, scenes, {}, filename);
+        }
+
+        bool save(const CameraManager& mgr, const SceneStore& scenes,
+                  const std::vector<visca::ViscaIpEndpoint>& viscaIp,
                   std::string filename = "presets.ptzc") const;
+
+        LoadStatus peekViscaIp(std::string filename,
+                               std::vector<visca::ViscaIpEndpoint>& viscaIp) const;
 
         /**
          * Normalizes a filename for .ptzc files: appends ".ptzc" if the path has no extension.

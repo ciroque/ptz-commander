@@ -12,7 +12,6 @@
 #include <algorithm>
 
 #include "../../core/Logger.h"
-#include "SerialTransport.h"           // for probe attempt
 #include "WindowsSerialTransport.h"
 #include "ViscaCommands.h"
 
@@ -293,9 +292,9 @@ bool ViscaDiscovery::probePort(const ViscaPortCandidate& candidate) {
     // Future work: send a safe non-motion inquiry (e.g. power or zoom position
     // inquiry) and check that the reply starts with 0x90.
 
-    WindowsSerialTransport transport;
+    WindowsSerialTransport transport(candidate.port, candidate.baud);
 
-    bool opened = transport.open(candidate.port, candidate.baud);
+    bool opened = transport.open();
     transport.close();
 
     if (!opened) {

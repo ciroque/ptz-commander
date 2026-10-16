@@ -1,5 +1,6 @@
 #include "CommandHandler.h"
 
+#include "camera/AddIpCommand.h"
 #include "camera/AliasCommand.h"
 #include "camera/ListCommand.h"
 #include "camera/MoveCommand.h"
@@ -33,6 +34,7 @@ namespace commands {
 
     CommandHandler::CommandHandler() {
         addCommand(std::make_unique<camera::ListCommand>());
+        addCommand(std::make_unique<camera::AddIpCommand>());
         addCommand(std::make_unique<camera::AliasCommand>());
         addCommand(std::make_unique<camera::MoveCommand>());
         addCommand(std::make_unique<camera::PushCommand>());
