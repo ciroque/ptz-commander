@@ -54,7 +54,7 @@ namespace core {
     void Application::start() {
         sceneControlServer_.start();
         running_ = true;
-        context_.out << "PTZ Commander " << PTZ_VERSION_STRING
+        context_.out << "PTZ Commander " << PTZ_VERSION_PRODUCT
                      << " (type 'exit' to quit)\n> ";
         std::string input;
         while (running_) {

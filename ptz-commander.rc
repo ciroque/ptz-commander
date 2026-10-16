@@ -8,11 +8,7 @@ IDI_ICON1 ICON "ptz-commander.ico"
  FILEVERSION PTZ_VERSION_MAJOR,PTZ_VERSION_MINOR,PTZ_VERSION_PATCH,PTZ_VERSION_BUILD
  PRODUCTVERSION PTZ_VERSION_MAJOR,PTZ_VERSION_MINOR,PTZ_VERSION_PATCH,PTZ_VERSION_BUILD
  FILEFLAGSMASK 0x3fL
-#if PTZ_VERSION_IS_RELEASE
  FILEFLAGS 0x0L
-#else
- FILEFLAGS 0x8L
-#endif
  FILEOS 0x40004L
  FILETYPE 0x1L
  FILESUBTYPE 0x0L
@@ -23,14 +19,11 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "PTZ Commander Project"
             VALUE "FileDescription", "Command-line tool for controlling PTZ cameras"
-            VALUE "FileVersion", PTZ_VERSION_STRING
+            VALUE "FileVersion", PTZ_VERSION_PRODUCT
             VALUE "InternalName", "ptz_commander.exe"
             VALUE "OriginalFilename", "ptz_commander.exe"
             VALUE "ProductName", "PTZ Commander"
-            VALUE "ProductVersion", PTZ_VERSION_STRING
-#if !PTZ_VERSION_IS_RELEASE
-            VALUE "PrivateBuild", PTZ_VERSION_STRING
-#endif
+            VALUE "ProductVersion", PTZ_VERSION_PRODUCT
         END
     END
     BLOCK "VarFileInfo"

@@ -75,29 +75,7 @@ namespace commands::console {
         }
 
         void printVersion(data::Context& ctx) {
-            ctx.out << "PTZ Commander " << PTZ_VERSION_STRING << std::endl;
-        }
-
-        void printDevBuild(data::Context& ctx) {
-#if !PTZ_VERSION_HAS_SEMVER
-            ctx.out << "This build is not from a release tag." << std::endl;
-#elif !PTZ_VERSION_IS_RELEASE
-            const std::string base = std::to_string(PTZ_VERSION_MAJOR) + "." +
-                                     std::to_string(PTZ_VERSION_MINOR) + "." +
-                                     std::to_string(PTZ_VERSION_PATCH);
-            if (PTZ_VERSION_COMMITS > 0) {
-                ctx.out << "This build is " << PTZ_VERSION_COMMITS
-                        << (PTZ_VERSION_COMMITS == 1 ? " commit" : " commits")
-                        << " after " << base;
-                if (PTZ_VERSION_DIRTY) {
-                    ctx.out << " and has uncommitted changes";
-                }
-                ctx.out << "." << std::endl;
-            }
-            else if (PTZ_VERSION_DIRTY) {
-                ctx.out << "This build has uncommitted changes on " << base << "." << std::endl;
-            }
-#endif
+            ctx.out << "PTZ Commander " << PTZ_VERSION_PRODUCT << std::endl;
         }
 
 #ifdef _WIN32
@@ -245,8 +223,6 @@ namespace commands::console {
 #endif
 
         void checkForUpdate(data::Context& ctx) {
-            printDevBuild(ctx);
-
             std::string tag;
             std::string url;
             std::string error;
@@ -264,27 +240,24 @@ namespace commands::console {
                 return;
             }
 
-            ctx.out << "Latest release: " << major << "." << minor << "." << patch << std::endl;
+            ctx.out << "Latest version: " << major << "." << minor << "." << patch << std::endl;
 
 #if PTZ_VERSION_HAS_SEMVER
             const int cmp = compareVersions(PTZ_VERSION_MAJOR, PTZ_VERSION_MINOR, PTZ_VERSION_PATCH,
                                             major, minor, patch);
             if (cmp < 0) {
-                ctx.out << "A newer release is available";
+                ctx.out << "A newer version is available";
                 if (!url.empty()) {
                     ctx.out << ": " << url;
                 }
                 ctx.out << std::endl;
             }
-            else if (cmp > 0) {
-                ctx.out << "This build is newer than the latest release." << std::endl;
-            }
-            else if (PTZ_VERSION_IS_RELEASE) {
-                ctx.out << "This install is current." << std::endl;
+            else {
+                ctx.out << "This version is current." << std::endl;
             }
 #else
             if (!url.empty()) {
-                ctx.out << "Release page: " << url << std::endl;
+                ctx.out << "A newer version is available: " << url << std::endl;
             }
 #endif
         }

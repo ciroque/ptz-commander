@@ -17,10 +17,10 @@ A C++ command-line tool for controlling PTZ (Pan-Tilt-Zoom) cameras, built with 
 
 | Command          | Arguments | Description                                                                 |
 |------------------|-----------|-----------------------------------------------------------------------------|
-| `version`        | None      | Prints this build. A release prints the tag (`0.3.1`). Any other build prints the `git describe` text. |
-| `version check`  | None      | Compares this build with the latest GitHub release and prints the release page when a newer one exists. Does not download or install. |
+| `version`        | None      | Prints the version, such as `0.3.1`. |
+| `version check`  | None      | Compares that version with the latest published version. Prints where to get it when a newer one exists. Does not download or install. |
 
-A build that is not the tagged commit says how many commits past that tag it is. If GitHub cannot be reached, the check says so and still prints the local version.
+If the check cannot reach the published version, it says so and still prints the local version.
 
 ### Camera
 
