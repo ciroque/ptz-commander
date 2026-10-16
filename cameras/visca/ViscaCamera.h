@@ -2,7 +2,7 @@
 #define CAMERAS_VISCA_VISCA_CAMERA_H
 
 #include "../Camera.h"
-#include "SerialTransport.h"
+#include "ViscaTransport.h"
 #include "ViscaCommands.h"
 
 #include <memory>
@@ -30,7 +30,7 @@ public:
 private:
     bool ensureOpen() const;
 
-    std::unique_ptr<SerialTransport> transport_;
+    std::unique_ptr<ViscaTransport> transport_;
     std::string port_;
     int baud_;
     uint8_t address_;

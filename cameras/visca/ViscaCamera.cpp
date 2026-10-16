@@ -12,8 +12,7 @@ ViscaCamera::ViscaCamera(const std::string& port, int baud, uint8_t address)
     , baud_(baud)
     , address_(address)
 {
-    // Use Windows implementation (the only one for now)
-    transport_ = std::make_unique<WindowsSerialTransport>();
+    transport_ = std::make_unique<WindowsSerialTransport>(port, baud);
 
     // Try to open eagerly so isConnected() is truthful early.
     // If it fails we stay disconnected until a command forces a retry.
@@ -55,7 +54,7 @@ bool ViscaCamera::ensureOpen() const {
         return true;
     }
     if (transport_) {
-        connected_ = transport_->open(port_, baud_);
+        connected_ = transport_->open();
         return connected_;
     }
     return false;

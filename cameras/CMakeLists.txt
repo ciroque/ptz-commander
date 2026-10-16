@@ -30,7 +30,7 @@ target_sources(ptz_commander PRIVATE
     visca/ViscaCommands.h
     visca/ViscaDiscovery.cpp
     visca/ViscaDiscovery.h
-    visca/SerialTransport.h
+    visca/ViscaTransport.h
     visca/WindowsSerialTransport.cpp
     visca/WindowsSerialTransport.h
 )
