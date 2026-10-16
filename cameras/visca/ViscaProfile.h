@@ -13,7 +13,9 @@ struct ViscaProfile {
     float tiltMinDeg = -30.0f;
     float tiltMaxDeg = 90.0f;
     uint16_t panMinRaw = 0x0000;
+    uint16_t panHomeRaw = 0x8000;
     uint16_t panMaxRaw = 0xFFFF;
+    bool panThroughHome = false;
     uint16_t tiltMinRaw = 0x0000;
     uint16_t tiltMaxRaw = 0xFFFF;
     uint16_t zoomMinRaw = 0x0000;
@@ -29,13 +31,24 @@ inline ViscaProfile lumensVcA51p() {
 inline ViscaProfile tenveo30x() {
     ViscaProfile p;
     p.name = "tenveo-30x";
-    // Degree limits are typical 30x conference PTZ. Raw pan/tilt use the same
-    // linear 16-bit map as Lumens until a measured Tenveo map replaces them.
-    // Zoom 0x0000 is wide (verified on the Tenveo at 192.168.1.145).
-    p.panMinDeg = -170.0f;
-    p.panMaxDeg = 170.0f;
-    p.tiltMinDeg = -30.0f;
+    // Spec pan ±175° (350° total). Measured on 192.168.1.145: home 0x4A6C,
+    // full left 0x0000, full right 0x8E3E. 0° is home, negative is left.
+    p.panMinDeg = -175.0f;
+    p.panMaxDeg = 175.0f;
+    p.panMinRaw = 0x0000;
+    p.panHomeRaw = 0x4A6C;
+    p.panMaxRaw = 0x8E3E;
+    p.panThroughHome = true;
+    // Spec tilt ±90°. Mechanical stops on 192.168.1.145 (absolute 0x0000 and
+    // 0xFFFF, then inquiry). User convention: −90 down, 0 level, +90 up.
+    // Higher raw is up (0x3C8A); raw 0 is down.
+    p.tiltMinDeg = -90.0f;
     p.tiltMaxDeg = 90.0f;
+    p.tiltMinRaw = 0x0000;
+    p.tiltMaxRaw = 0x3C8A;
+    // Measured zoom: full out 0x0000, full in 0x05E3. Linear 0–100.
+    p.zoomMinRaw = 0x0000;
+    p.zoomMaxRaw = 0x05E3;
     return p;
 }
 

@@ -7,28 +7,27 @@
 namespace cameras::visca {
 
 namespace {
-    uint16_t mapRange(float value, float inMin, float inMax, uint16_t outMin, uint16_t outMax) {
-        if (inMax == inMin) {
-            return outMin;
+    uint16_t mapRange(float value, float inA, float inB, uint16_t outA, uint16_t outB) {
+        if (inA == inB) {
+            return outA;
         }
-        value = std::clamp(value, inMin, inMax);
-        const float norm = (value - inMin) / (inMax - inMin);
-        const float span = static_cast<float>(outMax) - static_cast<float>(outMin);
-        return static_cast<uint16_t>(outMin + norm * span + 0.5f);
+        const float lo = std::min(inA, inB);
+        const float hi = std::max(inA, inB);
+        const float cv = std::clamp(value, lo, hi);
+        const float norm = (cv - inA) / (inB - inA);
+        const float span = static_cast<float>(outB) - static_cast<float>(outA);
+        return static_cast<uint16_t>(outA + norm * span + 0.5f);
     }
 
-    float unmapRange(uint16_t value, uint16_t inMin, uint16_t inMax, float outMin, float outMax) {
-        if (inMax == inMin) {
-            return outMin;
+    float unmapRange(uint16_t value, uint16_t inA, uint16_t inB, float outA, float outB) {
+        if (inA == inB) {
+            return outA;
         }
-        if (value <= inMin) {
-            return outMin;
-        }
-        if (value >= inMax) {
-            return outMax;
-        }
-        const float norm = static_cast<float>(value - inMin) / static_cast<float>(inMax - inMin);
-        return outMin + norm * (outMax - outMin);
+        const float a = static_cast<float>(inA);
+        const float b = static_cast<float>(inB);
+        const float v = std::clamp(static_cast<float>(value), std::min(a, b), std::max(a, b));
+        const float norm = (v - a) / (b - a);
+        return outA + norm * (outB - outA);
     }
 }
 
@@ -96,8 +95,17 @@ std::vector<uint8_t> ViscaCommands::zoomPositionInquiry(uint8_t address) {
 }
 
 uint16_t ViscaCommands::panDegreesToVisca(float degrees, const ViscaProfile& profile) {
-    return mapRange(degrees, profile.panMinDeg, profile.panMaxDeg,
-                    profile.panMinRaw, profile.panMaxRaw);
+    if (!profile.panThroughHome) {
+        return mapRange(degrees, profile.panMinDeg, profile.panMaxDeg,
+                        profile.panMinRaw, profile.panMaxRaw);
+    }
+    const float d = std::clamp(degrees, profile.panMinDeg, profile.panMaxDeg);
+    if (d <= 0.0f) {
+        return mapRange(d, profile.panMinDeg, 0.0f,
+                        profile.panMinRaw, profile.panHomeRaw);
+    }
+    return mapRange(d, 0.0f, profile.panMaxDeg,
+                    profile.panHomeRaw, profile.panMaxRaw);
 }
 
 uint16_t ViscaCommands::tiltDegreesToVisca(float degrees, const ViscaProfile& profile) {
@@ -112,8 +120,19 @@ uint16_t ViscaCommands::zoomPercentToVisca(int percent, const ViscaProfile& prof
 }
 
 float ViscaCommands::viscaToPanDegrees(uint16_t visca, const ViscaProfile& profile) {
-    return unmapRange(visca, profile.panMinRaw, profile.panMaxRaw,
-                      profile.panMinDeg, profile.panMaxDeg);
+    if (!profile.panThroughHome) {
+        return unmapRange(visca, profile.panMinRaw, profile.panMaxRaw,
+                          profile.panMinDeg, profile.panMaxDeg);
+    }
+    const bool increasing = profile.panMinRaw <= profile.panMaxRaw;
+    const bool onMinSide = increasing ? (visca <= profile.panHomeRaw)
+                                      : (visca >= profile.panHomeRaw);
+    if (onMinSide) {
+        return unmapRange(visca, profile.panMinRaw, profile.panHomeRaw,
+                          profile.panMinDeg, 0.0f);
+    }
+    return unmapRange(visca, profile.panHomeRaw, profile.panMaxRaw,
+                      0.0f, profile.panMaxDeg);
 }
 
 float ViscaCommands::viscaToTiltDegrees(uint16_t visca, const ViscaProfile& profile) {
