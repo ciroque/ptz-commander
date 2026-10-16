@@ -67,12 +67,15 @@ bool ViscaCamera::setPosition(float pan, float tilt, int zoom) {
     }
 
     // Compute the actual values that will be sent (ViscaCommands clamps to camera limits)
-    float clampedPan  = ViscaCommands::viscaToPanDegrees(ViscaCommands::panDegreesToVisca(pan));
-    float clampedTilt = ViscaCommands::viscaToTiltDegrees(ViscaCommands::tiltDegreesToVisca(tilt));
-    int   clampedZoom = ViscaCommands::viscaToZoomPercent(ViscaCommands::zoomPercentToVisca(zoom));
+    float clampedPan  = ViscaCommands::viscaToPanDegrees(
+        ViscaCommands::panDegreesToVisca(pan, profile_), profile_);
+    float clampedTilt = ViscaCommands::viscaToTiltDegrees(
+        ViscaCommands::tiltDegreesToVisca(tilt, profile_), profile_);
+    int   clampedZoom = ViscaCommands::viscaToZoomPercent(
+        ViscaCommands::zoomPercentToVisca(zoom, profile_), profile_);
 
-    auto ptCmd = ViscaCommands::panTiltAbsolute(pan, tilt, 0x10, 0x10, address_);
-    auto zmCmd = ViscaCommands::zoomAbsolute(zoom, address_);
+    auto ptCmd = ViscaCommands::panTiltAbsolute(pan, tilt, profile_, 0x10, 0x10, address_);
+    auto zmCmd = ViscaCommands::zoomAbsolute(zoom, profile_, address_);
 
     bool ok = transport_->write(ptCmd) && transport_->write(zmCmd);
 
@@ -99,8 +102,9 @@ bool ViscaCamera::setZoom(int zoom, int /*speed*/) {
         return false;
     }
 
-    int clampedZoom = ViscaCommands::viscaToZoomPercent(ViscaCommands::zoomPercentToVisca(zoom));
-    auto cmd = ViscaCommands::zoomAbsolute(zoom, address_);
+    int clampedZoom = ViscaCommands::viscaToZoomPercent(
+        ViscaCommands::zoomPercentToVisca(zoom, profile_), profile_);
+    auto cmd = ViscaCommands::zoomAbsolute(zoom, profile_, address_);
     bool ok = transport_->write(cmd);
 
     if (ok) {
@@ -156,8 +160,8 @@ Ptz ViscaCamera::getCurrentPtz() const {
         core::Logger::error("VISCA zoom inquiry write failed on " + port_);
         // still return what we have for pan/tilt if successful
         if (ptOk) {
-            lastPtz_.pan = ViscaCommands::viscaToPanDegrees(panVisca);
-            lastPtz_.tilt = ViscaCommands::viscaToTiltDegrees(tiltVisca);
+            lastPtz_.pan = ViscaCommands::viscaToPanDegrees(panVisca, profile_);
+            lastPtz_.tilt = ViscaCommands::viscaToTiltDegrees(tiltVisca, profile_);
         }
         return lastPtz_;
     }
@@ -183,7 +187,7 @@ Ptz ViscaCamera::getCurrentPtz() const {
         lastPtz_.tilt = ViscaCommands::viscaToTiltDegrees(tiltVisca);
     }
     if (zmOk) {
-        lastPtz_.zoom = ViscaCommands::viscaToZoomPercent(zoomVisca);
+        lastPtz_.zoom = ViscaCommands::viscaToZoomPercent(zoomVisca, profile_);
     }
 
     if (!ptOk && !zmOk) {

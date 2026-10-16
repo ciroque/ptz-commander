@@ -2,6 +2,7 @@
 #define CAMERAS_VISCA_VISCA_CAMERA_H
 
 #include "../Camera.h"
+#include "ViscaProfile.h"
 #include "ViscaTransport.h"
 #include "ViscaCommands.h"
 
@@ -34,6 +35,7 @@ private:
     std::string port_;
     int baud_;
     uint8_t address_;
+    ViscaProfile profile_{lumensVcA51p()};
 
     mutable Ptz lastPtz_{0.0f, 0.0f, 0};
     mutable bool connected_ = false;

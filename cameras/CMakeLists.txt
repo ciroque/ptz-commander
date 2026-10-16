@@ -28,6 +28,7 @@ target_sources(ptz_commander PRIVATE
     visca/ViscaCameraAdapter.h
     visca/ViscaCommands.cpp
     visca/ViscaCommands.h
+    visca/ViscaProfile.h
     visca/ViscaDiscovery.cpp
     visca/ViscaDiscovery.h
     visca/ViscaTransport.h
