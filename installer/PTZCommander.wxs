@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
-  <Package Name="PTZ Commander" Language="1033" Version="1.0.0.0" Manufacturer="PTZ Commander Project" UpgradeCode="6B565268-915A-461E-8EBF-F154B835455D"
+  <!-- ProductVersion is the git tag as four numbers (v0.3.1 -> 0.3.1.0), passed by
+       build-installer.bat. MSIs built before this stamp all reported 1.0.0.0, which
+       Windows Installer treats as newer than 0.x. Those installs must be removed
+       once before a tag-stamped package will replace them. -->
+  <Package Name="PTZ Commander" Language="1033" Version="$(var.ProductVersion)" Manufacturer="PTZ Commander Project" UpgradeCode="6B565268-915A-461E-8EBF-F154B835455D"
            InstallerVersion="200" Compressed="yes" Scope="perMachine">
 
     <!-- Application icon for the exe, shortcuts, and Add/Remove Programs -->

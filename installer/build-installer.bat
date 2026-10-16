@@ -58,9 +58,26 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [4/4] Building MSI with WiX v7...
+set "VERSION_FILE=%BUILD_DIR%\ptz_product_version.txt"
+if not exist "%VERSION_FILE%" (
+    echo ERROR: Product version file not found at %VERSION_FILE%
+    echo Configure and build x64-Release first, then re-run this script.
+    exit /b 1
+)
+set /p PRODUCT_VERSION=<"%VERSION_FILE%"
+if "%PRODUCT_VERSION%"=="" (
+    echo ERROR: Product version file is empty.
+    exit /b 1
+)
+if "%PRODUCT_VERSION%"=="0.0.0.0" (
+    echo ERROR: Product version is 0.0.0.0. Build from a tagged commit, or reconfigure with -DPTZ_VERSION=vX.Y.Z.
+    exit /b 1
+)
+
+echo [4/4] Building MSI with WiX v7 (product version %PRODUCT_VERSION%)...
 dotnet wix build "%SCRIPT_DIR%PTZCommander.wxs" ^
   -d SourceDir="%STAGE_DIR%" ^
+  -d ProductVersion="%PRODUCT_VERSION%" ^
   -arch x64 ^
   -o "%INSTALLER_BUILD_DIR%\PTZCommander.msi" ^
   -ext WixToolset.UI.wixext
