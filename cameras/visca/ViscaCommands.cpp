@@ -29,6 +29,30 @@ namespace {
         const float norm = (v - a) / (b - a);
         return outA + norm * (outB - outA);
     }
+
+    uint16_t axisDegreesToVisca(float degrees, const ViscaAxis& axis) {
+        if (!axis.throughHome) {
+            return mapRange(degrees, axis.minDeg, axis.maxDeg, axis.minRaw, axis.maxRaw);
+        }
+        const float d = std::clamp(degrees, axis.minDeg, axis.maxDeg);
+        if (d <= 0.0f) {
+            return mapRange(d, axis.minDeg, 0.0f, axis.minRaw, axis.homeRaw);
+        }
+        return mapRange(d, 0.0f, axis.maxDeg, axis.homeRaw, axis.maxRaw);
+    }
+
+    float viscaToAxisDegrees(uint16_t visca, const ViscaAxis& axis) {
+        if (!axis.throughHome) {
+            return unmapRange(visca, axis.minRaw, axis.maxRaw, axis.minDeg, axis.maxDeg);
+        }
+        const bool increasing = axis.minRaw <= axis.maxRaw;
+        const bool onMinSide = increasing ? (visca <= axis.homeRaw)
+                                          : (visca >= axis.homeRaw);
+        if (onMinSide) {
+            return unmapRange(visca, axis.minRaw, axis.homeRaw, axis.minDeg, 0.0f);
+        }
+        return unmapRange(visca, axis.homeRaw, axis.maxRaw, 0.0f, axis.maxDeg);
+    }
 }
 
 uint8_t ViscaCommands::addressByte(uint8_t address) {
@@ -95,22 +119,11 @@ std::vector<uint8_t> ViscaCommands::zoomPositionInquiry(uint8_t address) {
 }
 
 uint16_t ViscaCommands::panDegreesToVisca(float degrees, const ViscaProfile& profile) {
-    if (!profile.panThroughHome) {
-        return mapRange(degrees, profile.panMinDeg, profile.panMaxDeg,
-                        profile.panMinRaw, profile.panMaxRaw);
-    }
-    const float d = std::clamp(degrees, profile.panMinDeg, profile.panMaxDeg);
-    if (d <= 0.0f) {
-        return mapRange(d, profile.panMinDeg, 0.0f,
-                        profile.panMinRaw, profile.panHomeRaw);
-    }
-    return mapRange(d, 0.0f, profile.panMaxDeg,
-                    profile.panHomeRaw, profile.panMaxRaw);
+    return axisDegreesToVisca(degrees, profile.pan);
 }
 
 uint16_t ViscaCommands::tiltDegreesToVisca(float degrees, const ViscaProfile& profile) {
-    return mapRange(degrees, profile.tiltMinDeg, profile.tiltMaxDeg,
-                    profile.tiltMinRaw, profile.tiltMaxRaw);
+    return axisDegreesToVisca(degrees, profile.tilt);
 }
 
 uint16_t ViscaCommands::zoomPercentToVisca(int percent, const ViscaProfile& profile) {
@@ -120,24 +133,11 @@ uint16_t ViscaCommands::zoomPercentToVisca(int percent, const ViscaProfile& prof
 }
 
 float ViscaCommands::viscaToPanDegrees(uint16_t visca, const ViscaProfile& profile) {
-    if (!profile.panThroughHome) {
-        return unmapRange(visca, profile.panMinRaw, profile.panMaxRaw,
-                          profile.panMinDeg, profile.panMaxDeg);
-    }
-    const bool increasing = profile.panMinRaw <= profile.panMaxRaw;
-    const bool onMinSide = increasing ? (visca <= profile.panHomeRaw)
-                                      : (visca >= profile.panHomeRaw);
-    if (onMinSide) {
-        return unmapRange(visca, profile.panMinRaw, profile.panHomeRaw,
-                          profile.panMinDeg, 0.0f);
-    }
-    return unmapRange(visca, profile.panHomeRaw, profile.panMaxRaw,
-                      0.0f, profile.panMaxDeg);
+    return viscaToAxisDegrees(visca, profile.pan);
 }
 
 float ViscaCommands::viscaToTiltDegrees(uint16_t visca, const ViscaProfile& profile) {
-    return unmapRange(visca, profile.tiltMinRaw, profile.tiltMaxRaw,
-                      profile.tiltMinDeg, profile.tiltMaxDeg);
+    return viscaToAxisDegrees(visca, profile.tilt);
 }
 
 int ViscaCommands::viscaToZoomPercent(uint16_t visca, const ViscaProfile& profile) {
