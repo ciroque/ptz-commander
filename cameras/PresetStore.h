@@ -4,6 +4,8 @@
 #include "CameraManager.h"
 #include "SceneStore.h"
 #include "visca/ViscaIpEndpoint.h"
+#include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -33,6 +35,21 @@ namespace cameras {
         ParseError
     };
 
+    /**
+     * A .ptzc file parsed in full but not yet applied. Holds every camera
+     * entry in the file, keyed by serial, whether or not that camera is
+     * currently present.
+     */
+    struct StagedSetup {
+        struct Camera {
+            std::optional<std::string> alias;
+            std::vector<Preset> presets;
+        };
+        std::map<std::string, Camera> cameras;
+        std::map<std::string, Scene> scenes;
+        std::vector<visca::ViscaIpEndpoint> viscaIp;
+    };
+
     class PresetStore {
     public:
         /**
@@ -51,6 +68,22 @@ namespace cameras {
          */
         LoadStatus load(CameraManager& mgr, SceneStore& scenes,
                         std::string filename = "presets.ptzc");
+
+        /**
+         * Parses the whole file (camera entries, scenes, visca_ip) without
+         * touching any state. load() is read() followed by apply(); callers
+         * that must change cameras in between (adding VISCA-IP cameras) use
+         * the two halves directly.
+         * On ParseError, error (if given) says what was wrong.
+         */
+        LoadStatus read(std::string filename, StagedSetup& out,
+                        std::string* error = nullptr) const;
+
+        /**
+         * Applies a staged setup to the cameras currently present, with the
+         * same rules as load().
+         */
+        void apply(CameraManager& mgr, SceneStore& scenes, const StagedSetup& staged) const;
 
         /**
          * In-memory setup as the same JSON object written by save() to .ptzc.
@@ -74,9 +107,6 @@ namespace cameras {
         bool save(const CameraManager& mgr, const SceneStore& scenes,
                   const std::vector<visca::ViscaIpEndpoint>& viscaIp,
                   std::string filename = "presets.ptzc") const;
-
-        LoadStatus peekViscaIp(std::string filename,
-                               std::vector<visca::ViscaIpEndpoint>& viscaIp) const;
 
         /**
          * Normalizes a filename for .ptzc files: appends ".ptzc" if the path has no extension.

@@ -22,6 +22,9 @@ public:
     void stop();
 
     bool addIpCamera(const ViscaIpEndpoint& endpoint);
+    // For setup load: adds the camera, or switches an existing one to the
+    // endpoint's profile so the file's presets land where they were saved.
+    bool loadIpCamera(const ViscaIpEndpoint& endpoint);
     // Calibrates a VISCA-IP camera and switches it to the measured profile.
     std::optional<ViscaProfile> calibrateIpCamera(const std::string& serial,
                                                   const CalibrationRanges& ranges,

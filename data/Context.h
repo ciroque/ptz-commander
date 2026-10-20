@@ -20,6 +20,8 @@ namespace data {
         std::ostream& err;
         std::function<void()> onSetupChanged;
         std::function<bool(const cameras::visca::ViscaIpEndpoint&)> addViscaIp;
+        // Add, or move an existing camera onto the endpoint's profile (setup load).
+        std::function<bool(const cameras::visca::ViscaIpEndpoint&)> loadViscaIp;
         // Calibrates and applies the profile; nullopt with error set on failure.
         std::function<std::optional<cameras::visca::ViscaProfile>(
             const std::string& serial,

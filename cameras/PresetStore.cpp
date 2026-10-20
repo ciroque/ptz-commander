@@ -1,4 +1,5 @@
 #include "PresetStore.h"
+#include "visca/ViscaCalibration.h"
 #include "../core/Logger.h"
 
 #include <algorithm>
@@ -9,6 +10,7 @@
 #include <optional>
 #include <filesystem>
 #include <cstdlib>
+#include <stdexcept>
 
 namespace cameras {
 
@@ -115,6 +117,61 @@ namespace cameras {
             return j;
         }
 
+        nlohmann::json axisToJson(const visca::ViscaAxis& axis) {
+            return {
+                {"min_deg", axis.minDeg},
+                {"max_deg", axis.maxDeg},
+                {"min_raw", axis.minRaw},
+                {"home_raw", axis.homeRaw},
+                {"max_raw", axis.maxRaw},
+                {"through_home", axis.throughHome},
+                {"signed", axis.signedRaw}
+            };
+        }
+
+        nlohmann::json calibrationToJson(const visca::ViscaProfile& profile) {
+            return {
+                {"pan", axisToJson(profile.pan)},
+                {"tilt", axisToJson(profile.tilt)},
+                {"zoom", {{"min_raw", profile.zoomMinRaw}, {"max_raw", profile.zoomMaxRaw}}}
+            };
+        }
+
+        // Throws on missing or out-of-range fields; callers turn that into ParseError.
+        uint16_t rawField(const nlohmann::json& j, const char* key) {
+            const int value = j.at(key).get<int>();
+            if (value < 0 || value > 0xFFFF) {
+                throw std::out_of_range(std::string("raw position out of range: ") + key);
+            }
+            return static_cast<uint16_t>(value);
+        }
+
+        visca::ViscaAxis axisFromJson(const nlohmann::json& j) {
+            visca::ViscaAxis axis;
+            axis.minDeg = j.at("min_deg").get<float>();
+            axis.maxDeg = j.at("max_deg").get<float>();
+            axis.minRaw = rawField(j, "min_raw");
+            axis.homeRaw = rawField(j, "home_raw");
+            axis.maxRaw = rawField(j, "max_raw");
+            axis.throughHome = j.at("through_home").get<bool>();
+            axis.signedRaw = j.at("signed").get<bool>();
+            return axis;
+        }
+
+        visca::ViscaProfile calibrationFromJson(const nlohmann::json& j) {
+            visca::ViscaProfile profile;
+            profile.name = "calibrated";
+            profile.pan = axisFromJson(j.at("pan"));
+            profile.tilt = axisFromJson(j.at("tilt"));
+            profile.zoomMinRaw = rawField(j.at("zoom"), "min_raw");
+            profile.zoomMaxRaw = rawField(j.at("zoom"), "max_raw");
+            std::string error;
+            if (!visca::validCalibration(profile, error)) {
+                throw std::invalid_argument("invalid calibration: " + error);
+            }
+            return profile;
+        }
+
         bool parseViscaIp(const nlohmann::json& j, std::vector<visca::ViscaIpEndpoint>& out) {
             if (!j.contains("visca_ip")) {
                 return true;
@@ -130,6 +187,14 @@ namespace cameras {
                 ep.host = item["host"].get<std::string>();
                 ep.port = item.value("port", 52381);
                 ep.profile = item.value("profile", std::string("tenveo-30x"));
+                if (item.contains("calibration")) {
+                    try {
+                        ep.calibration = calibrationFromJson(item["calibration"]);
+                    }
+                    catch (const std::exception& e) {
+                        throw std::runtime_error("VISCA-IP camera " + ep.host + ": " + e.what());
+                    }
+                }
                 out.push_back(std::move(ep));
             }
             return true;
@@ -141,6 +206,15 @@ namespace cameras {
     }
 
     LoadStatus PresetStore::load(CameraManager& mgr, SceneStore& scenes, std::string filename) {
+        StagedSetup staged;
+        const auto status = read(std::move(filename), staged);
+        if (status == LoadStatus::Ok) {
+            apply(mgr, scenes, staged);
+        }
+        return status;
+    }
+
+    LoadStatus PresetStore::read(std::string filename, StagedSetup& out, std::string* error) const {
         filename = resolvePresetPath(std::move(filename));
 
         std::ifstream file(filename);
@@ -148,27 +222,35 @@ namespace cameras {
             return LoadStatus::NotFound;
         }
 
+        const auto parseError = [error](const std::string& reason) {
+            if (error) {
+                *error = reason;
+            }
+            return LoadStatus::ParseError;
+        };
+
         try {
             nlohmann::json j;
             file >> j;
             file.close();
 
-            struct StagedCamera {
-                std::optional<std::string> alias;
-                std::vector<Preset> presets;
-            };
+            StagedSetup staged;
 
-            auto cameras = mgr.getCameras();
-            std::map<std::string, StagedCamera> staged;
-
-            for (const auto& camera : cameras) {
-                std::string sn = camera->getSerialNumber();
-                if (sn == "scenes" || sn == "visca_ip" || !j.contains(sn)) {
+            // Every camera entry is parsed, not only those for cameras that
+            // are present now, so a malformed entry fails before anything
+            // (including adding VISCA-IP cameras) is changed.
+            for (auto camIt = j.begin(); camIt != j.end(); ++camIt) {
+                const std::string& sn = camIt.key();
+                if (sn == "scenes" || sn == "visca_ip") {
                     continue;
                 }
+                // Skipping it instead would let apply() clear that camera's presets.
+                if (!camIt.value().is_object()) {
+                    return parseError("camera entry '" + sn + "' is not an object");
+                }
 
-                auto camJson = j[sn];
-                StagedCamera entry;
+                auto camJson = camIt.value();
+                StagedSetup::Camera entry;
 
                 if (camJson.contains("alias")) {
                     std::string alias = camJson["alias"].get<std::string>();
@@ -191,18 +273,18 @@ namespace cameras {
                     }
                 }
 
-                staged.emplace(std::move(sn), std::move(entry));
+                staged.cameras.emplace(sn, std::move(entry));
             }
 
-            std::map<std::string, Scene> stagedScenes;
+            auto& stagedScenes = staged.scenes;
             if (j.contains("scenes")) {
                 auto scenesJson = j["scenes"];
                 if (!scenesJson.is_object()) {
-                    return LoadStatus::ParseError;
+                    return parseError("\"scenes\" is not an object");
                 }
                 for (auto sceneIt = scenesJson.begin(); sceneIt != scenesJson.end(); ++sceneIt) {
                     if (!sceneIt.value().is_object()) {
-                        return LoadStatus::ParseError;
+                        return parseError("scene '" + sceneIt.key() + "' is not an object");
                     }
                     Scene scene;
                     scene.name = sceneIt.key();
@@ -213,33 +295,41 @@ namespace cameras {
                 }
             }
 
-            for (auto& camera : cameras) {
-                camera->ClearPresets();
-
-                auto it = staged.find(camera->getSerialNumber());
-                if (it == staged.end()) {
-                    continue;
-                }
-
-                if (it->second.alias) {
-                    auto takenBy = mgr.assignAlias(camera, *it->second.alias);
-                    if (takenBy) {
-                        core::Logger::warn("Skipped alias '" + *it->second.alias
-                            + "' for " + camera->getSerialNumber()
-                            + (takenBy->empty() ? ": invalid alias" : (": already used by " + *takenBy)));
-                    }
-                }
-                for (const auto& preset : it->second.presets) {
-                    camera->AddPreset(preset.name, preset);
-                }
+            if (!parseViscaIp(j, staged.viscaIp)) {
+                return parseError("\"visca_ip\" must be a list of entries that each have a host");
             }
 
-            scenes.replaceAll(std::move(stagedScenes));
+            out = std::move(staged);
             return LoadStatus::Ok;
         }
-        catch (const std::exception&) {
-            return LoadStatus::ParseError;
+        catch (const std::exception& e) {
+            return parseError(e.what());
         }
+    }
+
+    void PresetStore::apply(CameraManager& mgr, SceneStore& scenes, const StagedSetup& staged) const {
+        for (auto& camera : mgr.getCameras()) {
+            camera->ClearPresets();
+
+            auto it = staged.cameras.find(camera->getSerialNumber());
+            if (it == staged.cameras.end()) {
+                continue;
+            }
+
+            if (it->second.alias) {
+                auto takenBy = mgr.assignAlias(camera, *it->second.alias);
+                if (takenBy) {
+                    core::Logger::warn("Skipped alias '" + *it->second.alias
+                        + "' for " + camera->getSerialNumber()
+                        + (takenBy->empty() ? ": invalid alias" : (": already used by " + *takenBy)));
+                }
+            }
+            for (const auto& preset : it->second.presets) {
+                camera->AddPreset(preset.name, preset);
+            }
+        }
+
+        scenes.replaceAll(staged.scenes);
     }
 
     bool PresetStore::save(const CameraManager& mgr, const SceneStore& scenes,
@@ -256,11 +346,15 @@ namespace cameras {
         if (!viscaIp.empty()) {
             nlohmann::json arr = nlohmann::json::array();
             for (const auto& ep : viscaIp) {
-                arr.push_back({
+                nlohmann::json entry = {
                     {"host", ep.host},
                     {"port", ep.port},
                     {"profile", ep.profile}
-                });
+                };
+                if (ep.calibration) {
+                    entry["calibration"] = calibrationToJson(*ep.calibration);
+                }
+                arr.push_back(std::move(entry));
             }
             j["visca_ip"] = std::move(arr);
         }
@@ -268,27 +362,6 @@ namespace cameras {
         file << j.dump(2);
         file.close();
         return true;
-    }
-
-    LoadStatus PresetStore::peekViscaIp(std::string filename,
-                                        std::vector<visca::ViscaIpEndpoint>& viscaIp) const {
-        filename = resolvePresetPath(std::move(filename));
-        std::ifstream file(filename);
-        if (!file.is_open()) {
-            return LoadStatus::NotFound;
-        }
-        try {
-            nlohmann::json j;
-            file >> j;
-            viscaIp.clear();
-            if (!parseViscaIp(j, viscaIp)) {
-                return LoadStatus::ParseError;
-            }
-            return LoadStatus::Ok;
-        }
-        catch (const std::exception&) {
-            return LoadStatus::ParseError;
-        }
     }
 
 } // namespace cameras
