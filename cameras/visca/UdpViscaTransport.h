@@ -32,8 +32,6 @@ public:
     int port() const { return port_; }
 
 private:
-    std::vector<uint8_t> frame(const std::vector<uint8_t>& visca);
-    static std::vector<uint8_t> unframe(const std::vector<uint8_t>& datagram);
     static std::string toHex(const std::vector<uint8_t>& data);
 
     std::string host_;

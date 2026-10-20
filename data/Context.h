@@ -29,6 +29,9 @@ namespace data {
             const cameras::visca::ViscaCalibrator::Progress&,
             std::string& error)> calibrateViscaIp;
         std::vector<cameras::visca::ViscaIpEndpoint> viscaIpEndpoints;
+        // Rows of the last `camera scan visca-ip` (host and port only), for
+        // `camera add scanned <n>`; nullopt until a scan has run.
+        std::optional<std::vector<cameras::visca::ViscaIpEndpoint>> lastViscaIpScan;
 
         Context(cameras::CameraManager& mgr,
                 cameras::SceneStore& scenes,
