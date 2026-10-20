@@ -43,36 +43,38 @@ These values are **logical / user-facing** degrees and percent. They are **not**
 
 ## 3. VISCA Serial Implementation (cameras/visca/)
 
-The `ViscaCamera` + `ViscaCommands` implement **only absolute positioning** (as requested):
+`camera move`, presets and scenes use **absolute positioning** only:
 
-- Uses VISCA Absolute Pan/Tilt (`81 01 06 02 ...`) and Zoom Direct (`81 01 04 47 ...`).
+- VISCA Absolute Pan/Tilt (`81 01 06 02 ...`) and Zoom Direct (`81 01 04 47 ...`).
 - Home command supported.
-- No velocity "drive" commands (pan left/right etc.) — only absolute targets. This matches the `camera move` + preset model of the rest of the tool.
+- Velocity "drive" commands (`81 01 06 01 ...`, `81 01 04 07 ...`) are used only by `camera calibrate` to find the mechanical stops (section 6).
 
-### Current Mapping (in `ViscaCommands.h` / `.cpp`)
+### Mapping: `ViscaProfile` (in `ViscaProfile.h`, converted by `ViscaCommands.cpp`)
+
+Each camera has a `ViscaProfile`: one `ViscaAxis` for pan and one for tilt, plus a raw zoom range.
 
 ```cpp
-namespace defaults {
-    constexpr float kPanMinDeg   = -170.0f;
-    constexpr float kPanMaxDeg   =  170.0f;
-    constexpr float kTiltMinDeg  =  -30.0f;
-    constexpr float kTiltMaxDeg  =   90.0f;
-    constexpr uint16_t kZoomMin  = 0x0000;
-    constexpr uint16_t kZoomMax  = 0x4000;  // typical for ~20x optical
-}
+struct ViscaAxis {
+    float minDeg, maxDeg;               // degree range exposed to the tool (min = left / down)
+    uint16_t minRaw, homeRaw, maxRaw;   // raw VISCA positions at the stops and at home
+    bool throughHome;                   // map each side of home separately, so 0° is home
+    bool signedRaw;                     // positions are two's-complement (Sony: left of home is 0xF6xx)
+};
 ```
 
-Conversion (linear, with clamping):
+Conversion is linear with clamping. With `throughHome`, degrees ≤ 0 map onto `minRaw..homeRaw` and degrees > 0 onto `homeRaw..maxRaw`, so 0° lands on home even when home isn't the midpoint of the raw range. Zoom maps 0..100 onto `zoomMinRaw..zoomMaxRaw`.
 
-- `panDegreesToVisca(float degrees)`: maps `kPanMinDeg .. kPanMaxDeg` → `0x0000 .. 0xFFFF`
-  - 0° (center) → approximately `0x8000`
-- `tiltDegreesToVisca(float degrees)`: maps `kTiltMinDeg .. kTiltMaxDeg` → `0x0000 .. 0xFFFF`
-- `zoomPercentToVisca(int percent)`: maps 0..100 → `0x0000 .. 0x4000`
+Built-in profiles (`camera add visca-ip <host> [port] <profile>`):
 
-These constants were chosen to match the **Lumens VC-A51P physical limits** exactly.
+| Profile | Pan | Tilt | Zoom raw | Notes |
+|---|---|---|---|---|
+| `lumens-vc-a51p` | ±170° over `0x0000..0xFFFF` | −30..+90° over `0x0000..0xFFFF` | `0x0000..0x4000` | Spec-sheet guess, not measured |
+| `tenveo-30x` | ±175°, home `0x4A6C`, stops `0x0000`/`0x8E3E` | ±90° over `0x0000..0x3C8A` | `0x0000..0x05E3` | Measured by hand |
+
+An unknown profile name is an error. It used to fall back to `lumens-vc-a51p`.
 
 In `setPosition()` / `setZoom()`:
-- Input values are clamped to the above ranges.
+- Input values are clamped to the profile's ranges.
 - VISCA absolute command is built and sent over the serial transport (fire-and-forget for now).
 - `lastPtz_` is updated with the (clamped) commanded value.
 - `getCurrentPtz()` performs live reads via VISCA inquiries (see limitations).
@@ -84,7 +86,7 @@ Speeds in absolute commands are currently fixed at `0x10` (medium) for pan/tilt.
 - VISCA uses 16-bit signed-ish positions (sent as 4 nibbles: high nibble first).
 - 0x0000 and 0xFFFF are the extremes **as defined by the camera** (not necessarily exactly -170° / +170° in all VISCA cameras).
 - Different VISCA cameras (Sony, Lumens, etc.) have different physical angle ranges even when using the same VISCA position scale.
-- The mapping above is a best-effort linear conversion for the VC-A51P.
+- A wrong profile mostly shows up in zoom. On a Tenveo, the Lumens zoom range puts everything above about 9% past full tele. Presets still return to the same spot under a wrong profile, because store and apply convert through the same mapping.
 
 ## 4. Coordinate System and Experimentation
 
@@ -114,27 +116,41 @@ Because you have been moving the camera:
 
 Error handling for motion commands remains the next priority (per your earlier list), followed by range tuning based on real hardware data.
 
-## 6. Tuning the Mapping
+## 6. Calibration (`camera calibrate`)
 
-The constants live in:
+Instead of writing a profile for every camera model, measure the camera itself:
 
-```cpp
-// cameras/visca/ViscaCommands.h
-namespace defaults { ... }
+```
+camera add visca-ip 192.168.1.146
+camera calibrate VISCA-IP:192.168.1.146:52381 350 90 90
+setup save
 ```
 
-And the conversion functions in `ViscaCommands.cpp`.
+`ViscaCalibrator` (`ViscaCalibration.cpp`) does this:
 
-You can edit them for:
-- Other VISCA camera models with different physical ranges.
-- Fine-tuning after real-world testing on the VC-A51P (e.g. if mechanical stops are slightly different, or you want a different "percent" feel for zoom).
-- Making them configurable per-camera in the future (e.g. via a `ViscaProfile` struct passed to `ViscaCamera`).
+1. Checks that the camera answers position inquiries.
+2. Sends Home and reads `homeRaw` for pan and tilt.
+3. Drives pan left, tilt down and zoom wide together, polling position every 150 ms until it holds still (3 reads within 2 raw units). That gives the min stops and `zoomMinRaw`. Pan and tilt must first move away from home; if either hasn't moved after 2 s, the drive was not carried out and calibration fails.
+4. Drives pan right, tilt up and zoom tele the same way (all three must move). That gives the max stops and `zoomMaxRaw`.
+5. Sends Home and drives zoom wide (Home only moves pan/tilt), then waits until a position inquiry shows pan/tilt at the measured home and zoom at the wide stop. Only then is the zoom drive stopped.
 
-After changing, rebuild and re-test.
+Every command's reply is read. A completion accepts it; "command buffer full" (`90 6y 03`) is retried every 100 ms for up to 2 s; any other VISCA error fails calibration with its name (for example `command not executable`). On any failure the camera is still stopped and sent home the same way; every stop, Home and zoom-wide command is sent even if an earlier one is refused, so a running zoom drive is always replaced. If its return can't be confirmed within 30 s, the error (or, after a good measurement, a warning) says it may have been left mid-move.
+
+The camera can't report angles, so the degree span comes from the spec sheet: `panSpan` (split evenly around home, 1–360), `tiltDown` and `tiltUp` (each 1–180). Defaults are `340 90 90`. Both axes map through the measured home, so 0° is always home. Each axis uses unsigned raw positions if home lies between the stops that way; otherwise it uses signed. Each side of home must have at least 16 raw units of travel; a camera whose home sits on a stop can't be calibrated. The same rules are checked for calibrations read from `.ptzc` files.
+
+Calibrating the Tenveo 30x reproduces the hand-measured `tenveo-30x` stops (pan and zoom exact, tilt max within 6 units) in about 25 seconds, ending at home with zoom fully wide.
+
+Things to know:
+- **Presets keep their spot.** They're stored in degrees, so applying a new profile converts each preset through its raw position.
+- **Persistence.** The measured profile is saved as a `calibration` object on the camera's `visca_ip` entry in the `.ptzc` file, and is used in place of the named profile on load. `setup load` parses the whole file first, checks every `visca_ip` entry's profile, and only then adds cameras or moves an already-added camera onto the file's profile before applying its presets. A parse error (including a camera entry that is not an object, or a calibration that fails these checks) or an unknown profile leaves everything unchanged, and the error says what was wrong.
+- **Soft limits and digital zoom count.** If the camera has pan/tilt limits set, or digital zoom enabled, calibration measures those as the stops.
+- **VISCA-IP only.** Serial cameras are auto-discovered and not saved in setups, so a calibration couldn't persist for them yet.
 
 ## 7. Related Files
 
-- `cameras/visca/ViscaCommands.h` + `.cpp` — mapping + packet builders
+- `cameras/visca/ViscaProfile.h` — `ViscaProfile` / `ViscaAxis` and the built-in profiles
+- `cameras/visca/ViscaCalibration.h` + `.cpp` — `camera calibrate`'s measurement routine
+- `cameras/visca/ViscaCommands.h` + `.cpp` — mapping + packet builders + reply parsing
 - `cameras/visca/ViscaCamera.cpp` — uses the commands for `setPosition`/`setZoom`
 - `cameras/Camera.h` + `Preset.h` — base interface
 - `commands/camera/MoveCommand.cpp` — parses user `camera move` args
