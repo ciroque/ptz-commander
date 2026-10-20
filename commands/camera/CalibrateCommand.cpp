@@ -112,6 +112,7 @@ namespace commands::camera {
                 << "  pan   " << describeAxis(profile->pan) << std::endl
                 << "  tilt  " << describeAxis(profile->tilt) << std::endl
                 << "  zoom  raw " << hex(profile->zoomMinRaw) << " to " << hex(profile->zoomMaxRaw) << std::endl
-                << "Existing presets were converted to keep their positions." << std::endl;
+                << "Existing presets were converted to keep their positions." << std::endl
+                << "Run `setup save` to keep this calibration." << std::endl;
     }
 }
