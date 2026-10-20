@@ -10,6 +10,8 @@ target_sources(ptz_commander PRIVATE
     camera/AddIpCommand.h
     camera/AliasCommand.cpp
     camera/AliasCommand.h
+    camera/CalibrateCommand.cpp
+    camera/CalibrateCommand.h
     camera/ListCommand.cpp
     camera/ListCommand.h
     camera/MoveCommand.cpp

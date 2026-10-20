@@ -129,4 +129,26 @@ bool ViscaCameraAdapter::addIpCamera(const ViscaIpEndpoint& endpoint) {
     return true;
 }
 
+std::optional<ViscaProfile> ViscaCameraAdapter::calibrateIpCamera(const std::string& serial,
+                                                                  const CalibrationRanges& ranges,
+                                                                  const ViscaCalibrator::Progress& progress,
+                                                                  std::string& error) {
+    const auto endpoint = std::find_if(ipEndpoints_.begin(), ipEndpoints_.end(),
+        [&serial](const ViscaIpEndpoint& ep) {
+            return "VISCA-IP:" + ep.host + ":" + std::to_string(ep.port) == serial;
+        });
+    auto camera = std::dynamic_pointer_cast<ViscaCamera>(manager_.findBySerial(serial));
+    if (endpoint == ipEndpoints_.end() || !camera) {
+        error = serial + " is not a VISCA-IP camera";
+        return std::nullopt;
+    }
+
+    auto profile = camera->calibrate(ranges, progress, error);
+    if (!profile) {
+        return std::nullopt;
+    }
+    camera->applyProfile(*profile);
+    return profile;
+}
+
 } // namespace cameras::visca

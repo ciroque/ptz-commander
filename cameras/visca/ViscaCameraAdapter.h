@@ -2,9 +2,11 @@
 #define CAMERAS_VISCA_VISCA_CAMERA_ADAPTER_H
 
 #include "../CameraManager.h"
+#include "ViscaCalibration.h"
 #include "ViscaIpEndpoint.h"
 
 #include <atomic>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -20,6 +22,11 @@ public:
     void stop();
 
     bool addIpCamera(const ViscaIpEndpoint& endpoint);
+    // Calibrates a VISCA-IP camera and switches it to the measured profile.
+    std::optional<ViscaProfile> calibrateIpCamera(const std::string& serial,
+                                                  const CalibrationRanges& ranges,
+                                                  const ViscaCalibrator::Progress& progress,
+                                                  std::string& error);
     const std::vector<ViscaIpEndpoint>& ipEndpoints() const { return ipEndpoints_; }
 
 private:
