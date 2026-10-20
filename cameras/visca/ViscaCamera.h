@@ -33,6 +33,10 @@ public:
     bool setZoom(int zoom, int speed) override;
     Ptz getCurrentPtz() const override;
 
+    // Sends a pan/tilt position inquiry and reports whether a VISCA reply
+    // came back. An error reply counts: it proves a VISCA device is listening.
+    bool answersInquiry() const;
+
     const ViscaProfile& profile() const { return profile_; }
 
     // Drives the camera through its full range to measure a profile. Does not
