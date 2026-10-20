@@ -117,7 +117,7 @@ Automatic discovery is performed at startup for VISCA-over-serial cameras.
 
 - Preferred hardware: Lumens VC-A51P (or compatible VISCA serial PTZ) connected via Keyspan USA-19H USB serial adapter (VID 06CD / PID 0121). Appears as e.g. COM3.
 - Default settings: 9600 baud, 8N1, camera address 1.
-- The implementation uses **absolute** Pan/Tilt/Zoom positioning commands only (no velocity "drive + stop" commands). This matches the `camera move` / preset model used by the rest of the tool.
+- Moves use **absolute** Pan/Tilt/Zoom positioning commands. This matches the `camera move` / preset model used by the rest of the tool. (Velocity "drive + stop" commands are only used by `camera calibrate`.)
 - Discovered cameras get synthetic serial numbers of the form `VISCA:COM3:1` (usable for `camera move`, `preset store/apply`, aliases, etc.).
 - Multiple VISCA cameras and/or OBSBOT cameras can coexist.
 
@@ -130,3 +130,15 @@ preset apply VISCA:COM3:1 intro
 ```
 
 Manual port configuration remains possible in future via CLI/config (the discovery and camera code are designed around defaults + `ViscaConfig` so they can be extended without major surgery).
+
+## VISCA-over-IP Camera Support
+
+Add a camera by address, then let `camera calibrate` measure its ranges instead of relying on a built-in profile:
+
+```
+camera add visca-ip 192.168.1.146
+camera calibrate VISCA-IP:192.168.1.146:52381 350 90 90
+setup save
+```
+
+Calibration moves the camera to every mechanical stop and through its full zoom (about 25 seconds), then leaves it at home with zoom fully wide. The numbers are the spec-sheet pan span and tilt down/up angles; the camera can only report raw positions, not degrees. The measured profile is saved with the setup. See `docs/VISCA-PTZ-Ranges-and-Coordinate-System.md` for details.
