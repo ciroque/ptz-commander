@@ -99,9 +99,14 @@ std::vector<uint8_t> ViscaCommands::panTiltAbsolute(float panDeg, float tiltDeg,
                                                     const ViscaProfile& profile,
                                                     uint8_t panSpeed, uint8_t tiltSpeed,
                                                     uint8_t address) {
-    const uint16_t panPos = panDegreesToVisca(panDeg, profile);
-    const uint16_t tiltPos = tiltDegreesToVisca(tiltDeg, profile);
+    return panTiltAbsoluteRaw(panDegreesToVisca(panDeg, profile),
+                              tiltDegreesToVisca(tiltDeg, profile),
+                              panSpeed, tiltSpeed, address);
+}
 
+std::vector<uint8_t> ViscaCommands::panTiltAbsoluteRaw(uint16_t panPos, uint16_t tiltPos,
+                                                       uint8_t panSpeed, uint8_t tiltSpeed,
+                                                       uint8_t address) {
     if (panSpeed < 0x01) panSpeed = 0x01;
     if (panSpeed > 0x18) panSpeed = 0x18;
     if (tiltSpeed < 0x01) tiltSpeed = 0x01;
@@ -123,12 +128,16 @@ std::vector<uint8_t> ViscaCommands::panTiltAbsolute(float panDeg, float tiltDeg,
 std::vector<uint8_t> ViscaCommands::zoomAbsolute(int zoomPercent,
                                                  const ViscaProfile& profile,
                                                  uint8_t address) {
+    return zoomAbsoluteRaw(zoomPercentToVisca(zoomPercent, profile), address);
+}
+
+std::vector<uint8_t> ViscaCommands::zoomAbsoluteRaw(uint16_t zoomPos, uint8_t address) {
     std::vector<uint8_t> cmd;
     cmd.push_back(addressByte(address));
     cmd.push_back(0x01);
     cmd.push_back(0x04);
     cmd.push_back(0x47);
-    appendNibblePosition(cmd, zoomPercentToVisca(zoomPercent, profile));
+    appendNibblePosition(cmd, zoomPos);
     cmd.push_back(0xFF);
     return cmd;
 }
@@ -139,6 +148,27 @@ std::vector<uint8_t> ViscaCommands::panTiltPositionInquiry(uint8_t address) {
 
 std::vector<uint8_t> ViscaCommands::zoomPositionInquiry(uint8_t address) {
     return {addressByte(address), 0x09, 0x04, 0x47, 0xFF};
+}
+
+namespace {
+    uint16_t nibbles(const std::vector<uint8_t>& reply, size_t at) {
+        return static_cast<uint16_t>((reply[at] << 12) | (reply[at + 1] << 8) |
+                                     (reply[at + 2] << 4) | reply[at + 3]);
+    }
+}
+
+std::optional<PanTiltRaw> ViscaCommands::parsePanTiltPosition(const std::vector<uint8_t>& reply) {
+    if (reply.size() != 11 || reply.back() != 0xFF || reply[0] != 0x90 || reply[1] != 0x50) {
+        return std::nullopt;
+    }
+    return PanTiltRaw{nibbles(reply, 2), nibbles(reply, 6)};
+}
+
+std::optional<uint16_t> ViscaCommands::parseZoomPosition(const std::vector<uint8_t>& reply) {
+    if (reply.size() != 7 || reply.back() != 0xFF || reply[0] != 0x90 || reply[1] != 0x50) {
+        return std::nullopt;
+    }
+    return nibbles(reply, 2);
 }
 
 uint16_t ViscaCommands::panDegreesToVisca(float degrees, const ViscaProfile& profile) {

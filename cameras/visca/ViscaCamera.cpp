@@ -138,16 +138,9 @@ Ptz ViscaCamera::getCurrentPtz() const {
 
     uint16_t panVisca = 0, tiltVisca = 0;
     bool ptOk = false;
-    if (!ptResp.empty() && ptResp.back() == 0xFF && ptResp.size() >= 11 &&
-        ptResp[0] == 0x90 && ptResp[1] == 0x50) {
-        panVisca = (static_cast<uint16_t>(ptResp[2]) << 12) |
-                   (static_cast<uint16_t>(ptResp[3]) << 8) |
-                   (static_cast<uint16_t>(ptResp[4]) << 4) |
-                   ptResp[5];
-        tiltVisca = (static_cast<uint16_t>(ptResp[6]) << 12) |
-                    (static_cast<uint16_t>(ptResp[7]) << 8) |
-                    (static_cast<uint16_t>(ptResp[8]) << 4) |
-                    ptResp[9];
+    if (const auto pt = ViscaCommands::parsePanTiltPosition(ptResp)) {
+        panVisca = pt->pan;
+        tiltVisca = pt->tilt;
         ptOk = true;
     } else if (!ptResp.empty()) {
         core::Logger::debug("VISCA pan/tilt inquiry bad response on " + serial_ +
@@ -171,12 +164,8 @@ Ptz ViscaCamera::getCurrentPtz() const {
 
     uint16_t zoomVisca = 0;
     bool zmOk = false;
-    if (!zmResp.empty() && zmResp.back() == 0xFF && zmResp.size() >= 7 &&
-        zmResp[0] == 0x90 && zmResp[1] == 0x50) {
-        zoomVisca = (static_cast<uint16_t>(zmResp[2]) << 12) |
-                    (static_cast<uint16_t>(zmResp[3]) << 8) |
-                    (static_cast<uint16_t>(zmResp[4]) << 4) |
-                    zmResp[5];
+    if (const auto zm = ViscaCommands::parseZoomPosition(zmResp)) {
+        zoomVisca = *zm;
         zmOk = true;
     } else if (!zmResp.empty()) {
         core::Logger::debug("VISCA zoom inquiry bad response on " + serial_ +
