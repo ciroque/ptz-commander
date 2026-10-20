@@ -22,6 +22,8 @@ target_sources(ptz_commander PRIVATE
     obsbot/strategies/TinyFamilyStrategy.h
 
     # VISCA serial camera support (absolute positioning only, auto-discovery for Keyspan USA-19H etc.)
+    visca/ViscaCalibration.cpp
+    visca/ViscaCalibration.h
     visca/ViscaCamera.cpp
     visca/ViscaCamera.h
     visca/ViscaCameraAdapter.cpp

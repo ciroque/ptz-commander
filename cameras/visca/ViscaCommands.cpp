@@ -142,6 +142,22 @@ std::vector<uint8_t> ViscaCommands::zoomAbsoluteRaw(uint16_t zoomPos, uint8_t ad
     return cmd;
 }
 
+std::vector<uint8_t> ViscaCommands::panTiltDrive(int panDir, int tiltDir,
+                                                 uint8_t panSpeed, uint8_t tiltSpeed,
+                                                 uint8_t address) {
+    panSpeed = std::clamp<uint8_t>(panSpeed, 0x01, 0x18);
+    tiltSpeed = std::clamp<uint8_t>(tiltSpeed, 0x01, 0x17);
+    const uint8_t pan = panDir < 0 ? 0x01 : (panDir > 0 ? 0x02 : 0x03);
+    const uint8_t tilt = tiltDir > 0 ? 0x01 : (tiltDir < 0 ? 0x02 : 0x03);
+    return {addressByte(address), 0x01, 0x06, 0x01, panSpeed, tiltSpeed, pan, tilt, 0xFF};
+}
+
+std::vector<uint8_t> ViscaCommands::zoomDrive(int dir, uint8_t address) {
+    // Variable speed 7 (fastest): 0x27 tele, 0x37 wide.
+    const uint8_t action = dir > 0 ? 0x27 : (dir < 0 ? 0x37 : 0x00);
+    return {addressByte(address), 0x01, 0x04, 0x07, action, 0xFF};
+}
+
 std::vector<uint8_t> ViscaCommands::panTiltPositionInquiry(uint8_t address) {
     return {addressByte(address), 0x09, 0x06, 0x12, 0xFF};
 }

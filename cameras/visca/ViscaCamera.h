@@ -2,11 +2,13 @@
 #define CAMERAS_VISCA_VISCA_CAMERA_H
 
 #include "../Camera.h"
+#include "ViscaCalibration.h"
 #include "ViscaProfile.h"
 #include "ViscaTransport.h"
 #include "ViscaCommands.h"
 
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace cameras::visca {
@@ -30,6 +32,18 @@ public:
     bool setPosition(float pan, float tilt, int zoom) override;
     bool setZoom(int zoom, int speed) override;
     Ptz getCurrentPtz() const override;
+
+    const ViscaProfile& profile() const { return profile_; }
+
+    // Drives the camera through its full range to measure a profile. Does not
+    // apply it; see applyProfile.
+    std::optional<ViscaProfile> calibrate(const CalibrationRanges& ranges,
+                                          const ViscaCalibrator::Progress& progress,
+                                          std::string& error);
+
+    // Switches profiles. Presets are stored in degrees, so each one is
+    // converted through its raw position to keep pointing at the same spot.
+    void applyProfile(const ViscaProfile& profile);
 
 private:
     bool ensureOpen() const;
