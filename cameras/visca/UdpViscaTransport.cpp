@@ -1,4 +1,5 @@
 #include "UdpViscaTransport.h"
+#include "ViscaIpFraming.h"
 #include "../../core/Logger.h"
 
 #ifdef _WIN32
@@ -86,37 +87,11 @@ std::string UdpViscaTransport::toHex(const std::vector<uint8_t>& data) {
     return oss.str();
 }
 
-std::vector<uint8_t> UdpViscaTransport::frame(const std::vector<uint8_t>& visca) {
-    const uint16_t type = (visca.size() >= 2 && visca[1] == 0x09) ? 0x0110 : 0x0100;
-    const uint16_t len = static_cast<uint16_t>(visca.size());
-    const uint32_t seq = sequence_++;
-    std::vector<uint8_t> out;
-    out.reserve(8 + visca.size());
-    out.push_back(static_cast<uint8_t>(type >> 8));
-    out.push_back(static_cast<uint8_t>(type & 0xFF));
-    out.push_back(static_cast<uint8_t>(len >> 8));
-    out.push_back(static_cast<uint8_t>(len & 0xFF));
-    out.push_back(static_cast<uint8_t>(seq >> 24));
-    out.push_back(static_cast<uint8_t>(seq >> 16));
-    out.push_back(static_cast<uint8_t>(seq >> 8));
-    out.push_back(static_cast<uint8_t>(seq & 0xFF));
-    out.insert(out.end(), visca.begin(), visca.end());
-    return out;
-}
-
-std::vector<uint8_t> UdpViscaTransport::unframe(const std::vector<uint8_t>& datagram) {
-    if (datagram.size() >= 8 && datagram[0] == 0x01 &&
-        (datagram[1] == 0x00 || datagram[1] == 0x01 || datagram[1] == 0x11 || datagram[1] == 0x10)) {
-        return std::vector<uint8_t>(datagram.begin() + 8, datagram.end());
-    }
-    return datagram;
-}
-
 bool UdpViscaTransport::write(const std::vector<uint8_t>& data) {
     if (!isOpen() || data.empty()) {
         return false;
     }
-    const auto pkt = frame(data);
+    const auto pkt = viscaIpFrame(data, sequence_++);
     core::Logger::debug("VISCA-IP TX " + host_ + ":" + std::to_string(port_) + " " + toHex(pkt));
     const int sent = sendto(socket_, reinterpret_cast<const char*>(pkt.data()),
                             static_cast<int>(pkt.size()), 0,
@@ -171,7 +146,7 @@ std::vector<uint8_t> UdpViscaTransport::readPacket(int timeoutMs) {
         }
         std::vector<uint8_t> datagram(buf, buf + n);
         core::Logger::debug("VISCA-IP RX " + host_ + ":" + std::to_string(port_) + " " + toHex(datagram));
-        auto visca = unframe(datagram);
+        auto visca = viscaIpUnframe(datagram);
         if (visca.size() >= 3 && visca[0] == 0x90 && visca[1] == 0x41) {
             continue; // ACK; wait for completion or inquiry payload
         }
