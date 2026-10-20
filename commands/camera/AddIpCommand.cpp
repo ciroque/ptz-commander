@@ -1,6 +1,7 @@
 #include "AddIpCommand.h"
 #include "../Arguments.h"
 #include "../../cameras/visca/ViscaIpEndpoint.h"
+#include "../../cameras/visca/ViscaProfile.h"
 #include <iostream>
 #include <string>
 
@@ -36,6 +37,11 @@ namespace commands::camera {
         }
         if (tokens.size() >= 4) {
             ep.profile = tokens[3];
+        }
+        if (!cameras::visca::profileByName(ep.profile)) {
+            ctx.err << "Unknown profile '" << ep.profile << "'. Known: "
+                    << cameras::visca::knownProfileNames() << std::endl;
+            return;
         }
 
         if (!ctx.addViscaIp(ep)) {

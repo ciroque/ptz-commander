@@ -104,6 +104,12 @@ bool ViscaCameraAdapter::addIpCamera(const ViscaIpEndpoint& endpoint) {
         core::Logger::warn("VISCA-IP camera already present: " + id);
         return false;
     }
+    const auto profile = profileByName(profileName);
+    if (!profile) {
+        core::Logger::error("Unknown VISCA profile '" + profileName + "' for " + id +
+                            " (known: " + knownProfileNames() + ")");
+        return false;
+    }
 
     auto transport = std::make_unique<UdpViscaTransport>(endpoint.host, port);
     auto camera = std::make_shared<ViscaCamera>(
@@ -111,7 +117,7 @@ bool ViscaCameraAdapter::addIpCamera(const ViscaIpEndpoint& endpoint) {
         id,
         "VISCA IP (" + endpoint.host + ")",
         static_cast<uint8_t>(1),
-        profileByName(profileName));
+        *profile);
     manager_.addCamera(camera);
 
     ViscaIpEndpoint stored = endpoint;

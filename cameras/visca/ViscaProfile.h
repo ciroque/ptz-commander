@@ -2,6 +2,7 @@
 #define CAMERAS_VISCA_VISCA_PROFILE_H
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
 namespace cameras::visca {
@@ -52,11 +53,20 @@ inline ViscaProfile tenveo30x() {
     return p;
 }
 
-inline ViscaProfile profileByName(const std::string& name) {
+// Unknown names return nullopt rather than a default, so a typo cannot
+// silently put a camera on the wrong ranges.
+inline std::optional<ViscaProfile> profileByName(const std::string& name) {
     if (name == "tenveo-30x" || name == "tenveo") {
         return tenveo30x();
     }
-    return lumensVcA51p();
+    if (name == "lumens-vc-a51p" || name == "lumens") {
+        return lumensVcA51p();
+    }
+    return std::nullopt;
+}
+
+inline const char* knownProfileNames() {
+    return "tenveo-30x, lumens-vc-a51p";
 }
 
 } // namespace cameras::visca
