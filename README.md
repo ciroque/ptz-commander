@@ -37,7 +37,8 @@ The `zoom` argument is an integer between 0 and 100, where 0 is the camera's min
 | `camera alias`                 | `<id> <alias>`                          | Sets a unique friendly alias for a camera — e.g., ```camera alias RMOWTHF7211JGR "LeftCam"```. Rejected if the alias is `*` or is already used as another camera's alias, serial, or name. |
 | `camera list`                  | None                                    | Lists all available cameras. |
 | `camera add visca-ip`          | `<host> [port] [profile]`               | Adds a VISCA-over-IP camera (default port 52381, profile tenveo-30x or lumens-vc-a51p). Survives `setup save` / `setup load`. |
-| `camera scan visca-ip`         | `[subnet] [port]`                       | Lists the VISCA-over-IP cameras that answer on the local networks (each narrowed to a /24), or on a subnet such as `192.168.1.0/24` (down to /16). Default port 52381. Only sends position inquiries: nothing is added or moved. |
+| `camera scan visca-ip`         | `[subnet] [port]`                       | Lists the VISCA-over-IP cameras that answer on the local networks (each narrowed to a /24), or on a subnet such as `192.168.1.0/24` (down to /16). Default port 52381. Only sends position inquiries: nothing is added or moved. Rows are numbered for `camera add scanned`. |
+| `camera add scanned`           | `<n...\|*> [profile]`                  | Adds cameras by their row number in the last `camera scan visca-ip` (e.g. `camera add scanned 1 3`, or `*` for every row). Rows already added are skipped. Default profile tenveo-30x. |
 | `camera calibrate`             | `<id> [panSpan] [tiltDown] [tiltUp]`    | Measures a VISCA-IP camera's pan, tilt and zoom stops and switches it to the measured profile. **Moves the camera through its full range** (about 25 seconds), then leaves it at home with zoom fully wide. The degree arguments come from the spec sheet (defaults `340 90 90`). Existing presets keep their positions. |
 | `camera move`                  | ```<id|*> <pan> <tilt> <zoom>```            | Moves camera(s) to PTZ — ```pan```, ```tilt``` (float), ```zoom``` (int, 0-100). Asterisk moves all cameras.          |
 | `camera show`                  | ```<id|*>```                                | Shows camera details.           |
@@ -134,11 +135,11 @@ Manual port configuration remains possible in future via CLI/config (the discove
 
 ## VISCA-over-IP Camera Support
 
-Find the camera's address, add it, then let `camera calibrate` measure its ranges instead of relying on a built-in profile:
+Find the camera, add it by its row in the scan, then let `camera calibrate` measure its ranges instead of relying on a built-in profile:
 
 ```
 camera scan visca-ip
-camera add visca-ip 192.168.1.146
+camera add scanned 1
 camera calibrate VISCA-IP:192.168.1.146:52381 350 90 90
 setup save
 ```
@@ -146,3 +147,5 @@ setup save
 Calibration moves the camera to every mechanical stop and through its full zoom (about 25 seconds), then leaves it at home with zoom fully wide. The numbers are the spec-sheet pan span and tilt down/up angles; the camera can only report raw positions, not degrees. The measured profile is saved with the setup. See `docs/VISCA-PTZ-Ranges-and-Coordinate-System.md` for details.
 
 `camera scan visca-ip` sends a VISCA-over-IP position inquiry to every address in the scanned networks and lists each device that replies, with the position it reported. A /24 takes under 2 seconds, most of it the 1.5 s spent listening for replies. Any VISCA reply counts, including an error, because some cameras (the Tenveo among them) reject the usual version inquiry. Cameras on another subnet can be found by naming it, e.g. `camera scan visca-ip 10.1.20.0/24`. Sony's discovery broadcast isn't used: the Tenveo doesn't answer it, and broadcasts don't cross routers.
+
+The row numbers belong to the last scan in the current session: a new scan replaces them, and they aren't saved. `camera add visca-ip <host>` still works for a camera you already know the address of. A scan can't tell models apart, so cameras added from it get the tenveo-30x profile unless one is given; calibrate any other camera.
