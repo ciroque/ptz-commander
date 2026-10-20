@@ -41,6 +41,8 @@ namespace {
     constexpr int kRounds = 2;
     // How long to keep listening after the last probe.
     constexpr auto kReplyWindow = std::chrono::milliseconds(1500);
+    // Consecutive ICMP resets tolerated before receiving counts as broken.
+    constexpr int kMaxResetsInARow = 16;
 
     // Clamped so an out-of-range prefix can't shift by a negative or full-width count.
     uint32_t maskFor(int prefix) {
@@ -189,7 +191,12 @@ std::vector<ViscaIpScanHit> scanViscaIp(const std::vector<Ipv4Network>& networks
     // Windows otherwise reports as WSAECONNRESET on the next recvfrom.
     BOOL reportReset = FALSE;
     DWORD returned = 0;
-    WSAIoctl(sock, SIO_UDP_CONNRESET, &reportReset, sizeof(reportReset), nullptr, 0, &returned, nullptr, nullptr);
+    if (WSAIoctl(sock, SIO_UDP_CONNRESET, &reportReset, sizeof(reportReset), nullptr, 0, &returned, nullptr,
+                 nullptr) != 0) {
+        error = "could not turn off ICMP reset reporting (WSA error " + std::to_string(WSAGetLastError()) + ")";
+        closesocket(sock);
+        return {};
+    }
     int receiveBuffer = 1 << 20;
     setsockopt(sock, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<const char*>(&receiveBuffer), sizeof(receiveBuffer));
 
@@ -203,6 +210,10 @@ std::vector<ViscaIpScanHit> scanViscaIp(const std::vector<Ipv4Network>& networks
     const std::set<uint32_t> targetSet(targets.begin(), targets.end());
 
     std::map<uint32_t, ViscaIpScanHit> hits;
+    // Set when receiving fails in a way that could repeat forever.
+    std::string receiveError;
+    int resetsInARow = 0;
+    // Returns true while there may be more to read without waiting.
     const auto receive = [&](int timeoutMs) {
         timeval tv{timeoutMs / 1000, (timeoutMs % 1000) * 1000};
         fd_set fds;
@@ -216,8 +227,22 @@ std::vector<ViscaIpScanHit> scanViscaIp(const std::vector<Ipv4Network>& networks
         int fromLen = sizeof(from);
         const int n = recvfrom(sock, reinterpret_cast<char*>(buf), sizeof(buf), 0,
                                reinterpret_cast<sockaddr*>(&from), &fromLen);
-        if (n <= 0) {
-            return true;  // something arrived but wasn't data; keep reading
+        if (n < 0) {
+            const int wsaError = WSAGetLastError();
+            if (wsaError == WSAEMSGSIZE) {
+                return true;  // an oversized datagram, discarded; not a VISCA reply
+            }
+            // A stray ICMP reset is skipped, but a run of them means the
+            // error isn't clearing and the drain would never end.
+            if ((wsaError == WSAECONNRESET || wsaError == WSAENETRESET) && ++resetsInARow <= kMaxResetsInARow) {
+                return true;
+            }
+            receiveError = "receive failed (WSA error " + std::to_string(wsaError) + ")";
+            return false;
+        }
+        resetsInARow = 0;
+        if (n == 0) {
+            return true;
         }
         const uint32_t host = ntohl(from.sin_addr.s_addr);
         const auto visca = viscaIpUnframe(std::vector<uint8_t>(buf, buf + n));
@@ -236,7 +261,7 @@ std::vector<ViscaIpScanHit> scanViscaIp(const std::vector<Ipv4Network>& networks
 
     const auto probe = viscaIpFrame(ViscaCommands::panTiltPositionInquiry(1), 0);
     auto batchStart = Clock::now();
-    for (int round = 0; round < kRounds; ++round) {
+    for (int round = 0; round < kRounds && receiveError.empty(); ++round) {
         for (size_t i = 0; i < targets.size(); ++i) {
             sockaddr_in dest{};
             dest.sin_family = AF_INET;
@@ -246,6 +271,9 @@ std::vector<ViscaIpScanHit> scanViscaIp(const std::vector<Ipv4Network>& networks
                    reinterpret_cast<const sockaddr*>(&dest), sizeof(dest));
             if ((i + 1) % kBatchSize == 0) {
                 while (receive(0)) {}  // drain what has arrived, without waiting
+                if (!receiveError.empty()) {
+                    break;
+                }
                 std::this_thread::sleep_until(batchStart + kBatchInterval);
                 batchStart = Clock::now();
             }
@@ -253,11 +281,15 @@ std::vector<ViscaIpScanHit> scanViscaIp(const std::vector<Ipv4Network>& networks
     }
 
     const auto deadline = Clock::now() + kReplyWindow;
-    while (Clock::now() < deadline) {
+    while (receiveError.empty() && Clock::now() < deadline) {
         const auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(deadline - Clock::now());
         receive(static_cast<int>(std::max<long long>(1, remaining.count())));
     }
     closesocket(sock);
+    if (!receiveError.empty()) {
+        error = receiveError;
+        return {};
+    }
 
     std::vector<ViscaIpScanHit> out;
     for (auto& [host, hit] : hits) {
