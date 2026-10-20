@@ -21,7 +21,8 @@ public:
     void start();
     void stop();
 
-    bool addIpCamera(const ViscaIpEndpoint& endpoint);
+    // False with error set if the camera can't be added.
+    bool addIpCamera(const ViscaIpEndpoint& endpoint, std::string& error);
     // For setup load: adds the camera, or switches an existing one to the
     // endpoint's profile so the file's presets land where they were saved.
     bool loadIpCamera(const ViscaIpEndpoint& endpoint);

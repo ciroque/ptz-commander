@@ -118,18 +118,21 @@ namespace {
     }
 }
 
-bool ViscaCameraAdapter::addIpCamera(const ViscaIpEndpoint& requested) {
+bool ViscaCameraAdapter::addIpCamera(const ViscaIpEndpoint& requested, std::string& error) {
     if (requested.host.empty()) {
+        error = "no host given";
         return false;
     }
     const auto endpoint = withDefaults(requested);
     const std::string id = ipCameraId(endpoint);
     if (manager_.findBySerial(id)) {
         core::Logger::warn("VISCA-IP camera already present: " + id);
+        error = "already added";
         return false;
     }
     const auto profile = profileFor(endpoint);
     if (!profile) {
+        error = "unknown profile '" + endpoint.profile + "'";
         return false;
     }
 
@@ -155,7 +158,8 @@ bool ViscaCameraAdapter::loadIpCamera(const ViscaIpEndpoint& requested) {
     const std::string id = ipCameraId(endpoint);
     auto camera = std::dynamic_pointer_cast<ViscaCamera>(manager_.findBySerial(id));
     if (!camera) {
-        return addIpCamera(endpoint);
+        std::string error;
+        return addIpCamera(endpoint, error);
     }
 
     // The file's presets were saved under the file's profile, so the camera

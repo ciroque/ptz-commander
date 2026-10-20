@@ -19,8 +19,8 @@ namespace core {
           sceneControlServer_(cameraMgr_, sceneStore_),
           running_(false) {
         context_.onSetupChanged = [this] { sceneControlServer_.broadcast(); };
-        context_.addViscaIp = [this](const cameras::visca::ViscaIpEndpoint& endpoint) {
-            const bool ok = viscaAdapter_->addIpCamera(endpoint);
+        context_.addViscaIp = [this](const cameras::visca::ViscaIpEndpoint& endpoint, std::string& error) {
+            const bool ok = viscaAdapter_->addIpCamera(endpoint, error);
             context_.viscaIpEndpoints = viscaAdapter_->ipEndpoints();
             return ok;
         };
