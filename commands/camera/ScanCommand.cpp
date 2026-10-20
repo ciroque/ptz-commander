@@ -1,6 +1,7 @@
 #include "ScanCommand.h"
 #include "../Arguments.h"
 #include "../../cameras/visca/ViscaIpScanner.h"
+#include "ViscaIpLabel.h"
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
@@ -89,39 +90,49 @@ namespace commands::camera {
             ctx.err << "Scan failed: " << error << std::endl;
             return;
         }
+
+        // Row n of the table is entry n-1, for `camera add scanned <n>`.
+        std::vector<cameras::visca::ViscaIpEndpoint> rows;
+        for (const auto& hit : hits) {
+            cameras::visca::ViscaIpEndpoint ep;
+            ep.host = hit.host;
+            ep.port = hit.port;
+            rows.push_back(std::move(ep));
+        }
+        ctx.lastViscaIpScan = std::move(rows);
+
         if (hits.empty()) {
             ctx.out << "No VISCA-IP cameras answered." << std::endl;
             return;
         }
 
+        const int IndexColWidth = 3;
         const int HostColWidth = 21;
         const int ReplyColWidth = 24;
         ctx.out << std::endl << std::left
+                << std::setw(IndexColWidth) << "#" << " | "
                 << std::setw(HostColWidth) << "Address" << " | "
                 << std::setw(ReplyColWidth) << "Reply" << " | " << "Added as" << std::endl
+                << std::string(IndexColWidth, '-') << "-+-"
                 << std::string(HostColWidth, '-') << "-+-"
                 << std::string(ReplyColWidth, '-') << "-+-" << std::string(20, '-') << std::endl;
 
         bool anyNew = false;
-        for (const auto& hit : hits) {
-            const bool added = std::any_of(ctx.viscaIpEndpoints.begin(), ctx.viscaIpEndpoints.end(),
-                [&](const auto& ep) { return ep.host == hit.host && ep.port == hit.port; });
-            std::string addedAs = "-";
-            if (added) {
-                const std::string serial = "VISCA-IP:" + hit.host + ":" + std::to_string(hit.port);
-                const auto camera = ctx.cameraMgr.findBySerial(serial);
-                addedAs = (camera && !camera->getAlias().empty()) ? camera->getAlias() : serial;
-            }
-            anyNew = anyNew || !added;
+        for (size_t i = 0; i < hits.size(); ++i) {
+            const auto& hit = hits[i];
+            const auto addedAs = viscaIpAddedAs(ctx, hit.host, hit.port);
+            anyNew = anyNew || !addedAs;
             ctx.out << std::left
+                    << std::setw(IndexColWidth) << (i + 1) << " | "
                     << std::setw(HostColWidth) << (hit.host + ":" + std::to_string(hit.port)) << " | "
-                    << std::setw(ReplyColWidth) << describeReply(hit) << " | " << addedAs << std::endl;
+                    << std::setw(ReplyColWidth) << describeReply(hit) << " | "
+                    << addedAs.value_or("-") << std::endl;
         }
 
         ctx.out << std::endl << "Found " << hits.size()
                 << (hits.size() == 1 ? " VISCA-IP camera." : " VISCA-IP cameras.") << std::endl;
         if (anyNew) {
-            ctx.out << "Add one with: camera add visca-ip <host> [port] [profile]" << std::endl;
+            ctx.out << "Add with: camera add scanned <n...|*> [profile]" << std::endl;
         }
     }
 }

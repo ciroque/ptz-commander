@@ -22,6 +22,7 @@ target_sources(ptz_commander PRIVATE
     camera/ScanCommand.h
     camera/ShowCommand.cpp
     camera/ShowCommand.h
+    camera/ViscaIpLabel.h
 
     console/ClearCommand.cpp
     console/ClearCommand.h
