@@ -24,6 +24,12 @@ namespace core {
             context_.viscaIpEndpoints = viscaAdapter_->ipEndpoints();
             return ok;
         };
+        context_.calibrateViscaIp = [this](const std::string& serial,
+                                           const cameras::visca::CalibrationRanges& ranges,
+                                           const cameras::visca::ViscaCalibrator::Progress& progress,
+                                           std::string& error) {
+            return viscaAdapter_->calibrateIpCamera(serial, ranges, progress, error);
+        };
         sceneControlServer_.setOnSceneApply([this](const std::string& name) {
             std::lock_guard<std::mutex> lock(commandMutex_);
             context_.out << std::endl;

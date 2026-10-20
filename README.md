@@ -36,7 +36,8 @@ The `zoom` argument is an integer between 0 and 100, where 0 is the camera's min
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
 | `camera alias`                 | `<id> <alias>`                          | Sets a unique friendly alias for a camera — e.g., ```camera alias RMOWTHF7211JGR "LeftCam"```. Rejected if the alias is `*` or is already used as another camera's alias, serial, or name. |
 | `camera list`                  | None                                    | Lists all available cameras. |
-| `camera add visca-ip`          | `<host> [port] [profile]`               | Adds a VISCA-over-IP camera (default port 52381, profile tenveo-30x). Survives `setup save` / `setup load`. |
+| `camera add visca-ip`          | `<host> [port] [profile]`               | Adds a VISCA-over-IP camera (default port 52381, profile tenveo-30x or lumens-vc-a51p). Survives `setup save` / `setup load`. |
+| `camera calibrate`             | `<id> [panSpan] [tiltDown] [tiltUp]`    | Measures a VISCA-IP camera's pan, tilt and zoom stops and switches it to the measured profile. **Moves the camera through its full range** (about 25 seconds), then leaves it at home with zoom fully wide. The degree arguments come from the spec sheet (defaults `340 90 90`). Existing presets keep their positions. |
 | `camera move`                  | ```<id|*> <pan> <tilt> <zoom>```            | Moves camera(s) to PTZ — ```pan```, ```tilt``` (float), ```zoom``` (int, 0-100). Asterisk moves all cameras.          |
 | `camera show`                  | ```<id|*>```                                | Shows camera details.           |
 

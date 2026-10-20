@@ -2,6 +2,7 @@
 
 #include "camera/AddIpCommand.h"
 #include "camera/AliasCommand.h"
+#include "camera/CalibrateCommand.h"
 #include "camera/ListCommand.h"
 #include "camera/MoveCommand.h"
 #include "camera/PushCommand.h"
@@ -37,6 +38,7 @@ namespace commands {
         addCommand(std::make_unique<camera::ListCommand>());
         addCommand(std::make_unique<camera::AddIpCommand>());
         addCommand(std::make_unique<camera::AliasCommand>());
+        addCommand(std::make_unique<camera::CalibrateCommand>());
         addCommand(std::make_unique<camera::MoveCommand>());
         addCommand(std::make_unique<camera::PushCommand>());
         addCommand(std::make_unique<camera::ShowCommand>());
