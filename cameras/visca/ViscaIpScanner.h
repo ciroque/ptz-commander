@@ -15,7 +15,8 @@ struct Ipv4Network {
     int prefix = 32;
 
     // Addresses to probe: all but the network and broadcast addresses,
-    // except for /31 and /32, which have none.
+    // except for /31 and /32, which have none. Empty for a prefix outside
+    // kMinScanPrefix..32.
     std::vector<uint32_t> hosts() const;
     std::string toString() const;
 };

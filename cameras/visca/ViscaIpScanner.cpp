@@ -42,8 +42,12 @@ namespace {
     // How long to keep listening after the last probe.
     constexpr auto kReplyWindow = std::chrono::milliseconds(1500);
 
+    // Clamped so an out-of-range prefix can't shift by a negative or full-width count.
     uint32_t maskFor(int prefix) {
-        return prefix == 0 ? 0 : 0xFFFFFFFFu << (32 - prefix);
+        if (prefix <= 0) {
+            return 0;
+        }
+        return prefix >= 32 ? 0xFFFFFFFFu : 0xFFFFFFFFu << (32 - prefix);
     }
 
     // A reply from camera address 1-7 starts with 0x90-0xF0 and ends with FF.
@@ -63,6 +67,9 @@ namespace {
 }
 
 std::vector<uint32_t> Ipv4Network::hosts() const {
+    if (prefix < kMinScanPrefix || prefix > 32) {
+        return {};
+    }
     const uint64_t size = uint64_t{1} << (32 - prefix);
     std::vector<uint32_t> out;
     if (prefix >= 31) {
@@ -148,7 +155,11 @@ std::vector<Ipv4Network> localIpv4Networks() {
             if ((address >> 16) == 0xA9FE) {  // 169.254/16: no DHCP lease, nothing to find
                 continue;
             }
-            const int prefix = std::max<int>(ua->OnLinkPrefixLength, kLocalScanPrefix);
+            // Windows reports 255 when the prefix isn't known; anything outside
+            // 1..32 is invalid for IPv4, so fall back to the /24.
+            const int onLink = ua->OnLinkPrefixLength;
+            const int prefix = (onLink >= 1 && onLink <= 32) ? std::max(onLink, kLocalScanPrefix)
+                                                              : kLocalScanPrefix;
             const Ipv4Network network{address & maskFor(prefix), prefix};
             const bool seen = std::any_of(networks.begin(), networks.end(), [&](const Ipv4Network& n) {
                 return n.base == network.base && n.prefix == network.prefix;
