@@ -1,57 +1,80 @@
 #include "ViscaCommands.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <vector>
 
 namespace cameras::visca {
 
 namespace {
-    uint16_t mapRange(float value, float inA, float inB, uint16_t outA, uint16_t outB) {
+    // Raw outputs are linear positions (see linear()); the result is rounded
+    // and wrapped back into the 16-bit field the camera expects.
+    uint16_t mapRange(float value, float inA, float inB, float outA, float outB) {
         if (inA == inB) {
-            return outA;
+            return static_cast<uint16_t>(static_cast<int32_t>(std::floor(outA + 0.5f)));
         }
         const float lo = std::min(inA, inB);
         const float hi = std::max(inA, inB);
         const float cv = std::clamp(value, lo, hi);
         const float norm = (cv - inA) / (inB - inA);
-        const float span = static_cast<float>(outB) - static_cast<float>(outA);
-        return static_cast<uint16_t>(outA + norm * span + 0.5f);
+        const float out = outA + norm * (outB - outA);
+        return static_cast<uint16_t>(static_cast<int32_t>(std::floor(out + 0.5f)));
     }
 
-    float unmapRange(uint16_t value, uint16_t inA, uint16_t inB, float outA, float outB) {
+    float unmapRange(float value, float inA, float inB, float outA, float outB) {
         if (inA == inB) {
             return outA;
         }
-        const float a = static_cast<float>(inA);
-        const float b = static_cast<float>(inB);
-        const float v = std::clamp(static_cast<float>(value), std::min(a, b), std::max(a, b));
-        const float norm = (v - a) / (b - a);
+        const float v = std::clamp(value, std::min(inA, inB), std::max(inA, inB));
+        const float norm = (v - inA) / (inB - inA);
         return outA + norm * (outB - outA);
     }
 
+    // Position on a straight line: signed axes read 0xF670 as -2448 so a range
+    // that crosses 0x0000 stays monotonic.
+    float linear(uint16_t raw, const ViscaAxis& axis) {
+        return axis.signedRaw ? static_cast<float>(static_cast<int16_t>(raw))
+                              : static_cast<float>(raw);
+    }
+
     uint16_t axisDegreesToVisca(float degrees, const ViscaAxis& axis) {
+        const float minRaw = linear(axis.minRaw, axis);
+        const float homeRaw = linear(axis.homeRaw, axis);
+        const float maxRaw = linear(axis.maxRaw, axis);
         if (!axis.throughHome) {
-            return mapRange(degrees, axis.minDeg, axis.maxDeg, axis.minRaw, axis.maxRaw);
+            return mapRange(degrees, axis.minDeg, axis.maxDeg, minRaw, maxRaw);
         }
         const float d = std::clamp(degrees, axis.minDeg, axis.maxDeg);
-        if (d <= 0.0f) {
-            return mapRange(d, axis.minDeg, 0.0f, axis.minRaw, axis.homeRaw);
+        // 0 degrees is home by definition. Without this, a zero-width degree
+        // side (minDeg == 0) would short-circuit to minRaw.
+        if (d == 0.0f) {
+            return axis.homeRaw;
         }
-        return mapRange(d, 0.0f, axis.maxDeg, axis.homeRaw, axis.maxRaw);
+        if (d < 0.0f) {
+            return mapRange(d, axis.minDeg, 0.0f, minRaw, homeRaw);
+        }
+        return mapRange(d, 0.0f, axis.maxDeg, homeRaw, maxRaw);
     }
 
     float viscaToAxisDegrees(uint16_t visca, const ViscaAxis& axis) {
+        const float v = linear(visca, axis);
+        const float minRaw = linear(axis.minRaw, axis);
+        const float homeRaw = linear(axis.homeRaw, axis);
+        const float maxRaw = linear(axis.maxRaw, axis);
         if (!axis.throughHome) {
-            return unmapRange(visca, axis.minRaw, axis.maxRaw, axis.minDeg, axis.maxDeg);
+            return unmapRange(v, minRaw, maxRaw, axis.minDeg, axis.maxDeg);
         }
-        const bool increasing = axis.minRaw <= axis.maxRaw;
-        const bool onMinSide = increasing ? (visca <= axis.homeRaw)
-                                          : (visca >= axis.homeRaw);
+        // Likewise home reads as 0 even when a stop coincides with it.
+        if (visca == axis.homeRaw) {
+            return 0.0f;
+        }
+        const bool increasing = minRaw <= maxRaw;
+        const bool onMinSide = increasing ? (v <= homeRaw) : (v >= homeRaw);
         if (onMinSide) {
-            return unmapRange(visca, axis.minRaw, axis.homeRaw, axis.minDeg, 0.0f);
+            return unmapRange(v, minRaw, homeRaw, axis.minDeg, 0.0f);
         }
-        return unmapRange(visca, axis.homeRaw, axis.maxRaw, 0.0f, axis.maxDeg);
+        return unmapRange(v, homeRaw, maxRaw, 0.0f, axis.maxDeg);
     }
 }
 
