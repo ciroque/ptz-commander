@@ -31,6 +31,13 @@ struct ViscaCommands {
                                              uint8_t address = 1);
     static std::vector<uint8_t> zoomAbsoluteRaw(uint16_t zoomPos, uint8_t address = 1);
 
+    // Continuous drives until stopped. Direction: -1 left/down/wide, +1 right/up/tele, 0 stop.
+    static std::vector<uint8_t> panTiltDrive(int panDir, int tiltDir,
+                                             uint8_t panSpeed = 0x18,
+                                             uint8_t tiltSpeed = 0x14,
+                                             uint8_t address = 1);
+    static std::vector<uint8_t> zoomDrive(int dir, uint8_t address = 1);
+
     static std::vector<uint8_t> panTiltPositionInquiry(uint8_t address = 1);
     static std::vector<uint8_t> zoomPositionInquiry(uint8_t address = 1);
 

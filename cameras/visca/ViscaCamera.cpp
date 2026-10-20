@@ -119,6 +119,36 @@ bool ViscaCamera::setZoom(int zoom, int /*speed*/) {
     return ok;
 }
 
+std::optional<ViscaProfile> ViscaCamera::calibrate(const CalibrationRanges& ranges,
+                                                   const ViscaCalibrator::Progress& progress,
+                                                   std::string& error) {
+    if (!ensureOpen() || !transport_) {
+        error = "transport not open on " + serial_;
+        return std::nullopt;
+    }
+    ViscaCalibrator calibrator(*transport_, address_, progress);
+    return calibrator.run(ranges, error);
+}
+
+void ViscaCamera::applyProfile(const ViscaProfile& profile) {
+    const auto remap = [this, &profile](const Ptz& ptz) {
+        return Ptz{
+            ViscaCommands::viscaToPanDegrees(
+                ViscaCommands::panDegreesToVisca(ptz.pan, profile_), profile),
+            ViscaCommands::viscaToTiltDegrees(
+                ViscaCommands::tiltDegreesToVisca(ptz.tilt, profile_), profile),
+            ViscaCommands::viscaToZoomPercent(
+                ViscaCommands::zoomPercentToVisca(ptz.zoom, profile_), profile)};
+    };
+
+    for (const auto& preset : getPresets()) {
+        AddPreset(preset->name, Preset(preset->name, remap(preset->ptz)));
+    }
+    lastPtz_ = remap(lastPtz_);
+    profile_ = profile;
+    core::Logger::info("ViscaCamera " + serial_ + " now using profile " + profile_.name);
+}
+
 Ptz ViscaCamera::getCurrentPtz() const {
     if (!ensureOpen() || !transport_) {
         core::Logger::warn("ViscaCamera::getCurrentPtz - transport not open on " + serial_ + ", returning cached");
