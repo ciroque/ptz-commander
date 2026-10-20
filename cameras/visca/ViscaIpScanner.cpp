@@ -39,6 +39,11 @@ namespace {
     // Every host is probed twice in case the first probe is lost, e.g.
     // while the PC is still resolving the host's MAC address.
     constexpr int kRounds = 2;
+    // The pause between rounds, listening all the while. Windows queues few
+    // datagrams per host while ARP resolves, so a retry sent straight after
+    // the first probe can be dropped with it; after the pause the address
+    // is cached and the retry is a separate transmission.
+    constexpr auto kRoundGap = std::chrono::milliseconds(250);
     // How long to keep listening after the last probe.
     constexpr auto kReplyWindow = std::chrono::milliseconds(1500);
     // Consecutive ICMP resets tolerated before receiving counts as broken.
@@ -259,10 +264,21 @@ std::vector<ViscaIpScanHit> scanViscaIp(const std::vector<Ipv4Network>& networks
         return true;
     };
 
+    const auto listenUntil = [&](Clock::time_point deadline) {
+        while (receiveError.empty() && Clock::now() < deadline) {
+            const auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(deadline - Clock::now());
+            receive(static_cast<int>(std::max<long long>(1, remaining.count())));
+        }
+    };
+
     const auto probe = viscaIpFrame(ViscaCommands::panTiltPositionInquiry(1), 0);
     auto batchStart = Clock::now();
     for (int round = 0; round < kRounds && receiveError.empty(); ++round) {
-        for (size_t i = 0; i < targets.size(); ++i) {
+        if (round > 0) {
+            listenUntil(Clock::now() + kRoundGap);
+            batchStart = Clock::now();
+        }
+        for (size_t i = 0; i < targets.size() && receiveError.empty(); ++i) {
             sockaddr_in dest{};
             dest.sin_family = AF_INET;
             dest.sin_port = htons(static_cast<u_short>(port));
@@ -271,20 +287,13 @@ std::vector<ViscaIpScanHit> scanViscaIp(const std::vector<Ipv4Network>& networks
                    reinterpret_cast<const sockaddr*>(&dest), sizeof(dest));
             if ((i + 1) % kBatchSize == 0) {
                 while (receive(0)) {}  // drain what has arrived, without waiting
-                if (!receiveError.empty()) {
-                    break;
-                }
                 std::this_thread::sleep_until(batchStart + kBatchInterval);
                 batchStart = Clock::now();
             }
         }
     }
 
-    const auto deadline = Clock::now() + kReplyWindow;
-    while (receiveError.empty() && Clock::now() < deadline) {
-        const auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(deadline - Clock::now());
-        receive(static_cast<int>(std::max<long long>(1, remaining.count())));
-    }
+    listenUntil(Clock::now() + kReplyWindow);
     closesocket(sock);
     if (!receiveError.empty()) {
         error = receiveError;
