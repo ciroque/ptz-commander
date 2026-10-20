@@ -18,6 +18,8 @@ struct ViscaAxis {
     // Map each side of home separately so 0 degrees is the camera's home even
     // when home is not the midpoint of the raw range.
     bool throughHome = false;
+    // Raw positions are two's-complement (e.g. Sony: left of home is 0xF6xx).
+    bool signedRaw = false;
 };
 
 struct ViscaProfile {
