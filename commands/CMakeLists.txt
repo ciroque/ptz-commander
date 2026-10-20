@@ -18,6 +18,8 @@ target_sources(ptz_commander PRIVATE
     camera/MoveCommand.h
     camera/PushCommand.cpp
     camera/PushCommand.h
+    camera/ScanCommand.cpp
+    camera/ScanCommand.h
     camera/ShowCommand.cpp
     camera/ShowCommand.h
 

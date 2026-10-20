@@ -6,6 +6,7 @@
 #include "camera/ListCommand.h"
 #include "camera/MoveCommand.h"
 #include "camera/PushCommand.h"
+#include "camera/ScanCommand.h"
 #include "camera/ShowCommand.h"
 
 #include "console/ClearCommand.h"
@@ -41,6 +42,7 @@ namespace commands {
         addCommand(std::make_unique<camera::CalibrateCommand>());
         addCommand(std::make_unique<camera::MoveCommand>());
         addCommand(std::make_unique<camera::PushCommand>());
+        addCommand(std::make_unique<camera::ScanCommand>());
         addCommand(std::make_unique<camera::ShowCommand>());
 
         addCommand(std::make_unique<preset::ListCommand>());
