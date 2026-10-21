@@ -29,12 +29,13 @@ namespace core {
             context_.viscaIpEndpoints = viscaAdapter_->ipEndpoints();
             return ok;
         };
-        context_.calibrateViscaIp = [this](const std::string& serial,
-                                           const cameras::visca::CalibrationRanges& ranges,
-                                           const cameras::visca::ViscaCalibrator::Progress& progress,
-                                           std::string& error) {
-            auto profile = viscaAdapter_->calibrateIpCamera(serial, ranges, progress, error);
+        context_.calibrateVisca = [this](const std::string& serial,
+                                         const cameras::visca::CalibrationRanges& ranges,
+                                         const cameras::visca::ViscaCalibrator::Progress& progress,
+                                         std::string& error) {
+            auto profile = viscaAdapter_->calibrateCamera(serial, ranges, progress, error);
             context_.viscaIpEndpoints = viscaAdapter_->ipEndpoints();
+            context_.viscaSerialEndpoints = viscaAdapter_->serialEndpoints();
             return profile;
         };
         context_.addViscaSerial = [this](const cameras::visca::ViscaSerialEndpoint& endpoint, std::string& error) {

@@ -20,6 +20,8 @@ struct ViscaSerialEndpoint {
     int baud = kSerialDefaultBaud;
     int address = 1;           // VISCA camera address, 1-7
     std::string profile = kSerialDefaultProfile;
+    // Measured by `camera calibrate`; used instead of the named profile when set.
+    std::optional<ViscaProfile> calibration;
 };
 
 // "VISCA:COM3:1": the camera's serial number, and its key in setup files.
@@ -70,9 +72,13 @@ inline const char* validSerialBauds() {
     return "1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200";
 }
 
-// The profile a camera added from this endpoint would use (empty means
-// lumens-vc-a51p). nullopt for an unknown name.
+// The profile a camera added from this endpoint would use: the calibration
+// if present, else the named profile (empty means lumens-vc-a51p). nullopt
+// for an unknown name.
 inline std::optional<ViscaProfile> resolveProfile(const ViscaSerialEndpoint& endpoint) {
+    if (endpoint.calibration) {
+        return endpoint.calibration;
+    }
     return profileByName(endpoint.profile.empty() ? kSerialDefaultProfile : endpoint.profile);
 }
 

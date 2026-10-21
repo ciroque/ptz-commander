@@ -54,8 +54,8 @@ namespace commands::camera {
             ctx.err << "Calibrate one camera at a time." << std::endl;
             return;
         }
-        if (!ctx.calibrateViscaIp) {
-            ctx.err << "VISCA-IP is not available." << std::endl;
+        if (!ctx.calibrateVisca) {
+            ctx.err << "VISCA is not available." << std::endl;
             return;
         }
 
@@ -89,10 +89,10 @@ namespace commands::camera {
         const auto serial = cameras.front()->getSerialNumber();
 
         // The header waits for the first step so a camera rejected up front
-        // (not VISCA-IP) does not announce that it is about to move.
+        // (not VISCA) does not announce that it is about to move.
         bool started = false;
         std::string error;
-        const auto profile = ctx.calibrateViscaIp(serial, ranges,
+        const auto profile = ctx.calibrateVisca(serial, ranges,
             [&ctx, &serial, &started](const std::string& step) {
                 if (!started) {
                     ctx.out << "Calibrating " << serial

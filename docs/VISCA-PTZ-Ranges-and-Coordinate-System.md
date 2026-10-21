@@ -145,9 +145,9 @@ Calibrating the Tenveo 30x reproduces the hand-measured `tenveo-30x` stops (pan 
 
 Things to know:
 - **Presets keep their spot.** They're stored in degrees, so applying a new profile converts each preset through its raw position.
-- **Persistence.** The measured profile is saved as a `calibration` object on the camera's `visca_ip` entry in the `.ptzc` file, and is used in place of the named profile on load. `setup load` parses the whole file first, checks every `visca_ip` entry's profile, and only then adds cameras or moves an already-added camera onto the file's profile before applying its presets. A parse error (including a camera entry that is not an object, or a calibration that fails these checks) or an unknown profile leaves everything unchanged, and the error says what was wrong.
+- **Persistence.** The measured profile is saved as a `calibration` object in the `.ptzc` file: on the camera's `visca_ip` entry, or for a serial camera inside the `visca_serial` block of its camera entry. It's used in place of the named profile on load. `setup load` parses the whole file first, checks every VISCA camera's profile, and only then adds cameras or moves an already-added camera onto the file's profile before applying its presets. A parse error (including a camera entry that is not an object, or a calibration that fails these checks) or an unknown profile leaves everything unchanged, and the error says what was wrong.
 - **Soft limits and digital zoom count.** If the camera has pan/tilt limits set, or digital zoom enabled, calibration measures those as the stops.
-- **VISCA-IP only, so far.** Serial cameras are now saved in setups, so a calibration could persist for them, but calibrating over serial isn't built yet.
+- **IP and serial.** The routine is the same over both. A serial port passes the ACK (`90 4y FF`) through, where the UDP transport drops it; the calibrator skips it and waits for the completion or an error. Serial calibration has not been run against a real camera yet.
 
 ## 7. Related Files
 
