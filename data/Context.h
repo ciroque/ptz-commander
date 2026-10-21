@@ -5,6 +5,7 @@
 #include "../cameras/SceneStore.h"
 #include "../cameras/visca/ViscaCalibration.h"
 #include "../cameras/visca/ViscaIpEndpoint.h"
+#include "../cameras/visca/ViscaSerialEndpoint.h"
 #include <functional>
 #include <iostream>
 #include <optional>
@@ -30,6 +31,10 @@ namespace data {
             const cameras::visca::ViscaCalibrator::Progress&,
             std::string& error)> calibrateViscaIp;
         std::vector<cameras::visca::ViscaIpEndpoint> viscaIpEndpoints;
+        // The same for VISCA cameras on COM ports.
+        std::function<bool(const cameras::visca::ViscaSerialEndpoint&, std::string& error)> addViscaSerial;
+        std::function<bool(const cameras::visca::ViscaSerialEndpoint&)> loadViscaSerial;
+        std::vector<cameras::visca::ViscaSerialEndpoint> viscaSerialEndpoints;
         // Rows of the last `camera scan visca-ip` (host and port only), for
         // `camera add scanned <n>`; nullopt until a scan has run.
         std::optional<std::vector<cameras::visca::ViscaIpEndpoint>> lastViscaIpScan;

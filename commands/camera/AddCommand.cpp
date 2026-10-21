@@ -1,8 +1,9 @@
-#include "AddIpCommand.h"
+#include "AddCommand.h"
 #include "../Arguments.h"
 #include "../../cameras/visca/ViscaIpEndpoint.h"
 #include "../../cameras/visca/ViscaProfile.h"
-#include "ViscaIpLabel.h"
+#include "../../cameras/visca/ViscaSerialEndpoint.h"
+#include "ViscaLabel.h"
 #include <algorithm>
 #include <iostream>
 #include <set>
@@ -104,10 +105,78 @@ namespace commands::camera {
                 }
             }
         }
+
+        bool isDigits(const std::string& token) {
+            return !token.empty() && std::all_of(token.begin(), token.end(), [](char c) { return c >= '0' && c <= '9'; });
+        }
+
+        // camera add serial <COMn> [baud] [address] [profile]
+        void addSerial(data::Context& ctx, const std::vector<std::string>& tokens) {
+            const std::string usage = "Usage: camera add serial <COMn> [baud] [address] [profile]";
+            if (tokens.size() < 2 || tokens.size() > 5) {
+                ctx.err << usage << std::endl;
+                return;
+            }
+            const auto port = cameras::visca::normalizeComPort(tokens[1]);
+            if (!port) {
+                ctx.err << "Invalid port '" << tokens[1] << "'; give a COM port such as COM3." << std::endl;
+                return;
+            }
+            cameras::visca::ViscaSerialEndpoint ep;
+            ep.port = *port;
+
+            // Numbers are the baud rate, then the address; a word is the profile.
+            int numbers = 0;
+            bool profileGiven = false;
+            for (size_t i = 2; i < tokens.size(); ++i) {
+                const auto& token = tokens[i];
+                if (isDigits(token) && token.size() <= 6 && numbers < 2 && !profileGiven) {
+                    const int value = std::stoi(token);
+                    if (numbers == 0 && !cameras::visca::validSerialBaud(value)) {
+                        ctx.err << "Invalid baud rate " << token << "; use one of "
+                                << cameras::visca::validSerialBauds() << "." << std::endl;
+                        return;
+                    }
+                    if (numbers == 1 && (value < 1 || value > 7)) {
+                        ctx.err << "Invalid address " << token << "; VISCA camera addresses are 1-7." << std::endl;
+                        return;
+                    }
+                    (numbers == 0 ? ep.baud : ep.address) = value;
+                    ++numbers;
+                } else if (!profileGiven && !isDigits(token)) {
+                    ep.profile = token;
+                    profileGiven = true;
+                } else {
+                    ctx.err << usage << std::endl;
+                    return;
+                }
+            }
+            if (!knownProfile(ctx, ep.profile)) {
+                return;
+            }
+
+            std::string error;
+            if (!ctx.addViscaSerial(ep, error)) {
+                ctx.err << "Could not add serial camera " << cameras::visca::serialCameraId(ep) << ": " << error
+                        << std::endl;
+                return;
+            }
+            ctx.notifySetupChanged();
+            ctx.out << "Added " << cameras::visca::serialCameraId(ep) << " baud=" << ep.baud
+                    << " profile=" << ep.profile << std::endl;
+        }
     }
 
-    void AddIpCommand::execute(data::Context& ctx, const std::string& args) {
+    void AddCommand::execute(data::Context& ctx, const std::string& args) {
         auto tokens = commands::splitArgs(args);
+        if (!tokens.empty() && tokens[0] == "serial") {
+            if (!ctx.addViscaSerial) {
+                ctx.err << "VISCA serial is not available." << std::endl;
+                return;
+            }
+            addSerial(ctx, tokens);
+            return;
+        }
         if (!ctx.addViscaIp && !tokens.empty() && (tokens[0] == "visca-ip" || tokens[0] == "scanned")) {
             ctx.err << "VISCA-IP is not available." << std::endl;
             return;
@@ -118,6 +187,7 @@ namespace commands::camera {
         }
         if (tokens.size() < 2 || tokens[0] != "visca-ip") {
             ctx.err << "Usage: camera add visca-ip <host> [port] [profile]" << std::endl
+                    << "       camera add serial <COMn> [baud] [address] [profile]" << std::endl
                     << "       camera add scanned <n...|*> [profile]" << std::endl;
             return;
         }

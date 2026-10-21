@@ -37,6 +37,16 @@ namespace core {
             context_.viscaIpEndpoints = viscaAdapter_->ipEndpoints();
             return profile;
         };
+        context_.addViscaSerial = [this](const cameras::visca::ViscaSerialEndpoint& endpoint, std::string& error) {
+            const bool ok = viscaAdapter_->addSerialCamera(endpoint, error);
+            context_.viscaSerialEndpoints = viscaAdapter_->serialEndpoints();
+            return ok;
+        };
+        context_.loadViscaSerial = [this](const cameras::visca::ViscaSerialEndpoint& endpoint) {
+            const bool ok = viscaAdapter_->loadSerialCamera(endpoint);
+            context_.viscaSerialEndpoints = viscaAdapter_->serialEndpoints();
+            return ok;
+        };
         sceneControlServer_.setOnSceneApply([this](const std::string& name) {
             std::lock_guard<std::mutex> lock(commandMutex_);
             context_.out << std::endl;
@@ -46,24 +56,16 @@ namespace core {
 
         // Start OBSBOT adapter (hotplug + network scan) in its own thread
         obsbotAdapterThread_ = std::thread(&cameras::obsbot::ObsbotCameraAdapter::start, obsbotAdapter_.get());
-
-        // Start VISCA serial discovery adapter (Keyspan priority + other COM ports)
-        viscaAdapterThread_ = std::thread(&cameras::visca::ViscaCameraAdapter::start, viscaAdapter_.get());
+        // VISCA cameras aren't discovered: they come from `camera add` and `setup load`.
     }
 
     Application::~Application() {
         sceneControlServer_.stop();
 
-        if (viscaAdapter_) {
-            viscaAdapter_->stop();
-        }
         if (obsbotAdapter_) {
             obsbotAdapter_->stop();
         }
 
-        if (viscaAdapterThread_.joinable()) {
-            viscaAdapterThread_.join();
-        }
         if (obsbotAdapterThread_.joinable()) {
             obsbotAdapterThread_.join();
         }

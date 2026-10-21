@@ -1,7 +1,7 @@
 #include "ScanCommand.h"
 #include "../Arguments.h"
 #include "../../cameras/visca/ViscaIpScanner.h"
-#include "ViscaIpLabel.h"
+#include "ViscaLabel.h"
 #include <algorithm>
 #include <iomanip>
 #include <iostream>

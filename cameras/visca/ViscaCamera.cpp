@@ -1,18 +1,10 @@
 #include "ViscaCamera.h"
 
-#include "WindowsSerialTransport.h"
 #include "../../core/Logger.h"
 
 #include <memory>
 
 namespace cameras::visca {
-
-ViscaCamera::ViscaCamera(const std::string& port, int baud, uint8_t address)
-    : ViscaCamera(std::make_unique<WindowsSerialTransport>(port, baud),
-                  "VISCA:" + port + ":" + std::to_string(static_cast<int>(address)),
-                  "VISCA Serial (" + port + " @" + std::to_string(baud) + ")",
-                  address,
-                  lumensVcA51p()) {}
 
 ViscaCamera::ViscaCamera(std::unique_ptr<ViscaTransport> transport,
                          std::string serial,

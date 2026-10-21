@@ -34,6 +34,7 @@ target_sources(ptz_commander PRIVATE
     visca/ViscaDiscovery.cpp
     visca/ViscaDiscovery.h
     visca/ViscaIpEndpoint.h
+    visca/ViscaSerialEndpoint.h
     visca/ViscaIpFraming.h
     visca/ViscaIpScanner.cpp
     visca/ViscaIpScanner.h

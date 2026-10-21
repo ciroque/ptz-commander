@@ -6,8 +6,8 @@ target_sources(ptz_commander PRIVATE
     CommandHandler.cpp
     CommandHandler.h
 
-    camera/AddIpCommand.cpp
-    camera/AddIpCommand.h
+    camera/AddCommand.cpp
+    camera/AddCommand.h
     camera/AliasCommand.cpp
     camera/AliasCommand.h
     camera/CalibrateCommand.cpp
@@ -22,7 +22,7 @@ target_sources(ptz_commander PRIVATE
     camera/ScanCommand.h
     camera/ShowCommand.cpp
     camera/ShowCommand.h
-    camera/ViscaIpLabel.h
+    camera/ViscaLabel.h
 
     console/ClearCommand.cpp
     console/ClearCommand.h

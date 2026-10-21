@@ -4,6 +4,7 @@
 #include "CameraManager.h"
 #include "SceneStore.h"
 #include "visca/ViscaIpEndpoint.h"
+#include "visca/ViscaSerialEndpoint.h"
 #include <map>
 #include <optional>
 #include <string>
@@ -21,6 +22,10 @@ namespace cameras {
      *       "name": { "name": "name", "pan": x, "tilt": y, "zoom": z },
      *       ...
      *     }
+     *   },
+     *   "VISCA:COM3:1": {
+     *     "presets": { ... },
+     *     "visca_serial": { "baud": 9600, "profile": "lumens-vc-a51p" }
      *   },
      *   "scenes": {
      *     "sermon": { "SERIAL": "presetName", ... }
@@ -51,6 +56,9 @@ namespace cameras {
         std::map<std::string, Camera> cameras;
         std::map<std::string, Scene> scenes;
         std::vector<visca::ViscaIpEndpoint> viscaIp;
+        // One per VISCA:COMn:a camera entry; the port and address come from
+        // the key.
+        std::vector<visca::ViscaSerialEndpoint> viscaSerial;
     };
 
     class PresetStore {
@@ -104,11 +112,12 @@ namespace cameras {
          */
         bool save(const CameraManager& mgr, const SceneStore& scenes,
                   std::string filename = "presets.ptzc") const {
-            return save(mgr, scenes, {}, filename);
+            return save(mgr, scenes, {}, {}, filename);
         }
 
         bool save(const CameraManager& mgr, const SceneStore& scenes,
                   const std::vector<visca::ViscaIpEndpoint>& viscaIp,
+                  const std::vector<visca::ViscaSerialEndpoint>& viscaSerial,
                   std::string filename = "presets.ptzc") const;
 
         /**
