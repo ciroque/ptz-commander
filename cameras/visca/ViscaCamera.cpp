@@ -67,9 +67,7 @@ bool ViscaCamera::answersInquiry(int timeoutMs) const {
         if (!transport_->write(ViscaCommands::panTiltPositionInquiry(address_))) {
             return false;
         }
-        // A reply from camera address 1-7 starts with 0x90-0xF0 and ends with FF.
-        const auto reply = transport_->readPacket(timeoutMs);
-        if (reply.size() >= 3 && reply[0] >= 0x90 && (reply[0] & 0x0F) == 0 && reply.back() == 0xFF) {
+        if (isViscaReply(transport_->readPacket(timeoutMs))) {
             return true;
         }
     }
