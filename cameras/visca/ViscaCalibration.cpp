@@ -226,7 +226,7 @@ bool ViscaCalibrator::sendCommand(const std::vector<uint8_t>& cmd, const char* w
             if (reply.empty()) {
                 break;
             }
-            if (reply.size() < 3 || !isReplyHeader(reply[0])) {
+            if (reply.size() < 3 || reply[0] != replyHeader(address_)) {
                 continue;
             }
             const uint8_t kind = reply[1] & 0xF0;

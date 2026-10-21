@@ -59,7 +59,9 @@ bool ViscaCamera::answersInquiry(int timeoutMs) const {
         if (!transport_->write(ViscaCommands::panTiltPositionInquiry(address_))) {
             return false;
         }
-        if (isViscaReply(transport_->readPacket(timeoutMs))) {
+        // Only from this camera's address, as the serial scan requires.
+        const auto reply = transport_->readPacket(timeoutMs);
+        if (isViscaReply(reply) && reply[0] == replyHeader(address_)) {
             return true;
         }
     }
