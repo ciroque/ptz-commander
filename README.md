@@ -40,7 +40,8 @@ The `zoom` argument is an integer between 0 and 100, where 0 is the camera's min
 | `camera add serial`            | `<COMn> [baud] [address] [profile]`     | Adds a VISCA camera on a COM port (default 9600 baud, address 1, profile lumens-vc-a51p) if it answers a position inquiry. One camera per port. Survives `setup save` / `setup load`. |
 | `camera scan visca-ip`         | `[subnet] [port]`                       | Lists the VISCA-over-IP cameras that answer on the local networks (each narrowed to a /24), or on a subnet such as `192.168.1.0/24` (down to /16). Default port 52381. Only sends position inquiries: nothing is added or moved. Rows are numbered for `camera add scanned`. |
 | `camera scan serial`           | `[COMn...]`                             | Lists the COM ports (all, or the ones named) where a VISCA camera answers, trying 9600 and 38400 baud and addresses 1-7. Only sends position inquiries: nothing is added or moved. Rows are numbered for `camera add scanned`. |
-| `camera add scanned`           | `<n...\|*> [profile]`                  | Adds cameras by their row number in the last `camera scan visca-ip` or `camera scan serial` (e.g. `camera add scanned 1 3`, or `*` for every row). Rows already added are skipped. Default profile tenveo-30x for VISCA-IP rows, lumens-vc-a51p for serial rows. |
+| `camera scan *`                | None                                    | Runs `camera scan visca-ip` and `camera scan serial` at the same time with their defaults, and lists what both found in one numbered table. If one scan can't run or fails, it says why under the table and the other's results still show. |
+| `camera add scanned`           | `<n...\|*> [profile]`                  | Adds cameras by their row number in the last `camera scan` of any kind (e.g. `camera add scanned 1 3`, or `*` for every row). Rows already added are skipped. Default profile tenveo-30x for VISCA-IP rows, lumens-vc-a51p for serial rows. |
 | `camera calibrate`             | `<id> [panSpan] [tiltDown] [tiltUp]`    | Measures a VISCA camera's (IP or serial) pan, tilt and zoom stops and switches it to the measured profile. **Moves the camera through its full range** (about 25 seconds), then leaves it at home with zoom fully wide. The degree arguments come from the spec sheet (defaults `340 90 90`). Existing presets keep their positions. |
 | `camera move`                  | ```<id\|*> <pan> <tilt> <zoom>```            | Moves camera(s) to PTZ — ```pan```, ```tilt``` (float), ```zoom``` (int, 0-100). Asterisk moves all cameras.          |
 | `camera show`                  | ```<id\|*>```                                | Shows camera details.           |
@@ -115,6 +116,17 @@ Example `.ptzc` file structure (per-camera):
 - **Tech Debt**: Preset name dupes—first match wins—<10 cameras—O(n) lookups.
 - **Dependencies**: `nlohmann/json`—`$PROJ_DIR/include/nlohmann/json.hpp`—CMake—`include_directories(include)`.
 - **Future**: `push/pull/pan`—speed control.
+
+## Finding VISCA cameras at a new venue
+`camera scan *` looks on the local networks and every COM port at once (about 3 seconds), so you don't need to know which kind of camera is there:
+
+```
+camera scan *
+camera add scanned *
+setup save
+```
+
+`camera add scanned *` gives VISCA-IP rows the tenveo-30x profile and serial rows lumens-vc-a51p; name a profile to use another, or calibrate the camera afterwards. The sections below cover each kind.
 
 ## VISCA Serial Camera Support (Windows)
 Serial cameras aren't looked for at startup. Find the camera, add it by its row in the scan, then save the setup so `setup load` brings it back:

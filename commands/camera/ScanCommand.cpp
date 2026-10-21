@@ -5,6 +5,7 @@
 #include "../../cameras/visca/ViscaSerialScanner.h"
 #include "ViscaLabel.h"
 #include <algorithm>
+#include <future>
 #include <iomanip>
 #include <iostream>
 #include <optional>
@@ -14,13 +15,14 @@
 
 namespace commands::camera {
     namespace {
+        namespace visca = cameras::visca;
+
         bool isNumber(const std::string& token) {
             return !token.empty() && token.size() <= 5 &&
                    std::all_of(token.begin(), token.end(), [](char c) { return c >= '0' && c <= '9'; });
         }
 
-        std::string describeReply(const std::vector<uint8_t>& reply,
-                                  const std::optional<cameras::visca::PanTiltRaw>& position) {
+        std::string describeReply(const std::vector<uint8_t>& reply, const std::optional<visca::PanTiltRaw>& position) {
             std::ostringstream ss;
             ss << std::hex << std::uppercase << std::setfill('0');
             if (position) {
@@ -43,181 +45,192 @@ namespace commands::camera {
             return out;
         }
 
-        std::string withDescription(const cameras::visca::SerialPortInfo& port) {
+        std::string withDescription(const visca::SerialPortInfo& port) {
             return port.description.empty() ? port.port : port.port + " (" + port.description + ")";
         }
 
-        void scanIp(data::Context& ctx, const std::vector<std::string>& tokens) {
-            const std::string usage = "Usage: camera scan visca-ip [subnet] [port]";
-            if (tokens.size() > 3) {
-                ctx.err << usage << std::endl;
-                return;
-            }
+        // One table row, and what `camera add scanned` gets for it.
+        struct Row {
+            bool serial = false;
+            std::string camera;
+            std::string reply;
+            std::string notes;
+            bool added = false;
+            data::Context::ScannedCamera scanned;
+        };
 
-            // Subnet and port may come in either order: a number is the port,
-            // anything with a dot is the subnet.
-            std::optional<cameras::visca::Ipv4Network> subnet;
+        // What one kind of scan found, ready to print.
+        struct Found {
+            const char* kind = "";            // "VISCA-IP" or "serial"
+            bool ran = false;                 // false if there was nothing to scan or it failed
+            std::vector<Row> rows;
+            std::vector<std::string> remarks; // lines under the table
+        };
+
+        struct IpPlan {
+            std::vector<visca::Ipv4Network> networks;
             int port = 52381;
+
+            std::string describe() const {
+                std::string names;
+                size_t addresses = 0;
+                for (const auto& network : networks) {
+                    names += (names.empty() ? "" : ", ") + network.toString();
+                    addresses += network.hosts().size();
+                }
+                return names + " on port " + std::to_string(port) + " (" + std::to_string(addresses) +
+                       (addresses == 1 ? " address)" : " addresses)");
+            }
+        };
+
+        // `[subnet] [port]`, in either order: a number is the port, anything
+        // with a dot is the subnet. nullopt with error set if they're wrong
+        // or there's no network to scan.
+        std::optional<IpPlan> planIp(const std::vector<std::string>& args, std::string& error) {
+            std::optional<visca::Ipv4Network> subnet;
+            IpPlan plan;
             bool portGiven = false;
-            for (size_t i = 1; i < tokens.size(); ++i) {
-                const auto& token = tokens[i];
+            for (const auto& token : args) {
                 if (isNumber(token) && !portGiven) {
-                    port = std::stoi(token);
-                    if (port <= 0 || port > 65535) {
-                        ctx.err << "Invalid port." << std::endl;
-                        return;
+                    plan.port = std::stoi(token);
+                    if (plan.port <= 0 || plan.port > 65535) {
+                        error = "Invalid port.";
+                        return std::nullopt;
                     }
                     portGiven = true;
                 } else if (token.find('.') != std::string::npos && !subnet) {
-                    std::string error;
-                    subnet = cameras::visca::parseIpv4Network(token, error);
+                    std::string reason;
+                    subnet = visca::parseIpv4Network(token, reason);
                     if (!subnet) {
-                        ctx.err << "Invalid subnet: " << error << std::endl;
-                        return;
+                        error = "Invalid subnet: " + reason;
+                        return std::nullopt;
                     }
                 } else {
-                    ctx.err << usage << std::endl;
-                    return;
+                    error = "Usage: camera scan visca-ip [subnet] [port]";
+                    return std::nullopt;
                 }
             }
-
-            const auto networks = subnet ? std::vector<cameras::visca::Ipv4Network>{*subnet}
-                                         : cameras::visca::localIpv4Networks();
-            if (networks.empty()) {
-                ctx.err << "No local IPv4 network found to scan. Give a subnet, e.g. "
-                           "camera scan visca-ip 192.168.1.0/24" << std::endl;
-                return;
+            plan.networks = subnet ? std::vector<visca::Ipv4Network>{*subnet} : visca::localIpv4Networks();
+            if (plan.networks.empty()) {
+                error = "No local IPv4 network found to scan. Give a subnet, e.g. camera scan visca-ip 192.168.1.0/24";
+                return std::nullopt;
             }
-
-            std::string names;
-            size_t addresses = 0;
-            for (const auto& network : networks) {
-                names += (names.empty() ? "" : ", ") + network.toString();
-                addresses += network.hosts().size();
-            }
-            ctx.out << "Scanning " << names << " on port " << port << " (" << addresses
-                    << (addresses == 1 ? " address" : " addresses") << ")..." << std::endl;
-
-            std::string error;
-            const auto hits = cameras::visca::scanViscaIp(networks, port, error);
-            if (!error.empty()) {
-                ctx.err << "Scan failed: " << error << std::endl;
-                return;
-            }
-
-            // Row n of the table is entry n-1, for `camera add scanned <n>`.
-            std::vector<data::Context::ScannedCamera> rows;
-            for (const auto& hit : hits) {
-                cameras::visca::ViscaIpEndpoint ep;
-                ep.host = hit.host;
-                ep.port = hit.port;
-                rows.emplace_back(std::move(ep));
-            }
-            ctx.lastScan = std::move(rows);
-
-            if (hits.empty()) {
-                ctx.out << "No VISCA-IP cameras answered." << std::endl;
-                return;
-            }
-
-            const int IndexColWidth = 3;
-            const int HostColWidth = 21;
-            const int ReplyColWidth = 24;
-            ctx.out << std::endl << std::left
-                    << std::setw(IndexColWidth) << "#" << " | "
-                    << std::setw(HostColWidth) << "Address" << " | "
-                    << std::setw(ReplyColWidth) << "Reply" << " | " << "Added as" << std::endl
-                    << std::string(IndexColWidth, '-') << "-+-"
-                    << std::string(HostColWidth, '-') << "-+-"
-                    << std::string(ReplyColWidth, '-') << "-+-" << std::string(20, '-') << std::endl;
-
-            bool anyNew = false;
-            for (size_t i = 0; i < hits.size(); ++i) {
-                const auto& hit = hits[i];
-                const auto addedAs = viscaIpAddedAs(ctx, hit.host, hit.port);
-                anyNew = anyNew || !addedAs;
-                ctx.out << std::left
-                        << std::setw(IndexColWidth) << (i + 1) << " | "
-                        << std::setw(HostColWidth) << (hit.host + ":" + std::to_string(hit.port)) << " | "
-                        << std::setw(ReplyColWidth) << describeReply(hit.reply, hit.position) << " | "
-                        << addedAs.value_or("-") << std::endl;
-            }
-
-            ctx.out << std::endl << "Found " << hits.size()
-                    << (hits.size() == 1 ? " VISCA-IP camera." : " VISCA-IP cameras.") << std::endl;
-            if (anyNew) {
-                ctx.out << "Add with: camera add scanned <n...|*> [profile] (default tenveo-30x)" << std::endl;
-            }
+            return plan;
         }
 
-        void scanSerial(data::Context& ctx, const std::vector<std::string>& tokens) {
-            using Status = cameras::visca::ViscaSerialScanResult::Status;
+        struct IpOutcome {
+            std::vector<visca::ViscaIpScanHit> hits;
+            std::string error;
+        };
 
-            // Every port Windows lists, or only the ones named.
-            const auto listed = cameras::visca::listSerialPorts();
-            std::vector<cameras::visca::SerialPortInfo> ports;
-            if (tokens.size() == 1) {
+        IpOutcome runIp(const IpPlan& plan) {
+            IpOutcome outcome;
+            outcome.hits = visca::scanViscaIp(plan.networks, plan.port, outcome.error);
+            return outcome;
+        }
+
+        Found foundIp(const data::Context& ctx, const IpOutcome& outcome) {
+            Found found;
+            found.kind = "VISCA-IP";
+            if (!outcome.error.empty()) {
+                found.remarks.push_back("VISCA-IP scan failed: " + outcome.error);
+                return found;
+            }
+            found.ran = true;
+            for (const auto& hit : outcome.hits) {
+                visca::ViscaIpEndpoint ep;
+                ep.host = hit.host;
+                ep.port = hit.port;
+                const auto addedAs = viscaIpAddedAs(ctx, hit.host, hit.port);
+                Row row;
+                row.camera = hit.host + ":" + std::to_string(hit.port);
+                row.reply = describeReply(hit.reply, hit.position);
+                row.notes = addedAs ? "added as " + *addedAs : "";
+                row.added = addedAs.has_value();
+                row.scanned = std::move(ep);
+                found.rows.push_back(std::move(row));
+            }
+            return found;
+        }
+
+        struct SerialPlan {
+            bool anyPorts = false;
+            std::vector<visca::SerialPortInfo> toScan;
+            std::vector<std::string> alreadyAdded;  // "COM4 as cam1"
+
+            std::string describe() const {
+                std::vector<std::string> names;
+                for (const auto& port : toScan) {
+                    names.push_back(port.port);
+                }
+                std::string rates;
+                const auto& bauds = visca::serialScanBauds();
+                for (size_t i = 0; i < bauds.size(); ++i) {
+                    rates += (i == 0 ? "" : (i + 1 == bauds.size() ? " and " : ", ")) + std::to_string(bauds[i]);
+                }
+                return joined(names) + " at " + rates + " baud";
+            }
+        };
+
+        // Every port Windows lists, or only the ones named. nullopt with
+        // error set for a name that isn't a COM port.
+        std::optional<SerialPlan> planSerial(const data::Context& ctx, const std::vector<std::string>& args,
+                                             std::string& error) {
+            const auto listed = visca::listSerialPorts();
+            std::vector<visca::SerialPortInfo> ports;
+            if (args.empty()) {
                 ports = listed;
             }
-            for (size_t i = 1; i < tokens.size(); ++i) {
-                const auto port = cameras::visca::normalizeComPort(tokens[i]);
+            for (const auto& token : args) {
+                const auto port = visca::normalizeComPort(token);
                 if (!port) {
-                    ctx.err << "Invalid port '" << tokens[i] << "'. Usage: camera scan serial [COMn...]" << std::endl;
-                    return;
+                    error = "Invalid port '" + token + "'. Usage: camera scan serial [COMn...]";
+                    return std::nullopt;
                 }
                 const auto it = std::find_if(listed.begin(), listed.end(),
                     [&port](const auto& info) { return info.port == *port; });
-                ports.push_back(it != listed.end() ? *it : cameras::visca::SerialPortInfo{*port, ""});
+                ports.push_back(it != listed.end() ? *it : visca::SerialPortInfo{*port, ""});
             }
 
             // A port with a camera already added is held open by that camera.
-            std::vector<std::string> alreadyAdded;
-            std::vector<cameras::visca::SerialPortInfo> toScan;
+            SerialPlan plan;
+            plan.anyPorts = !ports.empty();
             for (const auto& port : ports) {
                 if (const auto addedAs = viscaSerialAddedAs(ctx, port.port)) {
-                    alreadyAdded.push_back(port.port + " as " + *addedAs);
-                } else if (std::none_of(toScan.begin(), toScan.end(),
+                    plan.alreadyAdded.push_back(port.port + " as " + *addedAs);
+                } else if (std::none_of(plan.toScan.begin(), plan.toScan.end(),
                                         [&port](const auto& p) { return p.port == port.port; })) {
-                    toScan.push_back(port);
+                    plan.toScan.push_back(port);
                 }
             }
+            return plan;
+        }
 
-            ctx.lastScan = std::vector<data::Context::ScannedCamera>{};
-            if (toScan.empty()) {
-                ctx.out << (ports.empty() ? "No COM ports found. Is the USB serial adapter plugged in?"
-                                          : "Nothing to scan.");
-                ctx.out << std::endl;
-                if (!alreadyAdded.empty()) {
-                    ctx.out << "Already added, not scanned: " << joined(alreadyAdded) << "." << std::endl;
-                }
-                return;
+        Found foundSerial(const SerialPlan& plan, const std::vector<visca::ViscaSerialScanResult>& results) {
+            using Status = visca::ViscaSerialScanResult::Status;
+            Found found;
+            found.kind = "serial";
+            found.ran = !plan.toScan.empty();
+            if (!found.ran) {
+                found.remarks.push_back(plan.anyPorts ? "No COM ports to scan."
+                                                      : "No COM ports found. Is the USB serial adapter plugged in?");
             }
 
-            std::vector<std::string> names;
-            for (const auto& port : toScan) {
-                names.push_back(port.port);
-            }
-            std::string rates;
-            const auto& bauds = cameras::visca::serialScanBauds();
-            for (size_t i = 0; i < bauds.size(); ++i) {
-                rates += (i == 0 ? "" : (i + 1 == bauds.size() ? " and " : ", ")) + std::to_string(bauds[i]);
-            }
-            ctx.out << "Scanning " << joined(names) << " at " << rates << " baud..." << std::endl;
-
-            const auto results = cameras::visca::scanViscaSerial(toScan);
-
-            std::vector<data::Context::ScannedCamera> rows;
-            std::vector<const cameras::visca::ViscaSerialScanResult*> hits;
             std::vector<std::string> silent, busy, failed;
             for (const auto& result : results) {
                 switch (result.status) {
                 case Status::Answered: {
-                    cameras::visca::ViscaSerialEndpoint ep;
+                    visca::ViscaSerialEndpoint ep;
                     ep.port = result.port.port;
                     ep.baud = result.baud;
                     ep.address = result.address;
-                    rows.emplace_back(std::move(ep));
-                    hits.push_back(&result);
+                    Row row;
+                    row.serial = true;
+                    row.camera = ep.port + " @" + std::to_string(ep.baud) + " addr " + std::to_string(ep.address);
+                    row.reply = describeReply(result.reply, result.position);
+                    row.notes = result.port.description;
+                    row.scanned = std::move(ep);
+                    found.rows.push_back(std::move(row));
                     break;
                 }
                 case Status::Silent:
@@ -233,69 +246,177 @@ namespace commands::camera {
                     break;
                 }
             }
-            ctx.lastScan = std::move(rows);
+            if (!silent.empty()) {
+                found.remarks.push_back("No reply on " + joined(silent) + ".");
+            }
+            if (!busy.empty()) {
+                found.remarks.push_back("In use by another program: " + joined(busy) + ".");
+            }
+            if (!failed.empty()) {
+                found.remarks.push_back("Could not open " + joined(failed) + ".");
+            }
+            if (!plan.alreadyAdded.empty()) {
+                found.remarks.push_back("Already added, not scanned: " + joined(plan.alreadyAdded) + ".");
+            }
+            return found;
+        }
 
-            if (hits.empty()) {
-                ctx.out << "No serial cameras answered." << std::endl;
+        // One numbered table for all the scans that ran, then the lines
+        // under it. Replaces the rows `camera add scanned` uses.
+        void report(data::Context& ctx, const std::vector<Found>& scans) {
+            std::vector<const Row*> rows;
+            std::vector<data::Context::ScannedCamera> scanned;
+            for (const auto& found : scans) {
+                for (const auto& row : found.rows) {
+                    rows.push_back(&row);
+                    scanned.push_back(row.scanned);
+                }
+            }
+            ctx.lastScan = std::move(scanned);
+
+            if (rows.empty()) {
+                // Name the kind unless every scan ran; say nothing if none
+                // did, since the lines below explain why.
+                std::vector<std::string> ran;
+                for (const auto& found : scans) {
+                    if (found.ran) {
+                        ran.push_back(found.kind);
+                    }
+                }
+                if (ran.size() == scans.size() && scans.size() > 1) {
+                    ctx.out << "No cameras answered." << std::endl;
+                } else if (ran.size() == 1) {
+                    ctx.out << "No " << ran.front() << " cameras answered." << std::endl;
+                }
             } else {
                 const int IndexColWidth = 3;
-                const int PortColWidth = 6;
-                const int BaudColWidth = 6;
-                const int AddressColWidth = 7;
+                const int TypeColWidth = 8;
+                const int CameraColWidth = 21;
                 const int ReplyColWidth = 24;
                 ctx.out << std::endl << std::left
                         << std::setw(IndexColWidth) << "#" << " | "
-                        << std::setw(PortColWidth) << "Port" << " | "
-                        << std::setw(BaudColWidth) << "Baud" << " | "
-                        << std::setw(AddressColWidth) << "Address" << " | "
-                        << std::setw(ReplyColWidth) << "Reply" << " | " << "Adapter" << std::endl
+                        << std::setw(TypeColWidth) << "Type" << " | "
+                        << std::setw(CameraColWidth) << "Camera" << " | "
+                        << std::setw(ReplyColWidth) << "Reply" << " | " << "Notes" << std::endl
                         << std::string(IndexColWidth, '-') << "-+-"
-                        << std::string(PortColWidth, '-') << "-+-"
-                        << std::string(BaudColWidth, '-') << "-+-"
-                        << std::string(AddressColWidth, '-') << "-+-"
+                        << std::string(TypeColWidth, '-') << "-+-"
+                        << std::string(CameraColWidth, '-') << "-+-"
                         << std::string(ReplyColWidth, '-') << "-+-" << std::string(20, '-') << std::endl;
-                for (size_t i = 0; i < hits.size(); ++i) {
-                    const auto& hit = *hits[i];
+                for (size_t i = 0; i < rows.size(); ++i) {
+                    const auto& row = *rows[i];
                     ctx.out << std::left
                             << std::setw(IndexColWidth) << (i + 1) << " | "
-                            << std::setw(PortColWidth) << hit.port.port << " | "
-                            << std::setw(BaudColWidth) << hit.baud << " | "
-                            << std::setw(AddressColWidth) << hit.address << " | "
-                            << std::setw(ReplyColWidth) << describeReply(hit.reply, hit.position) << " | "
-                            << (hit.port.description.empty() ? "-" : hit.port.description) << std::endl;
+                            << std::setw(TypeColWidth) << (row.serial ? "Serial" : "VISCA-IP") << " | "
+                            << std::setw(CameraColWidth) << row.camera << " | "
+                            << std::setw(ReplyColWidth) << row.reply << " | "
+                            << (row.notes.empty() ? "-" : row.notes) << std::endl;
                 }
-                ctx.out << std::endl << "Found " << hits.size()
-                        << (hits.size() == 1 ? " serial camera." : " serial cameras.") << std::endl;
+
+                const auto serialRows = std::count_if(rows.begin(), rows.end(), [](const Row* r) { return r->serial; });
+                const auto ipRows = static_cast<long>(rows.size()) - serialRows;
+                const char* plural = rows.size() == 1 ? " camera" : " cameras";
+                ctx.out << std::endl << "Found " << rows.size();
+                if (ipRows > 0 && serialRows > 0) {
+                    ctx.out << plural << ": " << ipRows << " VISCA-IP, " << serialRows << " serial." << std::endl;
+                } else {
+                    ctx.out << (ipRows > 0 ? " VISCA-IP" : " serial") << plural << "." << std::endl;
+                }
             }
 
-            if (!silent.empty()) {
-                ctx.out << "No reply: " << joined(silent) << "." << std::endl;
+            for (const auto& found : scans) {
+                for (const auto& remark : found.remarks) {
+                    ctx.out << remark << std::endl;
+                }
             }
-            if (!busy.empty()) {
-                ctx.out << "In use by another program: " << joined(busy) << "." << std::endl;
+
+            const bool newIp = std::any_of(rows.begin(), rows.end(), [](const Row* r) { return !r->serial && !r->added; });
+            const bool newSerial = std::any_of(rows.begin(), rows.end(), [](const Row* r) { return r->serial && !r->added; });
+            if (newIp || newSerial) {
+                ctx.out << "Add with: camera add scanned <n...|*> [profile] (default ";
+                if (newIp && newSerial) {
+                    ctx.out << "tenveo-30x for VISCA-IP, " << visca::kSerialDefaultProfile << " for serial";
+                } else {
+                    ctx.out << (newIp ? "tenveo-30x" : visca::kSerialDefaultProfile);
+                }
+                ctx.out << ")" << std::endl;
             }
-            if (!failed.empty()) {
-                ctx.out << "Could not open: " << joined(failed) << "." << std::endl;
+        }
+
+        void scanIp(data::Context& ctx, const std::vector<std::string>& args) {
+            std::string error;
+            const auto plan = planIp(args, error);
+            if (!plan) {
+                ctx.err << error << std::endl;
+                return;
             }
-            if (!alreadyAdded.empty()) {
-                ctx.out << "Already added, not scanned: " << joined(alreadyAdded) << "." << std::endl;
+            ctx.out << "Scanning " << plan->describe() << "..." << std::endl;
+            const auto outcome = runIp(*plan);
+            if (!outcome.error.empty()) {
+                ctx.err << "Scan failed: " << outcome.error << std::endl;
+                return;
             }
-            if (!hits.empty()) {
-                ctx.out << "Add with: camera add scanned <n...|*> [profile] (default "
-                        << cameras::visca::kSerialDefaultProfile << ")" << std::endl;
+            report(ctx, {foundIp(ctx, outcome)});
+        }
+
+        void scanSerial(data::Context& ctx, const std::vector<std::string>& args) {
+            std::string error;
+            const auto plan = planSerial(ctx, args, error);
+            if (!plan) {
+                ctx.err << error << std::endl;
+                return;
             }
+            if (!plan->toScan.empty()) {
+                ctx.out << "Scanning " << plan->describe() << "..." << std::endl;
+            }
+            report(ctx, {foundSerial(*plan, visca::scanViscaSerial(plan->toScan))});
+        }
+
+        // Both scans at once, with the defaults. A scan that can't run or
+        // fails is reported under the table; the other still shows.
+        void scanAll(data::Context& ctx) {
+            std::string ipError;
+            const auto ipPlan = planIp({}, ipError);
+            // Without port names there's nothing to reject.
+            std::string unused;
+            const auto serialPlan = *planSerial(ctx, {}, unused);
+
+            if (ipPlan) {
+                ctx.out << "Scanning VISCA-IP: " << ipPlan->describe() << std::endl;
+            }
+            if (!serialPlan.toScan.empty()) {
+                ctx.out << "Scanning serial: " << serialPlan.describe() << std::endl;
+            }
+
+            std::future<IpOutcome> ip;
+            if (ipPlan) {
+                ip = std::async(std::launch::async, runIp, *ipPlan);
+            }
+            const auto serialResults = visca::scanViscaSerial(serialPlan.toScan);
+
+            Found ipFound;
+            ipFound.kind = "VISCA-IP";
+            if (ipPlan) {
+                ipFound = foundIp(ctx, ip.get());
+            } else {
+                ipFound.remarks.push_back("VISCA-IP not scanned: " + ipError);
+            }
+            report(ctx, {ipFound, foundSerial(serialPlan, serialResults)});
         }
     }
 
     void ScanCommand::execute(data::Context& ctx, const std::string& args) {
         auto tokens = commands::splitArgs(args);
+        const std::vector<std::string> rest(tokens.empty() ? tokens.end() : tokens.begin() + 1, tokens.end());
         if (!tokens.empty() && tokens[0] == "visca-ip") {
-            scanIp(ctx, tokens);
+            scanIp(ctx, rest);
         } else if (!tokens.empty() && tokens[0] == "serial") {
-            scanSerial(ctx, tokens);
+            scanSerial(ctx, rest);
+        } else if (tokens.size() == 1 && tokens[0] == "*") {
+            scanAll(ctx);
         } else {
             ctx.err << "Usage: camera scan visca-ip [subnet] [port]" << std::endl
-                    << "       camera scan serial [COMn...]" << std::endl;
+                    << "       camera scan serial [COMn...]" << std::endl
+                    << "       camera scan *" << std::endl;
         }
     }
 }
