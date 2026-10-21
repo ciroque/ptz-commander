@@ -22,7 +22,6 @@ namespace core {
         data::Context context_;
         commands::CommandHandler commandHandler_;
         std::thread obsbotAdapterThread_;
-        std::thread viscaAdapterThread_;
         SceneControlServer sceneControlServer_;
         std::mutex commandMutex_;
         bool running_;

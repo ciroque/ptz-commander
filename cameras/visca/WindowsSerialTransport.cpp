@@ -10,8 +10,8 @@
 
 namespace cameras::visca {
 
-WindowsSerialTransport::WindowsSerialTransport(std::string port, int baud)
-    : portName_(std::move(port)), baud_(baud) {}
+WindowsSerialTransport::WindowsSerialTransport(std::string port, int baud, bool quiet)
+    : portName_(std::move(port)), baud_(baud), quiet_(quiet) {}
 
 WindowsSerialTransport::~WindowsSerialTransport() {
     close();
@@ -35,7 +35,10 @@ bool WindowsSerialTransport::open() {
                           nullptr);
 
     if (handle_ == INVALID_HANDLE_VALUE) {
-        core::Logger::error("Failed to open serial port " + port + " (error " + std::to_string(GetLastError()) + ")");
+        lastError_ = GetLastError();
+        if (!quiet_) {
+            core::Logger::error("Failed to open serial port " + port + " (error " + std::to_string(lastError_) + ")");
+        }
         return false;
     }
 
@@ -44,7 +47,10 @@ bool WindowsSerialTransport::open() {
     dcb.DCBlength = sizeof(DCB);
 
     if (!GetCommState(handle_, &dcb)) {
-        core::Logger::error("GetCommState failed for " + port);
+        lastError_ = GetLastError();
+        if (!quiet_) {
+            core::Logger::error("GetCommState failed for " + port);
+        }
         close();
         return false;
     }
@@ -60,7 +66,10 @@ bool WindowsSerialTransport::open() {
     dcb.fInX  = FALSE;
 
     if (!SetCommState(handle_, &dcb)) {
-        core::Logger::error("SetCommState failed for " + port + " @ " + std::to_string(baud));
+        lastError_ = GetLastError();
+        if (!quiet_) {
+            core::Logger::error("SetCommState failed for " + port + " @ " + std::to_string(baud));
+        }
         close();
         return false;
     }
@@ -81,7 +90,7 @@ bool WindowsSerialTransport::open() {
     // Purge any stale data
     PurgeComm(handle_, PURGE_RXCLEAR | PURGE_TXCLEAR);
 
-    core::Logger::info("Opened VISCA serial port " + port + " @ " + std::to_string(baud) + " 8N1");
+    core::Logger::debug("Opened VISCA serial port " + port + " @ " + std::to_string(baud) + " 8N1");
     return true;
 }
 
@@ -93,7 +102,7 @@ void WindowsSerialTransport::close() {
     if (handle_ != INVALID_HANDLE_VALUE) {
         CloseHandle(handle_);
         handle_ = INVALID_HANDLE_VALUE;
-        core::Logger::info("Closed serial port " + portName_);
+        core::Logger::debug("Closed serial port " + portName_);
     }
 }
 
@@ -131,16 +140,19 @@ std::vector<uint8_t> WindowsSerialTransport::readPacket(int timeoutMs) {
 
     COMMTIMEOUTS to = oldTimeouts;
     to.ReadIntervalTimeout = 30;                 // allow small gaps between bytes
-    to.ReadTotalTimeoutConstant = timeoutMs;
     to.ReadTotalTimeoutMultiplier = 0;
-    SetCommTimeouts(handle_, &to);
 
     std::vector<uint8_t> packet;
     uint8_t byte = 0;
     DWORD bytesRead = 0;
-    DWORD startTime = GetTickCount();
+    const DWORD startTime = GetTickCount();
+    const DWORD limit = static_cast<DWORD>(timeoutMs);
 
-    while (GetTickCount() - startTime < static_cast<DWORD>(timeoutMs) + 50) {
+    for (DWORD elapsed; (elapsed = GetTickCount() - startTime) < limit;) {
+        // Each read waits only for what's left, so a silent port takes
+        // timeoutMs, not a second full wait after the first.
+        to.ReadTotalTimeoutConstant = limit - elapsed;
+        SetCommTimeouts(handle_, &to);
         if (ReadFile(handle_, &byte, 1, &bytesRead, nullptr) && bytesRead == 1) {
             packet.push_back(byte);
             if (byte == 0xFF) {

@@ -174,14 +174,14 @@ namespace {
 }
 
 std::optional<PanTiltRaw> ViscaCommands::parsePanTiltPosition(const std::vector<uint8_t>& reply) {
-    if (reply.size() != 11 || reply.back() != 0xFF || reply[0] != 0x90 || reply[1] != 0x50) {
+    if (reply.size() != 11 || reply.back() != 0xFF || !isReplyHeader(reply[0]) || reply[1] != 0x50) {
         return std::nullopt;
     }
     return PanTiltRaw{nibbles(reply, 2), nibbles(reply, 6)};
 }
 
 std::optional<uint16_t> ViscaCommands::parseZoomPosition(const std::vector<uint8_t>& reply) {
-    if (reply.size() != 7 || reply.back() != 0xFF || reply[0] != 0x90 || reply[1] != 0x50) {
+    if (reply.size() != 7 || reply.back() != 0xFF || !isReplyHeader(reply[0]) || reply[1] != 0x50) {
         return std::nullopt;
     }
     return nibbles(reply, 2);

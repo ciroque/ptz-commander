@@ -84,6 +84,11 @@ namespace cameras {
         constexpr const char* kLumensMappingKey = "lumens_mapping";
         constexpr int kLumensMapping = 2;
 
+        // A serial camera's baud rate and profile, in its camera entry rather
+        // than a top-level key: builds that predate it reject unknown
+        // top-level keys but ignore unknown camera-entry keys.
+        constexpr const char* kViscaSerialKey = "visca_serial";
+
         const visca::ViscaCamera* onLumensProfile(const Camera& camera) {
             const auto* viscaCamera = dynamic_cast<const visca::ViscaCamera*>(&camera);
             if (viscaCamera && viscaCamera->profile().name == visca::lumensVcA51p().name) {
@@ -294,6 +299,31 @@ namespace cameras {
 
                 entry.legacyLumensMapping = camJson.value(kLumensMappingKey, 1) < kLumensMapping;
 
+                if (auto serial = visca::parseSerialCameraId(sn)) {
+                    if (camJson.contains(kViscaSerialKey)) {
+                        const auto& block = camJson[kViscaSerialKey];
+                        if (!block.is_object()) {
+                            return parseError("\"visca_serial\" of '" + sn + "' is not an object");
+                        }
+                        serial->baud = block.value("baud", visca::kSerialDefaultBaud);
+                        serial->profile = block.value("profile", std::string(visca::kSerialDefaultProfile));
+                        if (!visca::validSerialBaud(serial->baud)) {
+                            return parseError("camera entry '" + sn + "' has baud " + std::to_string(serial->baud) +
+                                              "; use one of " + visca::validSerialBauds());
+                        }
+                    }
+                    const auto samePort = std::find_if(staged.viscaSerial.begin(), staged.viscaSerial.end(),
+                        [&serial](const visca::ViscaSerialEndpoint& ep) { return ep.port == serial->port; });
+                    if (samePort != staged.viscaSerial.end()) {
+                        return parseError("cameras '" + visca::serialCameraId(*samePort) + "' and '" + sn +
+                                          "' are on the same port; only one camera per port is supported");
+                    }
+                    staged.viscaSerial.push_back(std::move(*serial));
+                } else if (camJson.contains(kViscaSerialKey)) {
+                    return parseError("camera entry '" + sn + "' has \"visca_serial\" but its key isn't a serial "
+                                      "camera such as VISCA:COM3:1");
+                }
+
                 staged.cameras.emplace(sn, std::move(entry));
             }
 
@@ -367,6 +397,7 @@ namespace cameras {
 
     bool PresetStore::save(const CameraManager& mgr, const SceneStore& scenes,
                            const std::vector<visca::ViscaIpEndpoint>& viscaIp,
+                           const std::vector<visca::ViscaSerialEndpoint>& viscaSerial,
                            std::string filename) const {
         filename = resolvePresetPath(std::move(filename));
 
@@ -390,6 +421,12 @@ namespace cameras {
                 arr.push_back(std::move(entry));
             }
             j["visca_ip"] = std::move(arr);
+        }
+        for (const auto& ep : viscaSerial) {
+            j[visca::serialCameraId(ep)][kViscaSerialKey] = {
+                {"baud", ep.baud},
+                {"profile", ep.profile}
+            };
         }
 
         file << j.dump(2);

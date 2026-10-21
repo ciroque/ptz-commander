@@ -57,11 +57,6 @@ namespace {
         return prefix >= 32 ? 0xFFFFFFFFu : 0xFFFFFFFFu << (32 - prefix);
     }
 
-    // A reply from camera address 1-7 starts with 0x90-0xF0 and ends with FF.
-    bool isViscaReply(const std::vector<uint8_t>& v) {
-        return v.size() >= 3 && v[0] >= 0x90 && (v[0] & 0x0F) == 0 && v.back() == 0xFF;
-    }
-
     class WinsockSession {
     public:
         WinsockSession() { ok_ = WSAStartup(MAKEWORD(2, 2), &data_) == 0; }

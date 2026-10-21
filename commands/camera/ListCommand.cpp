@@ -8,6 +8,7 @@ namespace commands::camera {
     void ListCommand::execute(data::Context& ctx, const std::string& args) {
         auto cameras = commands::resolveCameras(ctx, "*");
         if (cameras.empty()) {
+            ctx.err << "Load a setup with `setup load`, or add VISCA cameras with `camera add`." << std::endl;
             return;
         }
 

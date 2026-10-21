@@ -4,11 +4,10 @@
 #include "../CameraManager.h"
 #include "ViscaCalibration.h"
 #include "ViscaIpEndpoint.h"
+#include "ViscaSerialEndpoint.h"
 
-#include <atomic>
 #include <optional>
 #include <string>
-#include <thread>
 #include <vector>
 
 namespace cameras::visca {
@@ -16,10 +15,6 @@ namespace cameras::visca {
 class ViscaCameraAdapter {
 public:
     explicit ViscaCameraAdapter(CameraManager& manager);
-    ~ViscaCameraAdapter();
-
-    void start();
-    void stop();
 
     // Adds the camera only if it answers a VISCA inquiry. False with error
     // set if it can't be added.
@@ -34,14 +29,18 @@ public:
                                                   std::string& error);
     const std::vector<ViscaIpEndpoint>& ipEndpoints() const { return ipEndpoints_; }
 
+    // The same for cameras on COM ports, one per port.
+    bool addSerialCamera(const ViscaSerialEndpoint& endpoint, std::string& error);
+    bool loadSerialCamera(const ViscaSerialEndpoint& endpoint);
+    const std::vector<ViscaSerialEndpoint>& serialEndpoints() const { return serialEndpoints_; }
+
 private:
-    void discoverAndAdd();
     bool createIpCamera(const ViscaIpEndpoint& endpoint, bool requireReply, std::string& error);
+    bool createSerialCamera(const ViscaSerialEndpoint& endpoint, bool requireReply, std::string& error);
 
     CameraManager& manager_;
     std::vector<ViscaIpEndpoint> ipEndpoints_;
-    std::atomic<bool> running_{false};
-    std::thread worker_;
+    std::vector<ViscaSerialEndpoint> serialEndpoints_;
 };
 
 } // namespace cameras::visca

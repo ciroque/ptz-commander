@@ -8,6 +8,16 @@
 
 namespace cameras::visca {
 
+// The first byte of a reply from camera address 1-7: 0x90-0xF0.
+inline uint8_t replyHeader(uint8_t address) { return static_cast<uint8_t>(0x80 | ((address & 0x07) << 4)); }
+inline bool isReplyHeader(uint8_t byte) { return byte >= 0x90 && (byte & 0x0F) == 0; }
+
+// Any reply from a camera, error replies included: header, at least one
+// byte, FF.
+inline bool isViscaReply(const std::vector<uint8_t>& packet) {
+    return packet.size() >= 3 && isReplyHeader(packet[0]) && packet.back() == 0xFF;
+}
+
 struct PanTiltRaw {
     uint16_t pan = 0;
     uint16_t tilt = 0;

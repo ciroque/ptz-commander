@@ -19,8 +19,6 @@ Ptz remapPtz(const Ptz& ptz, const ViscaProfile& from, const ViscaProfile& to);
 
 class ViscaCamera : public ::cameras::Camera {
 public:
-    explicit ViscaCamera(const std::string& port, int baud = 9600, uint8_t address = 1);
-
     ViscaCamera(std::unique_ptr<ViscaTransport> transport,
                 std::string serial,
                 std::string name,
