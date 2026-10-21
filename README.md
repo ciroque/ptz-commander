@@ -37,8 +37,10 @@ The `zoom` argument is an integer between 0 and 100, where 0 is the camera's min
 | `camera alias`                 | `<id> <alias>`                          | Sets a unique friendly alias for a camera — e.g., ```camera alias RMOWTHF7211JGR "LeftCam"```. Rejected if the alias is `*` or is already used as another camera's alias, serial, or name. |
 | `camera list`                  | None                                    | Lists all available cameras. A VISCA camera shows as connected only if it answers a position inquiry right then; each one that doesn't adds up to 0.6 s. |
 | `camera add visca-ip`          | `<host> [port] [profile]`               | Adds a VISCA-over-IP camera (default port 52381, profile tenveo-30x or lumens-vc-a51p) if it answers a position inquiry. Survives `setup save` / `setup load`. |
+| `camera add serial`            | `<COMn> [baud] [address] [profile]`     | Adds a VISCA camera on a COM port (default 9600 baud, address 1, profile lumens-vc-a51p) if it answers a position inquiry. One camera per port. Survives `setup save` / `setup load`. |
 | `camera scan visca-ip`         | `[subnet] [port]`                       | Lists the VISCA-over-IP cameras that answer on the local networks (each narrowed to a /24), or on a subnet such as `192.168.1.0/24` (down to /16). Default port 52381. Only sends position inquiries: nothing is added or moved. Rows are numbered for `camera add scanned`. |
-| `camera add scanned`           | `<n...\|*> [profile]`                  | Adds cameras by their row number in the last `camera scan visca-ip` (e.g. `camera add scanned 1 3`, or `*` for every row). Rows already added are skipped. Default profile tenveo-30x. |
+| `camera scan serial`           | `[COMn...]`                             | Lists the COM ports (all, or the ones named) where a VISCA camera answers, trying 9600 and 38400 baud and addresses 1-7. Only sends position inquiries: nothing is added or moved. Rows are numbered for `camera add scanned`. |
+| `camera add scanned`           | `<n...\|*> [profile]`                  | Adds cameras by their row number in the last `camera scan visca-ip` or `camera scan serial` (e.g. `camera add scanned 1 3`, or `*` for every row). Rows already added are skipped. Default profile tenveo-30x for VISCA-IP rows, lumens-vc-a51p for serial rows. |
 | `camera calibrate`             | `<id> [panSpan] [tiltDown] [tiltUp]`    | Measures a VISCA-IP camera's pan, tilt and zoom stops and switches it to the measured profile. **Moves the camera through its full range** (about 25 seconds), then leaves it at home with zoom fully wide. The degree arguments come from the spec sheet (defaults `340 90 90`). Existing presets keep their positions. |
 | `camera move`                  | ```<id\|*> <pan> <tilt> <zoom>```            | Moves camera(s) to PTZ — ```pan```, ```tilt``` (float), ```zoom``` (int, 0-100). Asterisk moves all cameras.          |
 | `camera show`                  | ```<id\|*>```                                | Shows camera details.           |
@@ -115,23 +117,32 @@ Example `.ptzc` file structure (per-camera):
 - **Future**: `push/pull/pan`—speed control.
 
 ## VISCA Serial Camera Support (Windows)
-Automatic discovery is performed at startup for VISCA-over-serial cameras.
+Serial cameras aren't looked for at startup. Find the camera, add it by its row in the scan, then save the setup so `setup load` brings it back:
 
-- Preferred hardware: Lumens VC-A51P (or compatible VISCA serial PTZ) connected via Keyspan USA-19H USB serial adapter (VID 06CD / PID 0121). Appears as e.g. COM3.
-- Default settings: 9600 baud, 8N1, camera address 1.
+```
+camera scan serial
+camera add scanned 1
+setup save
+```
+
+`camera scan serial` sends a position inquiry on every COM port, or only the ones named (`camera scan serial COM3`). It tries 9600 and 38400 baud and camera addresses 1-7, and lists the ports where a camera answered. Any USB serial adapter works. Ports are scanned at the same time, and a silent one takes about 2.5 seconds. Below the table it lists the ports that stayed silent, are in use by another program, weren't found, or already have a camera. Nothing moves.
+
+`camera add serial <COMn> [baud] [address] [profile]` adds a camera whose port you already know, e.g. `camera add serial COM3 9600 1 lumens-vc-a51p`. Defaults are 9600 baud, address 1 and the lumens-vc-a51p profile. Like `camera add visca-ip`, it adds the camera only if it answers, which takes about 2 seconds to give up on a silent one.
+
+- Hardware: a Lumens VC-A51P, or another VISCA camera, on any USB serial adapter. The adapter appears as a COM port, e.g. COM3. The line settings are 8N1.
+- **One camera per COM port.** Each camera opens its port exclusively, so cameras daisy-chained on one port aren't supported.
+- Serial cameras have ids of the form `VISCA:COM3:1` (port and camera address), usable for `camera move`, `preset store/apply`, aliases, etc. If Windows gives the adapter a different COM number, for example when it's plugged into another USB port, it's a different id: add the camera again, or change the key in the `.ptzc` file.
+- `setup save` stores the baud rate and profile in the camera's entry in the `.ptzc` file (`"visca_serial"`). `setup load` adds the camera even if its adapter is unplugged at the time, as it does for a VISCA-IP camera that's switched off. Files saved by earlier versions, which looked for Keyspan USA-19H adapters at startup, load their `VISCA:COMn:a` cameras at 9600 baud on the lumens-vc-a51p profile, as those versions did.
+- `camera calibrate` only works on VISCA-IP cameras so far.
 - Moves use **absolute** Pan/Tilt/Zoom positioning commands. This matches the `camera move` / preset model used by the rest of the tool. (Velocity "drive + stop" commands are only used by `camera calibrate`.)
-- Discovered cameras get synthetic serial numbers of the form `VISCA:COM3:1` (usable for `camera move`, `preset store/apply`, aliases, etc.).
 - Multiple VISCA cameras and/or OBSBOT cameras can coexist.
 
-Example (typical auto-discovered usage):
+Once added:
 ```
-camera list
 camera move VISCA:COM3:1 12.5 -3.0 40
 preset store VISCA:COM3:1 intro
 preset apply VISCA:COM3:1 intro
 ```
-
-Manual port configuration remains possible in future via CLI/config (the discovery and camera code are designed around defaults + `ViscaConfig` so they can be extended without major surgery).
 
 ## VISCA-over-IP Camera Support
 

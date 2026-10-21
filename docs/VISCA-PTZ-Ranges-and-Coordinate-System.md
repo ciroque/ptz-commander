@@ -114,7 +114,7 @@ Because you have been moving the camera:
 - **getCurrentPtz()**: Performs live VISCA position inquiries (Pan/Tilt Pos Inquiry `81 09 06 12 FF` and Zoom Pos Inquiry `81 09 04 47 FF`). Falls back to cached last-commanded value on failure or timeout. Enables capturing positions set via the camera's own presets/remote into tool presets.
 - **No response reading for motion commands**: `setPosition` / `setZoom` (and other commands) are sent fire-and-forget. We do not read ACK (90 41 FF), Completion (90 51 FF), or error responses from the camera. Errors are only detected via serial write failure. (Position inquiries do perform synchronous reads and parse the responses.)
 - **Range clamping**: Values outside the configured min/max are silently clamped.
-- **Multiple cameras / non-Keyspan**: Discovery prefers Keyspan USA-19H (VID 0x06CD / PID 0x0121 or name match). Other serial VISCA setups may require manual construction or future CLI support.
+- **Finding serial cameras**: nothing is discovered at startup. `camera scan serial` finds cameras on any adapter by sending a position inquiry, and `camera add serial <COMn>` adds one by port. One camera per COM port; daisy chains aren't supported.
 - **Ceiling mount / orientation**: Handled by camera settings; the degree mapping in the tool assumes "normal" desktop orientation.
 
 Error handling for motion commands remains the next priority (per your earlier list), followed by range tuning based on real hardware data.
@@ -147,7 +147,7 @@ Things to know:
 - **Presets keep their spot.** They're stored in degrees, so applying a new profile converts each preset through its raw position.
 - **Persistence.** The measured profile is saved as a `calibration` object on the camera's `visca_ip` entry in the `.ptzc` file, and is used in place of the named profile on load. `setup load` parses the whole file first, checks every `visca_ip` entry's profile, and only then adds cameras or moves an already-added camera onto the file's profile before applying its presets. A parse error (including a camera entry that is not an object, or a calibration that fails these checks) or an unknown profile leaves everything unchanged, and the error says what was wrong.
 - **Soft limits and digital zoom count.** If the camera has pan/tilt limits set, or digital zoom enabled, calibration measures those as the stops.
-- **VISCA-IP only.** Serial cameras are auto-discovered and not saved in setups, so a calibration couldn't persist for them yet.
+- **VISCA-IP only, so far.** Serial cameras are now saved in setups, so a calibration could persist for them, but calibrating over serial isn't built yet.
 
 ## 7. Related Files
 
@@ -158,7 +158,7 @@ Things to know:
 - `cameras/Camera.h` + `Preset.h` — base interface
 - `commands/camera/MoveCommand.cpp` — parses user `camera move` args
 - `README.md` — general usage of pan/tilt/zoom arguments
-- `cameras/visca/ViscaDiscovery.*` — how ports are found (unrelated to PTZ values)
+- `cameras/visca/ViscaSerialScanner.*` — how COM ports are listed and scanned for cameras (unrelated to PTZ values)
 
 ## 8. References
 
@@ -175,7 +175,6 @@ Things to know:
 **Recommended next** (per your earlier list):
 - Error / response handling (read ACK, Completion, and error packets from commands).
 - Range tuning / coordinate system validation based on your testing with the VC-A51P.
-- Manual port override support if the auto Keyspan discovery isn't sufficient for all your setups.
 - Anything else you discover while playing.
 
 Let me know the next item!
