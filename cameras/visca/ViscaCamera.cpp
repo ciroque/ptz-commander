@@ -48,10 +48,16 @@ std::string ViscaCamera::getName() const {
 }
 
 bool ViscaCamera::isConnected() const {
-    return connected_ && transport_ && transport_->isOpen();
+    // Short waits: `camera list` asks every camera in turn, and a camera that
+    // answers at all does so within milliseconds.
+    return answersInquiry(300);
 }
 
-bool ViscaCamera::answersInquiry() const {
+bool ViscaCamera::isOpen() const {
+    return ensureOpen();
+}
+
+bool ViscaCamera::answersInquiry(int timeoutMs) const {
     if (!ensureOpen() || !transport_) {
         return false;
     }
@@ -62,7 +68,7 @@ bool ViscaCamera::answersInquiry() const {
             return false;
         }
         // A reply from camera address 1-7 starts with 0x90-0xF0 and ends with FF.
-        const auto reply = transport_->readPacket(1000);
+        const auto reply = transport_->readPacket(timeoutMs);
         if (reply.size() >= 3 && reply[0] >= 0x90 && (reply[0] & 0x0F) == 0 && reply.back() == 0xFF) {
             return true;
         }

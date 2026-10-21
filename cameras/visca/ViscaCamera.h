@@ -31,15 +31,20 @@ public:
 
     std::string getSerialNumber() const override;
     std::string getName() const override;
+    // Whether the camera answers a position inquiry now, not just whether its
+    // serial port or socket is open. Up to 0.6 s for one that doesn't answer.
     bool isConnected() const override;
+    // Whether the serial port or UDP socket is open (opening it if needed).
+    bool isOpen() const;
 
     bool setPosition(float pan, float tilt, int zoom) override;
     bool setZoom(int zoom, int speed) override;
     Ptz getCurrentPtz() const override;
 
-    // Sends a pan/tilt position inquiry and reports whether a VISCA reply
-    // came back. An error reply counts: it proves a VISCA device is listening.
-    bool answersInquiry() const;
+    // Sends a pan/tilt position inquiry, up to twice with timeoutMs each, and
+    // reports whether a VISCA reply came back. An error reply counts: it
+    // proves a VISCA device is listening.
+    bool answersInquiry(int timeoutMs = 1000) const;
 
     const ViscaProfile& profile() const { return profile_; }
 
