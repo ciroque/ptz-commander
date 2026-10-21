@@ -147,7 +147,7 @@ bool ViscaCameraAdapter::createIpCamera(const ViscaIpEndpoint& requested, bool r
         "VISCA IP (" + endpoint.host + ")",
         static_cast<uint8_t>(1),
         *profile);
-    if (requireReply && !camera->isConnected()) {
+    if (requireReply && !camera->isOpen()) {
         error = "could not open UDP to '" + endpoint.host + "'; give an IPv4 address such as 192.168.1.146";
         return false;
     }
