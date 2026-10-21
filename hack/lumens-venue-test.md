@@ -6,16 +6,22 @@ PowerShell 5.1 as it comes and needs nothing installed.
 ## 1. Try PTZ Commander first
 
 ```
-camera scan visca-ip
+camera scan *
 camera add scanned <n> lumens-vc-a51p
 camera move <id> 0 0 0             # should go to home
 camera calibrate <id> 340 30 90    # only when it's not live
 setup save
 ```
 
+- `camera scan *` looks on the local networks and every COM port at once. Give
+  the profile when adding: a VISCA-IP row otherwise gets tenveo-30x. (A serial
+  row gets lumens-vc-a51p anyway.)
 - If the scan misses it but you can find its IP, try
   `camera add visca-ip <ip> 52381 lumens-vc-a51p`. The camera's on-screen menu
   should show the IP, or the building's router will.
+- On serial with a known port, try `camera add serial COMn 9600` and then
+  `camera add serial COMn 38400`. Those are the two rates the manual lists.
+- Calibration works over VISCA-IP and serial alike.
 - Use `340 30 90` for calibrate, not the defaults: the Lumens tilts 30° down and
   90° up. With the defaults, tilt degrees would be off.
 - Calibration sweeps the camera through its full range for about 25 s and
@@ -24,8 +30,9 @@ setup save
 
 ## 2. If that fails, close PTZ Commander and run the script
 
-Close PTZ Commander first: it holds the COM ports while it runs, and the script
-gets "access denied" on a port the app has open.
+Close PTZ Commander, and anything else that might use a COM port, first. The
+script gets "access denied" on a port another program has open, and PTZ
+Commander keeps the port of any serial camera it has added open.
 
 ```
 powershell -ExecutionPolicy Bypass -File .\lumens-probe.ps1 -CameraIp <ip>
@@ -37,6 +44,7 @@ powershell -ExecutionPolicy Bypass -File .\lumens-probe.ps1 -CameraIp <ip>
   to one port.
 - Add `-AllowMove` only while the camera isn't live. It then drives the camera
   for about 20 s, in small steps, and ends at home with zoom wide.
+- A run takes about half a minute, or a minute with `-AllowMove`.
 
 ## 3. Bring back the log
 
@@ -54,8 +62,8 @@ The log is `lumens-probe-<time>.txt` on the Desktop.
 - **Serial:** every COM port and its adapter type. On each port it sends the
   address-set and IF_Clear broadcasts, then tries camera addresses 1 to 7
   until one answers, then repeats the 20 inquiries.
-- **The movement test (`-AllowMove`):** the moves a serial `camera calibrate`
-  would rely on.
+- **The movement test (`-AllowMove`):** the moves `camera calibrate` relies
+  on, so a failed calibration can be pinned down.
   - It logs every reply to Home and to the drive commands, with timings.
   - It polls position while panning and tilting each way, and during a pan
     and zoom at the same time, which is what the calibrator does.
@@ -75,6 +83,12 @@ camera has, so you may need an adapter cable to plug the CH340 in.
 
 - **VISCA-IP path:** read-only, against the Tenveo. 20 of 20 inquiries
   answered, with correct positions.
-- **Serial path:** ran on COM1, which has nothing connected, so no replies
-  were expected.
-- **Not run:** the movement test.
+- **Movement test:** against the Tenveo over VISCA-IP.
+  - Every command got an ACK and then a completion.
+  - Position changed the right way during each drive.
+  - The absolute move reached raw 0/0, and the camera ended at home with
+    zoom wide.
+  - The "Lumens deg" figures mean nothing for the Tenveo, whose home isn't
+    raw 0/0.
+- **Serial path:** ran only on COM1, which has nothing connected. No camera
+  answers over serial here.
