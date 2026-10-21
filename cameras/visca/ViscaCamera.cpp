@@ -149,21 +149,18 @@ std::optional<ViscaProfile> ViscaCamera::calibrate(const CalibrationRanges& rang
     return calibrator.run(ranges, error);
 }
 
-void ViscaCamera::applyProfile(const ViscaProfile& profile) {
-    const auto remap = [this, &profile](const Ptz& ptz) {
-        return Ptz{
-            ViscaCommands::viscaToPanDegrees(
-                ViscaCommands::panDegreesToVisca(ptz.pan, profile_), profile),
-            ViscaCommands::viscaToTiltDegrees(
-                ViscaCommands::tiltDegreesToVisca(ptz.tilt, profile_), profile),
-            ViscaCommands::viscaToZoomPercent(
-                ViscaCommands::zoomPercentToVisca(ptz.zoom, profile_), profile)};
-    };
+Ptz remapPtz(const Ptz& ptz, const ViscaProfile& from, const ViscaProfile& to) {
+    return Ptz{
+        ViscaCommands::viscaToPanDegrees(ViscaCommands::panDegreesToVisca(ptz.pan, from), to),
+        ViscaCommands::viscaToTiltDegrees(ViscaCommands::tiltDegreesToVisca(ptz.tilt, from), to),
+        ViscaCommands::viscaToZoomPercent(ViscaCommands::zoomPercentToVisca(ptz.zoom, from), to)};
+}
 
+void ViscaCamera::applyProfile(const ViscaProfile& profile) {
     for (const auto& preset : getPresets()) {
-        AddPreset(preset->name, Preset(preset->name, remap(preset->ptz)));
+        AddPreset(preset->name, Preset(preset->name, remapPtz(preset->ptz, profile_, profile)));
     }
-    lastPtz_ = remap(lastPtz_);
+    lastPtz_ = remapPtz(lastPtz_, profile_, profile);
     profile_ = profile;
     core::Logger::info("ViscaCamera " + serial_ + " now using profile " + profile_.name);
 }

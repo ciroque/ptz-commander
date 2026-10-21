@@ -44,6 +44,9 @@ namespace cameras {
         struct Camera {
             std::optional<std::string> alias;
             std::vector<Preset> presets;
+            // No "lumens_mapping" marker: if this camera is on the
+            // lumens-vc-a51p profile, its presets use the legacy mapping.
+            bool legacyLumensMapping = true;
         };
         std::map<std::string, Camera> cameras;
         std::map<std::string, Scene> scenes;

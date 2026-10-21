@@ -1,5 +1,6 @@
 #include "PresetStore.h"
 #include "visca/ViscaCalibration.h"
+#include "visca/ViscaCamera.h"
 #include "../core/Logger.h"
 
 #include <algorithm>
@@ -76,6 +77,21 @@ namespace cameras {
     }
 
     namespace {
+        // Camera entries saved with the manual's lumens-vc-a51p mapping carry
+        // "lumens_mapping": 2. Entries without it were saved with the legacy
+        // mapping, and their presets are converted on load. A camera-entry key
+        // keeps the file loadable by builds that predate it.
+        constexpr const char* kLumensMappingKey = "lumens_mapping";
+        constexpr int kLumensMapping = 2;
+
+        const visca::ViscaCamera* onLumensProfile(const Camera& camera) {
+            const auto* viscaCamera = dynamic_cast<const visca::ViscaCamera*>(&camera);
+            if (viscaCamera && viscaCamera->profile().name == visca::lumensVcA51p().name) {
+                return viscaCamera;
+            }
+            return nullptr;
+        }
+
         nlohmann::json serializeSetup(const CameraManager& mgr, const SceneStore& scenes) {
             nlohmann::json j = nlohmann::json::object();
             auto cameras = mgr.getCameras();
@@ -98,6 +114,9 @@ namespace cameras {
                     presetsObj[preset->name] = presetJson;
                 }
                 camEntry["presets"] = presetsObj;
+                if (onLumensProfile(*camera)) {
+                    camEntry[kLumensMappingKey] = kLumensMapping;
+                }
 
                 j[camera->getSerialNumber()] = camEntry;
             }
@@ -273,6 +292,8 @@ namespace cameras {
                     }
                 }
 
+                entry.legacyLumensMapping = camJson.value(kLumensMappingKey, 1) < kLumensMapping;
+
                 staged.cameras.emplace(sn, std::move(entry));
             }
 
@@ -324,8 +345,20 @@ namespace cameras {
                         + (takenBy->empty() ? ": invalid alias" : (": already used by " + *takenBy)));
                 }
             }
+            // Presets saved with the legacy Lumens mapping keep pointing at
+            // the same spot under the current one.
+            const auto* lumens = it->second.legacyLumensMapping ? onLumensProfile(*camera) : nullptr;
             for (const auto& preset : it->second.presets) {
-                camera->AddPreset(preset.name, preset);
+                if (lumens) {
+                    camera->AddPreset(preset.name, Preset(preset.name,
+                        visca::remapPtz(preset.ptz, visca::lumensVcA51pLegacy(), lumens->profile())));
+                } else {
+                    camera->AddPreset(preset.name, preset);
+                }
+            }
+            if (lumens && !it->second.presets.empty()) {
+                core::Logger::info("Converted " + std::to_string(it->second.presets.size()) + " presets for " +
+                                   camera->getSerialNumber() + " from the legacy Lumens mapping");
             }
         }
 

@@ -11,6 +11,7 @@ From the official Lumens VC-A51P datasheet and user manual (2022):
 - **Zoom**: 20x optical
 - **Pan/Tilt Speed**: up to 300°/sec
 - **Preset Positions**: 128 (internal to camera)
+- **Raw positions** (RS158 command set v1.3): two's-complement around home `0x0000`, 160 per degree. Pan `0x95C0` (−170°, left) to `0x6A40` (+170°, right); tilt `0xED40` (−30°, down) to `0x3840` (+90°, up); zoom `0x0000..0x4000`.
 
 These ranges are the default mechanical limits. The camera supports software Pan/Tilt Limit settings (configurable via OSD menu, web interface, or VISCA commands) that can restrict movement further (e.g., Pan Left Limit = -170, Tilt Down Limit = -30 by default in the menu).
 
@@ -68,10 +69,12 @@ Built-in profiles (`camera add visca-ip <host> [port] <profile>`):
 
 | Profile | Pan | Tilt | Zoom raw | Notes |
 |---|---|---|---|---|
-| `lumens-vc-a51p` | ±170° over `0x0000..0xFFFF` | −30..+90° over `0x0000..0xFFFF` | `0x0000..0x4000` | Spec-sheet guess, not measured |
+| `lumens-vc-a51p` | ±170°, home `0x0000`, stops `0x95C0`/`0x6A40` (signed) | −30..+90°, home `0x0000`, stops `0xED40`/`0x3840` (signed) | `0x0000..0x4000` | From the Lumens command set (RS158 v1.3), 160 raw per degree; not yet checked on a camera |
 | `tenveo-30x` | ±175°, home `0x4A6C`, stops `0x0000`/`0x8E3E` | ±90° over `0x0000..0x3C8A` | `0x0000..0x05E3` | Measured by hand |
 
 An unknown profile name is an error. It used to fall back to `lumens-vc-a51p`.
+
+The `lumens-vc-a51p` mapping used to be unsigned `0x0000..0xFFFF` with home at `0x8000`, a guess that put the camera's real home at −170° pan and −30° tilt. Presets are saved in degrees, so `setup save` marks each camera entry on this profile with `"lumens_mapping": 2`. When `setup load` finds an entry on this profile without the marker, it converts that entry's presets from the old mapping through their raw positions, so they keep pointing at the same spot. Saving the setup again writes the marker. Older builds ignore the marker, but they read the degrees with the old mapping, so don't save a converted setup from an older build.
 
 In `setPosition()` / `setZoom()`:
 - Input values are clamped to the profile's ranges.
@@ -84,7 +87,7 @@ Speeds in absolute commands are currently fixed at `0x10` (medium) for pan/tilt.
 ### VISCA Protocol Units vs. Degrees
 
 - VISCA uses 16-bit signed-ish positions (sent as 4 nibbles: high nibble first).
-- 0x0000 and 0xFFFF are the extremes **as defined by the camera** (not necessarily exactly -170° / +170° in all VISCA cameras).
+- The stops are **defined by the camera**. Some cameras use unsigned positions with home partway along (the Tenveo: `0x0000..0x8E3E`, home `0x4A6C`); others use two's-complement positions around home `0x0000` (the Lumens: left of home reads `0x95C0..0xFFFF`; Sony cameras work the same way with their own stops).
 - Different VISCA cameras (Sony, Lumens, etc.) have different physical angle ranges even when using the same VISCA position scale.
 - A wrong profile mostly shows up in zoom. On a Tenveo, the Lumens zoom range puts everything above about 9% past full tele. Presets still return to the same spot under a wrong profile, because store and apply convert through the same mapping.
 
