@@ -22,17 +22,19 @@ public:
     // For setup load: adds the camera, or switches an existing one to the
     // endpoint's profile so the file's presets land where they were saved.
     bool loadIpCamera(const ViscaIpEndpoint& endpoint);
-    // Calibrates a VISCA-IP camera and switches it to the measured profile.
-    std::optional<ViscaProfile> calibrateIpCamera(const std::string& serial,
-                                                  const CalibrationRanges& ranges,
-                                                  const ViscaCalibrator::Progress& progress,
-                                                  std::string& error);
     const std::vector<ViscaIpEndpoint>& ipEndpoints() const { return ipEndpoints_; }
 
     // The same for cameras on COM ports, one per port.
     bool addSerialCamera(const ViscaSerialEndpoint& endpoint, std::string& error);
     bool loadSerialCamera(const ViscaSerialEndpoint& endpoint);
     const std::vector<ViscaSerialEndpoint>& serialEndpoints() const { return serialEndpoints_; }
+
+    // Calibrates a VISCA camera, IP or serial, switches it to the measured
+    // profile and keeps the profile with its endpoint for `setup save`.
+    std::optional<ViscaProfile> calibrateCamera(const std::string& serial,
+                                                const CalibrationRanges& ranges,
+                                                const ViscaCalibrator::Progress& progress,
+                                                std::string& error);
 
 private:
     bool createIpCamera(const ViscaIpEndpoint& endpoint, bool requireReply, std::string& error);

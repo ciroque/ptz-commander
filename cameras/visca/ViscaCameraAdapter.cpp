@@ -117,15 +117,17 @@ bool ViscaCameraAdapter::loadIpCamera(const ViscaIpEndpoint& requested) {
     return true;
 }
 
-std::optional<ViscaProfile> ViscaCameraAdapter::calibrateIpCamera(const std::string& serial,
-                                                                  const CalibrationRanges& ranges,
-                                                                  const ViscaCalibrator::Progress& progress,
-                                                                  std::string& error) {
-    const auto endpoint = std::find_if(ipEndpoints_.begin(), ipEndpoints_.end(),
+std::optional<ViscaProfile> ViscaCameraAdapter::calibrateCamera(const std::string& serial,
+                                                                const CalibrationRanges& ranges,
+                                                                const ViscaCalibrator::Progress& progress,
+                                                                std::string& error) {
+    const auto ip = std::find_if(ipEndpoints_.begin(), ipEndpoints_.end(),
         [&serial](const ViscaIpEndpoint& ep) { return ipCameraId(ep) == serial; });
+    const auto onSerial = std::find_if(serialEndpoints_.begin(), serialEndpoints_.end(),
+        [&serial](const ViscaSerialEndpoint& ep) { return serialCameraId(ep) == serial; });
     auto camera = std::dynamic_pointer_cast<ViscaCamera>(manager_.findBySerial(serial));
-    if (endpoint == ipEndpoints_.end() || !camera) {
-        error = serial + " is not a VISCA-IP camera";
+    if (!camera || (ip == ipEndpoints_.end() && onSerial == serialEndpoints_.end())) {
+        error = serial + " is not a VISCA camera";
         return std::nullopt;
     }
 
@@ -134,7 +136,11 @@ std::optional<ViscaProfile> ViscaCameraAdapter::calibrateIpCamera(const std::str
         return std::nullopt;
     }
     camera->applyProfile(*profile);
-    endpoint->calibration = profile;
+    if (ip != ipEndpoints_.end()) {
+        ip->calibration = profile;
+    } else {
+        onSerial->calibration = profile;
+    }
     return profile;
 }
 
@@ -149,7 +155,8 @@ namespace {
     }
 
     std::string describe(const ViscaSerialEndpoint& endpoint) {
-        return serialCameraId(endpoint) + " baud=" + std::to_string(endpoint.baud) + " profile=" + endpoint.profile;
+        return serialCameraId(endpoint) + " baud=" + std::to_string(endpoint.baud) + " profile=" + endpoint.profile +
+               (endpoint.calibration ? " (calibrated)" : "");
     }
 }
 

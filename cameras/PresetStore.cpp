@@ -311,6 +311,14 @@ namespace cameras {
                             return parseError("camera entry '" + sn + "' has baud " + std::to_string(serial->baud) +
                                               "; use one of " + visca::validSerialBauds());
                         }
+                        if (block.contains("calibration")) {
+                            try {
+                                serial->calibration = calibrationFromJson(block["calibration"]);
+                            }
+                            catch (const std::exception& e) {
+                                return parseError("serial camera " + sn + ": " + e.what());
+                            }
+                        }
                     }
                     const auto samePort = std::find_if(staged.viscaSerial.begin(), staged.viscaSerial.end(),
                         [&serial](const visca::ViscaSerialEndpoint& ep) { return ep.port == serial->port; });
@@ -423,10 +431,14 @@ namespace cameras {
             j["visca_ip"] = std::move(arr);
         }
         for (const auto& ep : viscaSerial) {
-            j[visca::serialCameraId(ep)][kViscaSerialKey] = {
+            nlohmann::json block = {
                 {"baud", ep.baud},
                 {"profile", ep.profile}
             };
+            if (ep.calibration) {
+                block["calibration"] = calibrationToJson(*ep.calibration);
+            }
+            j[visca::serialCameraId(ep)][kViscaSerialKey] = std::move(block);
         }
 
         file << j.dump(2);

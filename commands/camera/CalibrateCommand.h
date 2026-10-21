@@ -8,7 +8,7 @@ namespace commands::camera {
     public:
         CalibrateCommand()
             : Command("camera", "calibrate", "camera calibrate <id> [panSpan] [tiltDown] [tiltUp]",
-                      "Measure a VISCA-IP camera's stops (moves it through its full range; defaults 340 90 90)") {}
+                      "Measure a VISCA camera's stops (moves it through its full range; defaults 340 90 90)") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 }

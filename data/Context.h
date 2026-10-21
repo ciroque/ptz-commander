@@ -25,12 +25,13 @@ namespace data {
         std::function<bool(const cameras::visca::ViscaIpEndpoint&, std::string& error)> addViscaIp;
         // Add, or move an existing camera onto the endpoint's profile (setup load).
         std::function<bool(const cameras::visca::ViscaIpEndpoint&)> loadViscaIp;
-        // Calibrates and applies the profile; nullopt with error set on failure.
+        // Calibrates a VISCA camera (IP or serial) and applies the profile;
+        // nullopt with error set on failure.
         std::function<std::optional<cameras::visca::ViscaProfile>(
             const std::string& serial,
             const cameras::visca::CalibrationRanges&,
             const cameras::visca::ViscaCalibrator::Progress&,
-            std::string& error)> calibrateViscaIp;
+            std::string& error)> calibrateVisca;
         std::vector<cameras::visca::ViscaIpEndpoint> viscaIpEndpoints;
         // The same for VISCA cameras on COM ports.
         std::function<bool(const cameras::visca::ViscaSerialEndpoint&, std::string& error)> addViscaSerial;

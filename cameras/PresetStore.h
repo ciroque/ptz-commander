@@ -25,7 +25,7 @@ namespace cameras {
      *   },
      *   "VISCA:COM3:1": {
      *     "presets": { ... },
-     *     "visca_serial": { "baud": 9600, "profile": "lumens-vc-a51p" }
+     *     "visca_serial": { "baud": 9600, "profile": "lumens-vc-a51p", "calibration": { ... } }
      *   },
      *   "scenes": {
      *     "sermon": { "SERIAL": "presetName", ... }
