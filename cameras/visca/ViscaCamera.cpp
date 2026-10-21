@@ -51,6 +51,25 @@ bool ViscaCamera::isConnected() const {
     return connected_ && transport_ && transport_->isOpen();
 }
 
+bool ViscaCamera::answersInquiry() const {
+    if (!ensureOpen() || !transport_) {
+        return false;
+    }
+    // Asked twice, in case one datagram is lost.
+    for (int attempt = 0; attempt < 2; ++attempt) {
+        transport_->purgeInput();
+        if (!transport_->write(ViscaCommands::panTiltPositionInquiry(address_))) {
+            return false;
+        }
+        // A reply from camera address 1-7 starts with 0x90-0xF0 and ends with FF.
+        const auto reply = transport_->readPacket(1000);
+        if (reply.size() >= 3 && reply[0] >= 0x90 && (reply[0] & 0x0F) == 0 && reply.back() == 0xFF) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool ViscaCamera::ensureOpen() const {
     if (transport_ && transport_->isOpen()) {
         return true;

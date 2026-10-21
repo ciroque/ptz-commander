@@ -21,7 +21,9 @@ public:
     void start();
     void stop();
 
-    bool addIpCamera(const ViscaIpEndpoint& endpoint);
+    // Adds the camera only if it answers a VISCA inquiry. False with error
+    // set if it can't be added.
+    bool addIpCamera(const ViscaIpEndpoint& endpoint, std::string& error);
     // For setup load: adds the camera, or switches an existing one to the
     // endpoint's profile so the file's presets land where they were saved.
     bool loadIpCamera(const ViscaIpEndpoint& endpoint);
@@ -34,6 +36,7 @@ public:
 
 private:
     void discoverAndAdd();
+    bool createIpCamera(const ViscaIpEndpoint& endpoint, bool requireReply, std::string& error);
 
     CameraManager& manager_;
     std::vector<ViscaIpEndpoint> ipEndpoints_;

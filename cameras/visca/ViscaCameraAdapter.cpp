@@ -118,18 +118,25 @@ namespace {
     }
 }
 
-bool ViscaCameraAdapter::addIpCamera(const ViscaIpEndpoint& requested) {
+bool ViscaCameraAdapter::addIpCamera(const ViscaIpEndpoint& requested, std::string& error) {
+    return createIpCamera(requested, true, error);
+}
+
+bool ViscaCameraAdapter::createIpCamera(const ViscaIpEndpoint& requested, bool requireReply, std::string& error) {
     if (requested.host.empty()) {
+        error = "no host given";
         return false;
     }
     const auto endpoint = withDefaults(requested);
     const std::string id = ipCameraId(endpoint);
     if (manager_.findBySerial(id)) {
         core::Logger::warn("VISCA-IP camera already present: " + id);
+        error = "already added";
         return false;
     }
     const auto profile = profileFor(endpoint);
     if (!profile) {
+        error = "unknown profile '" + endpoint.profile + "'";
         return false;
     }
 
@@ -140,6 +147,15 @@ bool ViscaCameraAdapter::addIpCamera(const ViscaIpEndpoint& requested) {
         "VISCA IP (" + endpoint.host + ")",
         static_cast<uint8_t>(1),
         *profile);
+    if (requireReply && !camera->isConnected()) {
+        error = "could not open UDP to '" + endpoint.host + "'; give an IPv4 address such as 192.168.1.146";
+        return false;
+    }
+    if (requireReply && !camera->answersInquiry()) {
+        core::Logger::warn("VISCA-IP camera not added, no reply: " + id);
+        error = "no reply to a VISCA inquiry; check the camera is on and the address and port are right";
+        return false;
+    }
     manager_.addCamera(camera);
     ipEndpoints_.push_back(endpoint);
 
@@ -155,7 +171,9 @@ bool ViscaCameraAdapter::loadIpCamera(const ViscaIpEndpoint& requested) {
     const std::string id = ipCameraId(endpoint);
     auto camera = std::dynamic_pointer_cast<ViscaCamera>(manager_.findBySerial(id));
     if (!camera) {
-        return addIpCamera(endpoint);
+        // A saved camera loads even if it's off right now.
+        std::string error;
+        return createIpCamera(endpoint, false, error);
     }
 
     // The file's presets were saved under the file's profile, so the camera

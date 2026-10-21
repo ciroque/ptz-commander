@@ -84,8 +84,10 @@ namespace commands::camera {
                     continue;
                 }
                 ep.profile = profile;
-                if (!ctx.addViscaIp(ep)) {
-                    ctx.err << "Could not add #" << n << " " << ep.host << ":" << ep.port << std::endl;
+                std::string error;
+                if (!ctx.addViscaIp(ep, error)) {
+                    ctx.err << "Could not add #" << n << " " << ep.host << ":" << ep.port << ": " << error
+                            << std::endl;
                     continue;
                 }
                 addedAny = true;
@@ -145,8 +147,9 @@ namespace commands::camera {
             return;
         }
 
-        if (!ctx.addViscaIp(ep)) {
-            ctx.err << "Could not add VISCA-IP camera " << ep.host << std::endl;
+        std::string error;
+        if (!ctx.addViscaIp(ep, error)) {
+            ctx.err << "Could not add VISCA-IP camera " << ep.host << ":" << ep.port << ": " << error << std::endl;
             return;
         }
 
