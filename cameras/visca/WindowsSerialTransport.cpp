@@ -131,16 +131,19 @@ std::vector<uint8_t> WindowsSerialTransport::readPacket(int timeoutMs) {
 
     COMMTIMEOUTS to = oldTimeouts;
     to.ReadIntervalTimeout = 30;                 // allow small gaps between bytes
-    to.ReadTotalTimeoutConstant = timeoutMs;
     to.ReadTotalTimeoutMultiplier = 0;
-    SetCommTimeouts(handle_, &to);
 
     std::vector<uint8_t> packet;
     uint8_t byte = 0;
     DWORD bytesRead = 0;
-    DWORD startTime = GetTickCount();
+    const DWORD startTime = GetTickCount();
+    const DWORD limit = static_cast<DWORD>(timeoutMs);
 
-    while (GetTickCount() - startTime < static_cast<DWORD>(timeoutMs) + 50) {
+    for (DWORD elapsed; (elapsed = GetTickCount() - startTime) < limit;) {
+        // Each read waits only for what's left, so a silent port takes
+        // timeoutMs, not a second full wait after the first.
+        to.ReadTotalTimeoutConstant = limit - elapsed;
+        SetCommTimeouts(handle_, &to);
         if (ReadFile(handle_, &byte, 1, &bytesRead, nullptr) && bytesRead == 1) {
             packet.push_back(byte);
             if (byte == 0xFF) {
