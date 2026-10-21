@@ -13,6 +13,10 @@
 
 namespace cameras::visca {
 
+// The degrees that point at the same raw position under `to` as ptz does
+// under `from`.
+Ptz remapPtz(const Ptz& ptz, const ViscaProfile& from, const ViscaProfile& to);
+
 class ViscaCamera : public ::cameras::Camera {
 public:
     explicit ViscaCamera(const std::string& port, int baud = 9600, uint8_t address = 1);
