@@ -8,7 +8,8 @@ namespace commands::camera {
     public:
         ScanCommand()
             : Command("camera", "scan", "camera scan visca-ip [subnet] [port]",
-                      "Find VISCA-over-IP cameras on the local networks (or a subnet such as 192.168.1.0/24; default port 52381)") {}
+                      "Find VISCA-over-IP cameras on the local networks (or a subnet such as 192.168.1.0/24; default port 52381); "
+                      "`camera scan serial [COMn...]` finds VISCA cameras on COM ports") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 }

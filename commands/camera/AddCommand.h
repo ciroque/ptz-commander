@@ -11,7 +11,7 @@ namespace commands::camera {
                       "Add a VISCA-over-IP camera (default port 52381, profile tenveo-30x); "
                       "`camera add serial <COMn> [baud] [address] [profile]` adds one on a COM port "
                       "(default 9600 baud, address 1, profile lumens-vc-a51p); "
-                      "`camera add scanned <n...|*> [profile]` adds rows of the last `camera scan visca-ip`") {}
+                      "`camera add scanned <n...|*> [profile]` adds rows of the last `camera scan`") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 }

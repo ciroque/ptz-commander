@@ -10,8 +10,8 @@
 
 namespace cameras::visca {
 
-WindowsSerialTransport::WindowsSerialTransport(std::string port, int baud)
-    : portName_(std::move(port)), baud_(baud) {}
+WindowsSerialTransport::WindowsSerialTransport(std::string port, int baud, bool quiet)
+    : portName_(std::move(port)), baud_(baud), quiet_(quiet) {}
 
 WindowsSerialTransport::~WindowsSerialTransport() {
     close();
@@ -35,7 +35,10 @@ bool WindowsSerialTransport::open() {
                           nullptr);
 
     if (handle_ == INVALID_HANDLE_VALUE) {
-        core::Logger::error("Failed to open serial port " + port + " (error " + std::to_string(GetLastError()) + ")");
+        lastError_ = GetLastError();
+        if (!quiet_) {
+            core::Logger::error("Failed to open serial port " + port + " (error " + std::to_string(lastError_) + ")");
+        }
         return false;
     }
 
@@ -44,7 +47,10 @@ bool WindowsSerialTransport::open() {
     dcb.DCBlength = sizeof(DCB);
 
     if (!GetCommState(handle_, &dcb)) {
-        core::Logger::error("GetCommState failed for " + port);
+        lastError_ = GetLastError();
+        if (!quiet_) {
+            core::Logger::error("GetCommState failed for " + port);
+        }
         close();
         return false;
     }
@@ -60,7 +66,10 @@ bool WindowsSerialTransport::open() {
     dcb.fInX  = FALSE;
 
     if (!SetCommState(handle_, &dcb)) {
-        core::Logger::error("SetCommState failed for " + port + " @ " + std::to_string(baud));
+        lastError_ = GetLastError();
+        if (!quiet_) {
+            core::Logger::error("SetCommState failed for " + port + " @ " + std::to_string(baud));
+        }
         close();
         return false;
     }
@@ -81,7 +90,7 @@ bool WindowsSerialTransport::open() {
     // Purge any stale data
     PurgeComm(handle_, PURGE_RXCLEAR | PURGE_TXCLEAR);
 
-    core::Logger::info("Opened VISCA serial port " + port + " @ " + std::to_string(baud) + " 8N1");
+    core::Logger::debug("Opened VISCA serial port " + port + " @ " + std::to_string(baud) + " 8N1");
     return true;
 }
 
@@ -93,7 +102,7 @@ void WindowsSerialTransport::close() {
     if (handle_ != INVALID_HANDLE_VALUE) {
         CloseHandle(handle_);
         handle_ = INVALID_HANDLE_VALUE;
-        core::Logger::info("Closed serial port " + portName_);
+        core::Logger::debug("Closed serial port " + portName_);
     }
 }
 

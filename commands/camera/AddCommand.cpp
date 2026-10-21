@@ -8,6 +8,7 @@
 #include <iostream>
 #include <set>
 #include <string>
+#include <variant>
 
 namespace commands::camera {
     namespace {
@@ -25,11 +26,11 @@ namespace commands::camera {
         // camera add scanned <n...|*> [profile]: rows of the last scan.
         void addScanned(data::Context& ctx, const std::vector<std::string>& tokens) {
             const std::string usage = "Usage: camera add scanned <n...|*> [profile]";
-            if (!ctx.lastViscaIpScan) {
-                ctx.err << "Run `camera scan visca-ip` first." << std::endl;
+            if (!ctx.lastScan) {
+                ctx.err << "Run `camera scan visca-ip` or `camera scan serial` first." << std::endl;
                 return;
             }
-            const auto& rows = *ctx.lastViscaIpScan;
+            const auto& rows = *ctx.lastScan;
 
             std::set<size_t> indexes;  // 1-based, in table order
             bool all = false;
@@ -64,10 +65,8 @@ namespace commands::camera {
                     return;
                 }
             }
-            if (profile.empty()) {
-                profile = kDefaultProfile;
-            }
-            if (!knownProfile(ctx, profile)) {
+            // Without one, each row gets its kind's default profile.
+            if (!profile.empty() && !knownProfile(ctx, profile)) {
                 return;
             }
             if (all) {
@@ -77,28 +76,46 @@ namespace commands::camera {
             }
 
             bool addedAny = false;
+            bool addedIpWithDefault = false;
             for (const size_t n : indexes) {
-                auto ep = rows[n - 1];
-                if (const auto addedAs = viscaIpAddedAs(ctx, ep.host, ep.port)) {
-                    ctx.out << "#" << n << " " << ep.host << ":" << ep.port
-                            << " is already added as " << *addedAs << std::endl;
-                    continue;
-                }
-                ep.profile = profile;
                 std::string error;
-                if (!ctx.addViscaIp(ep, error)) {
-                    ctx.err << "Could not add #" << n << " " << ep.host << ":" << ep.port << ": " << error
-                            << std::endl;
-                    continue;
+                if (const auto* row = std::get_if<cameras::visca::ViscaIpEndpoint>(&rows[n - 1])) {
+                    auto ep = *row;
+                    if (const auto addedAs = viscaIpAddedAs(ctx, ep.host, ep.port)) {
+                        ctx.out << "#" << n << " " << ep.host << ":" << ep.port
+                                << " is already added as " << *addedAs << std::endl;
+                        continue;
+                    }
+                    ep.profile = profile.empty() ? kDefaultProfile : profile;
+                    if (!ctx.addViscaIp || !ctx.addViscaIp(ep, error)) {
+                        ctx.err << "Could not add #" << n << " " << ep.host << ":" << ep.port << ": "
+                                << (ctx.addViscaIp ? error : "VISCA-IP is not available") << std::endl;
+                        continue;
+                    }
+                    ctx.out << "Added #" << n << " " << viscaIpSerial(ep.host, ep.port)
+                            << " profile=" << ep.profile << std::endl;
+                    addedIpWithDefault = addedIpWithDefault || profile.empty();
+                } else {
+                    auto ep = std::get<cameras::visca::ViscaSerialEndpoint>(rows[n - 1]);
+                    if (const auto addedAs = viscaSerialAddedAs(ctx, ep.port)) {
+                        ctx.out << "#" << n << " " << ep.port << " is already added as " << *addedAs << std::endl;
+                        continue;
+                    }
+                    ep.profile = profile.empty() ? cameras::visca::kSerialDefaultProfile : profile;
+                    if (!ctx.addViscaSerial || !ctx.addViscaSerial(ep, error)) {
+                        ctx.err << "Could not add #" << n << " " << ep.port << ": "
+                                << (ctx.addViscaSerial ? error : "VISCA serial is not available") << std::endl;
+                        continue;
+                    }
+                    ctx.out << "Added #" << n << " " << cameras::visca::serialCameraId(ep) << " baud=" << ep.baud
+                            << " profile=" << ep.profile << std::endl;
                 }
                 addedAny = true;
-                ctx.out << "Added #" << n << " " << viscaIpSerial(ep.host, ep.port)
-                        << " profile=" << profile << std::endl;
             }
 
             if (addedAny) {
                 ctx.notifySetupChanged();
-                if (profile == kDefaultProfile) {
+                if (addedIpWithDefault) {
                     // A scan can't tell camera models apart.
                     ctx.out << "If a camera isn't a Tenveo 30x, run `camera calibrate <id>` to measure its ranges."
                             << std::endl;
@@ -177,12 +194,12 @@ namespace commands::camera {
             addSerial(ctx, tokens);
             return;
         }
-        if (!ctx.addViscaIp && !tokens.empty() && (tokens[0] == "visca-ip" || tokens[0] == "scanned")) {
-            ctx.err << "VISCA-IP is not available." << std::endl;
-            return;
-        }
         if (!tokens.empty() && tokens[0] == "scanned") {
             addScanned(ctx, tokens);
+            return;
+        }
+        if (!ctx.addViscaIp && !tokens.empty() && tokens[0] == "visca-ip") {
+            ctx.err << "VISCA-IP is not available." << std::endl;
             return;
         }
         if (tokens.size() < 2 || tokens[0] != "visca-ip") {

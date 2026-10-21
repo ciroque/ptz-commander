@@ -10,6 +10,7 @@
 #include <iostream>
 #include <optional>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace data {
@@ -35,9 +36,11 @@ namespace data {
         std::function<bool(const cameras::visca::ViscaSerialEndpoint&, std::string& error)> addViscaSerial;
         std::function<bool(const cameras::visca::ViscaSerialEndpoint&)> loadViscaSerial;
         std::vector<cameras::visca::ViscaSerialEndpoint> viscaSerialEndpoints;
-        // Rows of the last `camera scan visca-ip` (host and port only), for
-        // `camera add scanned <n>`; nullopt until a scan has run.
-        std::optional<std::vector<cameras::visca::ViscaIpEndpoint>> lastViscaIpScan;
+        // Rows of the last `camera scan visca-ip` or `camera scan serial`
+        // (no profile chosen yet), for `camera add scanned <n>`; nullopt
+        // until a scan has run. A new scan of either kind replaces them.
+        using ScannedCamera = std::variant<cameras::visca::ViscaIpEndpoint, cameras::visca::ViscaSerialEndpoint>;
+        std::optional<std::vector<ScannedCamera>> lastScan;
 
         Context(cameras::CameraManager& mgr,
                 cameras::SceneStore& scenes,
