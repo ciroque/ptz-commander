@@ -30,9 +30,30 @@ struct ViscaProfile {
     uint16_t zoomMaxRaw = 0x4000;
 };
 
+// From the Lumens manual (RS158, VC-A51P/VC-A51PN command set 1.3): positions
+// are two's-complement around home 0x0000 at 160 per degree. Pan is -170° left
+// (0x95C0) to +170° right (0x6A40); tilt is -30° down (0xED40) to +90° up
+// (0x3840). Zoom is 0x0000..0x4000.
 inline ViscaProfile lumensVcA51p() {
     ViscaProfile p;
     p.name = "lumens-vc-a51p";
+    p.pan = {-170.0f, 170.0f, 0x95C0, 0x0000, 0x6A40, true, true};
+    p.tilt = {-30.0f, 90.0f, 0xED40, 0x0000, 0x3840, true, true};
+    p.zoomMinRaw = 0x0000;
+    p.zoomMaxRaw = 0x4000;
+    return p;
+}
+
+// The lumens-vc-a51p mapping before it was taken from the manual: unsigned
+// 0x0000..0xFFFF, which put the camera's home at -170° pan. Only for
+// converting presets saved with it (see PresetStore).
+inline ViscaProfile lumensVcA51pLegacy() {
+    ViscaProfile p;
+    p.name = "lumens-vc-a51p";
+    p.pan = {-170.0f, 170.0f, 0x0000, 0x8000, 0xFFFF, false, false};
+    p.tilt = {-30.0f, 90.0f, 0x0000, 0x8000, 0xFFFF, false, false};
+    p.zoomMinRaw = 0x0000;
+    p.zoomMaxRaw = 0x4000;
     return p;
 }
 
