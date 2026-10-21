@@ -299,9 +299,6 @@ namespace cameras {
 
                 entry.legacyLumensMapping = camJson.value(kLumensMappingKey, 1) < kLumensMapping;
 
-                // Entries keyed VISCA:COMn:a without the block were saved
-                // when serial cameras were found at startup, at 9600 baud on
-                // the Lumens profile, so they load with those defaults.
                 if (auto serial = visca::parseSerialCameraId(sn)) {
                     if (camJson.contains(kViscaSerialKey)) {
                         const auto& block = camJson[kViscaSerialKey];
@@ -426,7 +423,6 @@ namespace cameras {
             j["visca_ip"] = std::move(arr);
         }
         for (const auto& ep : viscaSerial) {
-            // The camera's own entry, written above, gets the block.
             j[visca::serialCameraId(ep)][kViscaSerialKey] = {
                 {"baud", ep.baud},
                 {"profile", ep.profile}

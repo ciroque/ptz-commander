@@ -56,7 +56,6 @@ namespace core {
 
         // Start OBSBOT adapter (hotplug + network scan) in its own thread
         obsbotAdapterThread_ = std::thread(&cameras::obsbot::ObsbotCameraAdapter::start, obsbotAdapter_.get());
-        // VISCA cameras aren't discovered: they come from `camera add` and `setup load`.
     }
 
     Application::~Application() {

@@ -12,8 +12,6 @@
 
 namespace cameras::visca {
 
-// Owns the VISCA cameras that were added or loaded from a setup. Nothing is
-// discovered at startup: cameras come from `camera add`, or `setup load`.
 class ViscaCameraAdapter {
 public:
     explicit ViscaCameraAdapter(CameraManager& manager);
