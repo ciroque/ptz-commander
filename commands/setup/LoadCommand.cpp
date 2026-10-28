@@ -1,5 +1,6 @@
 #include "LoadCommand.h"
 #include "../../cameras/PresetStore.h"
+#include "../../cameras/onvif/OnvifEndpoint.h"
 #include "../../cameras/visca/ViscaIpEndpoint.h"
 #include "../../cameras/visca/ViscaSerialEndpoint.h"
 #include <iostream>
@@ -72,6 +73,17 @@ namespace commands::setup {
             ctx.err << "Failed to load " << filename << ": VISCA serial is not available." << std::endl;
             return;
         }
+        for (const auto& ep : staged.onvif) {
+            if (ep.host.empty() || ep.user.empty() || ep.password.empty()) {
+                ctx.err << "Failed to load " << filename
+                        << ": an onvif entry needs a host, user, and password" << std::endl;
+                return;
+            }
+        }
+        if (!staged.onvif.empty() && !ctx.addOnvif) {
+            ctx.err << "Failed to load " << filename << ": ONVIF is not available." << std::endl;
+            return;
+        }
 
         // VISCA cameras are added (or moved onto the file's profile) first,
         // so their presets below are applied under the profile they were saved with.
@@ -90,9 +102,23 @@ namespace commands::setup {
                 return;
             }
         }
+        // A camera that does not answer is left out. Presets for the cameras
+        // that are present are still applied below.
+        bool onvifMissing = false;
+        for (const auto& ep : staged.onvif) {
+            const auto added = ctx.addOnvif(ep);
+            if (added.status == cameras::onvif::OnvifAddStatus::Failed) {
+                ctx.err << "Could not add ONVIF camera " << ep.address() << ": " << added.detail << std::endl;
+                onvifMissing = true;
+            }
+        }
         store.apply(ctx.cameraMgr, ctx.sceneStore, staged);
 
         ctx.notifySetupChanged();
-        ctx.out << "Loaded setup from " << filename << std::endl;
+        ctx.out << "Loaded setup from " << filename;
+        if (onvifMissing) {
+            ctx.out << " (an ONVIF camera did not answer and was not added)";
+        }
+        ctx.out << std::endl;
     }
 }

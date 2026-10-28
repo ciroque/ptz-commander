@@ -1,4 +1,5 @@
 #include "PresetStore.h"
+#include "onvif/OnvifEndpoint.h"
 #include "visca/ViscaCalibration.h"
 #include "visca/ViscaCamera.h"
 #include "../core/Logger.h"
@@ -223,6 +224,30 @@ namespace cameras {
             }
             return true;
         }
+
+        bool parseOnvif(const nlohmann::json& j, std::vector<onvif::OnvifEndpoint>& out) {
+            if (!j.contains("onvif")) {
+                return true;
+            }
+            if (!j["onvif"].is_array()) {
+                return false;
+            }
+            for (const auto& item : j["onvif"]) {
+                if (!item.is_object() || !item.contains("host") || !item["host"].is_string()
+                    || !item.contains("user") || !item["user"].is_string()
+                    || !item.contains("password") || !item["password"].is_string()) {
+                    return false;
+                }
+                onvif::OnvifEndpoint ep;
+                ep.host = item["host"].get<std::string>();
+                ep.port = item.value("port", 80);
+                ep.user = item["user"].get<std::string>();
+                ep.password = item["password"].get<std::string>();
+                ep.servicePath = item.value("path", std::string("/onvif/device_service"));
+                out.push_back(std::move(ep));
+            }
+            return true;
+        }
     }
 
     std::string PresetStore::toJsonString(const CameraManager& mgr, const SceneStore& scenes) const {
@@ -265,7 +290,7 @@ namespace cameras {
             // (including adding VISCA-IP cameras) is changed.
             for (auto camIt = j.begin(); camIt != j.end(); ++camIt) {
                 const std::string& sn = camIt.key();
-                if (sn == "scenes" || sn == "visca_ip") {
+                if (sn == "scenes" || sn == "visca_ip" || sn == "onvif") {
                     continue;
                 }
                 // Skipping it instead would let apply() clear that camera's presets.
@@ -357,6 +382,9 @@ namespace cameras {
             if (!parseViscaIp(j, staged.viscaIp)) {
                 return parseError("\"visca_ip\" must be a list of entries that each have a host");
             }
+            if (!parseOnvif(j, staged.onvif)) {
+                return parseError("\"onvif\" must be a list of entries that each have a host, user, and password");
+            }
 
             out = std::move(staged);
             return LoadStatus::Ok;
@@ -406,6 +434,7 @@ namespace cameras {
     bool PresetStore::save(const CameraManager& mgr, const SceneStore& scenes,
                            const std::vector<visca::ViscaIpEndpoint>& viscaIp,
                            const std::vector<visca::ViscaSerialEndpoint>& viscaSerial,
+                           const std::vector<onvif::OnvifEndpoint>& onvif,
                            std::string filename) const {
         filename = resolvePresetPath(std::move(filename));
 
@@ -429,6 +458,19 @@ namespace cameras {
                 arr.push_back(std::move(entry));
             }
             j["visca_ip"] = std::move(arr);
+        }
+        if (!onvif.empty()) {
+            nlohmann::json arr = nlohmann::json::array();
+            for (const auto& ep : onvif) {
+                arr.push_back({
+                    {"host", ep.host},
+                    {"port", ep.port},
+                    {"user", ep.user},
+                    {"password", ep.password},
+                    {"path", ep.servicePath}
+                });
+            }
+            j["onvif"] = std::move(arr);
         }
         for (const auto& ep : viscaSerial) {
             nlohmann::json block = {
