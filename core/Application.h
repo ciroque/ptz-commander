@@ -4,6 +4,7 @@
 #include "../cameras/CameraManager.h"
 #include "../cameras/SceneStore.h"
 #include "../cameras/obsbot/ObsbotCameraAdapter.h"
+#include "../cameras/onvif/OnvifCameraAdapter.h"
 #include "../cameras/visca/ViscaCameraAdapter.h"
 #include "../commands/CommandHandler.h"
 #include "../data/Context.h"
@@ -19,6 +20,7 @@ namespace core {
         cameras::SceneStore sceneStore_;
         std::unique_ptr<cameras::obsbot::ObsbotCameraAdapter> obsbotAdapter_;
         std::unique_ptr<cameras::visca::ViscaCameraAdapter> viscaAdapter_;
+        std::unique_ptr<cameras::onvif::OnvifCameraAdapter> onvifAdapter_;
         data::Context context_;
         commands::CommandHandler commandHandler_;
         std::thread obsbotAdapterThread_;

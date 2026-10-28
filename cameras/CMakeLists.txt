@@ -43,4 +43,16 @@ target_sources(ptz_commander PRIVATE
     visca/ViscaTransport.h
     visca/WindowsSerialTransport.cpp
     visca/WindowsSerialTransport.h
+
+    onvif/OnvifCamera.cpp
+    onvif/OnvifCamera.h
+    onvif/OnvifCameraAdapter.cpp
+    onvif/OnvifCameraAdapter.h
+    onvif/OnvifClient.cpp
+    onvif/OnvifClient.h
+    onvif/OnvifDiscovery.cpp
+    onvif/OnvifDiscovery.h
+    onvif/OnvifEndpoint.h
+    onvif/OnvifMap.h
+    onvif/OnvifParse.h
 )
