@@ -1,5 +1,6 @@
 #include "ScanCommand.h"
 #include "../Arguments.h"
+#include "../../cameras/onvif/OnvifDiscovery.h"
 #include "../../cameras/visca/ViscaIpScanner.h"
 #include "../../cameras/visca/ViscaSerialEndpoint.h"
 #include "../../cameras/visca/ViscaSerialScanner.h"
@@ -49,9 +50,20 @@ namespace commands::camera {
             return port.description.empty() ? port.port : port.port + " (" + port.description + ")";
         }
 
+        enum class RowKind { Ip, Serial, Onvif };
+
+        const char* typeName(RowKind kind) {
+            switch (kind) {
+            case RowKind::Serial: return "Serial";
+            case RowKind::Onvif: return "ONVIF";
+            case RowKind::Ip: break;
+            }
+            return "VISCA-IP";
+        }
+
         // One table row, and what `camera add scanned` gets for it.
         struct Row {
-            bool serial = false;
+            RowKind kind = RowKind::Ip;
             std::string camera;
             std::string reply;
             std::string notes;
@@ -225,7 +237,7 @@ namespace commands::camera {
                     ep.baud = result.baud;
                     ep.address = result.address;
                     Row row;
-                    row.serial = true;
+                    row.kind = RowKind::Serial;
                     row.camera = ep.port + " @" + std::to_string(ep.baud) + " addr " + std::to_string(ep.address);
                     row.reply = describeReply(result.reply, result.position);
                     row.notes = result.port.description;
@@ -306,20 +318,42 @@ namespace commands::camera {
                     const auto& row = *rows[i];
                     ctx.out << std::left
                             << std::setw(IndexColWidth) << (i + 1) << " | "
-                            << std::setw(TypeColWidth) << (row.serial ? "Serial" : "VISCA-IP") << " | "
+                            << std::setw(TypeColWidth) << typeName(row.kind) << " | "
                             << std::setw(CameraColWidth) << row.camera << " | "
                             << std::setw(ReplyColWidth) << row.reply << " | "
                             << (row.notes.empty() ? "-" : row.notes) << std::endl;
                 }
 
-                const auto serialRows = std::count_if(rows.begin(), rows.end(), [](const Row* r) { return r->serial; });
-                const auto ipRows = static_cast<long>(rows.size()) - serialRows;
-                const char* plural = rows.size() == 1 ? " camera" : " cameras";
+                const auto countKind = [&](RowKind kind) {
+                    return std::count_if(rows.begin(), rows.end(),
+                                         [kind](const Row* r) { return r->kind == kind; });
+                };
+                const auto ipRows = countKind(RowKind::Ip);
+                const auto serialRows = countKind(RowKind::Serial);
+                const auto onvifRows = countKind(RowKind::Onvif);
+                std::vector<std::string> parts;
+                if (ipRows > 0) {
+                    parts.push_back(std::to_string(ipRows) + " VISCA-IP");
+                }
+                if (serialRows > 0) {
+                    parts.push_back(std::to_string(serialRows) + " serial");
+                }
+                if (onvifRows > 0) {
+                    parts.push_back(std::to_string(onvifRows) + " ONVIF");
+                }
                 ctx.out << std::endl << "Found " << rows.size();
-                if (ipRows > 0 && serialRows > 0) {
-                    ctx.out << plural << ": " << ipRows << " VISCA-IP, " << serialRows << " serial." << std::endl;
+                if (parts.size() > 1) {
+                    ctx.out << (rows.size() == 1 ? " camera: " : " cameras: ");
+                    for (size_t p = 0; p < parts.size(); ++p) {
+                        ctx.out << (p == 0 ? "" : ", ") << parts[p];
+                    }
+                    ctx.out << "." << std::endl;
+                } else if (onvifRows > 0) {
+                    ctx.out << (rows.size() == 1 ? " ONVIF camera." : " ONVIF cameras.") << std::endl;
+                } else if (ipRows > 0) {
+                    ctx.out << (rows.size() == 1 ? " VISCA-IP camera." : " VISCA-IP cameras.") << std::endl;
                 } else {
-                    ctx.out << (ipRows > 0 ? " VISCA-IP" : " serial") << plural << "." << std::endl;
+                    ctx.out << (rows.size() == 1 ? " serial camera." : " serial cameras.") << std::endl;
                 }
             }
 
@@ -329,8 +363,12 @@ namespace commands::camera {
                 }
             }
 
-            const bool newIp = std::any_of(rows.begin(), rows.end(), [](const Row* r) { return !r->serial && !r->added; });
-            const bool newSerial = std::any_of(rows.begin(), rows.end(), [](const Row* r) { return r->serial && !r->added; });
+            const bool newIp = std::any_of(rows.begin(), rows.end(),
+                                           [](const Row* r) { return r->kind == RowKind::Ip && !r->added; });
+            const bool newSerial = std::any_of(rows.begin(), rows.end(),
+                                               [](const Row* r) { return r->kind == RowKind::Serial && !r->added; });
+            const bool newOnvif = std::any_of(rows.begin(), rows.end(),
+                                              [](const Row* r) { return r->kind == RowKind::Onvif && !r->added; });
             if (newIp || newSerial) {
                 ctx.out << "Add with: camera add scanned <n...|*> [profile] (default ";
                 if (newIp && newSerial) {
@@ -339,6 +377,9 @@ namespace commands::camera {
                     ctx.out << (newIp ? "tenveo-30x" : visca::kSerialDefaultProfile);
                 }
                 ctx.out << ")" << std::endl;
+            }
+            if (newOnvif) {
+                ctx.out << "Add an ONVIF row with: camera add scanned <n> <user> <password>" << std::endl;
             }
         }
 
@@ -369,6 +410,38 @@ namespace commands::camera {
                 ctx.out << "Scanning " << plan->describe() << "..." << std::endl;
             }
             report(ctx, {foundSerial(*plan, visca::scanViscaSerial(plan->toScan))});
+        }
+
+        // WS-Discovery. Nothing is added. Credentials come later, with
+        // `camera add scanned <n> <user> <password>`.
+        void scanOnvif(data::Context& ctx, const std::vector<std::string>& args) {
+            if (!args.empty()) {
+                ctx.err << "Usage: camera scan onvif" << std::endl;
+                return;
+            }
+            ctx.out << "Scanning for ONVIF cameras..." << std::endl;
+            const auto outcome = cameras::onvif::OnvifDiscovery::probe();
+            if (!outcome.error.empty()) {
+                ctx.err << "Scan failed: " << outcome.error << std::endl;
+                return;
+            }
+            Found found;
+            found.kind = "ONVIF";
+            found.ran = true;
+            for (auto device : outcome.devices) {
+                const bool added = ctx.cameraMgr.findBySerial(device.serial()) != nullptr;
+                Row row;
+                row.kind = RowKind::Onvif;
+                row.camera = device.address();
+                row.reply = device.label.empty() ? "WS-Discovery" : device.label;
+                row.notes = added ? "already added" : "";
+                row.added = added;
+                device.user.clear();
+                device.password.clear();
+                row.scanned = std::move(device);
+                found.rows.push_back(std::move(row));
+            }
+            report(ctx, {found});
         }
 
         // Both scans at once, with the defaults. A scan that can't run or
@@ -411,11 +484,14 @@ namespace commands::camera {
             scanIp(ctx, rest);
         } else if (!tokens.empty() && tokens[0] == "serial") {
             scanSerial(ctx, rest);
+        } else if (!tokens.empty() && tokens[0] == "onvif") {
+            scanOnvif(ctx, rest);
         } else if (tokens.size() == 1 && tokens[0] == "*") {
             scanAll(ctx);
         } else {
             ctx.err << "Usage: camera scan visca-ip [subnet] [port]" << std::endl
                     << "       camera scan serial [COMn...]" << std::endl
+                    << "       camera scan onvif" << std::endl
                     << "       camera scan *" << std::endl;
         }
     }
