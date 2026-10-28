@@ -72,8 +72,9 @@ target_link_libraries(ptz_commander PRIVATE
 
 # VISCA serial discovery uses SetupAPI on Windows (VID/PID enumeration for Keyspan etc.)
 # and the VISCA-IP scan uses IP Helper to find the local networks.
+# ONVIF uses WinHTTP plus bcrypt (WS-Security digest) and the same IP Helper for WS-Discovery.
 if(WIN32)
-    target_link_libraries(ptz_commander PRIVATE setupapi ws2_32 winhttp iphlpapi)
+    target_link_libraries(ptz_commander PRIVATE setupapi ws2_32 winhttp bcrypt iphlpapi)
 
     # Library names on the link line have no directory. Ninja then uses LIB, and a
     # 32-bit ambient LIB supplies x86 import libraries to an x64 link. Pin the x64

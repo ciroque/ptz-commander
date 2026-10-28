@@ -14,7 +14,7 @@ namespace commands::camera {
 
         int NameColWidth = 28;
         int AliasColWidth = 20;
-        int SerialNumberColWidth = 20;
+        int SerialNumberColWidth = 24;
         int ConnectedColWidth = 10;
 
 

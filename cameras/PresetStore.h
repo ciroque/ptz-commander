@@ -3,6 +3,7 @@
 
 #include "CameraManager.h"
 #include "SceneStore.h"
+#include "onvif/OnvifEndpoint.h"
 #include "visca/ViscaIpEndpoint.h"
 #include "visca/ViscaSerialEndpoint.h"
 #include <map>
@@ -59,6 +60,9 @@ namespace cameras {
         // One per VISCA:COMn:a camera entry; the port and address come from
         // the key.
         std::vector<visca::ViscaSerialEndpoint> viscaSerial;
+        // Connection records. The password is written only by save(), never
+        // by toJsonString() (the WebSocket snapshot).
+        std::vector<onvif::OnvifEndpoint> onvif;
     };
 
     class PresetStore {
@@ -81,7 +85,7 @@ namespace cameras {
                         std::string filename = "presets.ptzc");
 
         /**
-         * Parses the whole file (camera entries, scenes, visca_ip) without
+         * Parses the whole file (camera entries, scenes, visca_ip, onvif) without
          * touching any state. load() is read() followed by apply(); callers
          * that must change cameras in between (adding VISCA-IP cameras) use
          * the two halves directly.
@@ -112,12 +116,13 @@ namespace cameras {
          */
         bool save(const CameraManager& mgr, const SceneStore& scenes,
                   std::string filename = "presets.ptzc") const {
-            return save(mgr, scenes, {}, {}, filename);
+            return save(mgr, scenes, {}, {}, {}, filename);
         }
 
         bool save(const CameraManager& mgr, const SceneStore& scenes,
                   const std::vector<visca::ViscaIpEndpoint>& viscaIp,
                   const std::vector<visca::ViscaSerialEndpoint>& viscaSerial,
+                  const std::vector<onvif::OnvifEndpoint>& onvif,
                   std::string filename = "presets.ptzc") const;
 
         /**

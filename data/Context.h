@@ -3,6 +3,7 @@
 
 #include "../cameras/CameraManager.h"
 #include "../cameras/SceneStore.h"
+#include "../cameras/onvif/OnvifEndpoint.h"
 #include "../cameras/visca/ViscaCalibration.h"
 #include "../cameras/visca/ViscaIpEndpoint.h"
 #include "../cameras/visca/ViscaSerialEndpoint.h"
@@ -37,10 +38,15 @@ namespace data {
         std::function<bool(const cameras::visca::ViscaSerialEndpoint&, std::string& error)> addViscaSerial;
         std::function<bool(const cameras::visca::ViscaSerialEndpoint&)> loadViscaSerial;
         std::vector<cameras::visca::ViscaSerialEndpoint> viscaSerialEndpoints;
-        // Rows of the last `camera scan visca-ip` or `camera scan serial`
-        // (no profile chosen yet), for `camera add scanned <n>`; nullopt
-        // until a scan has run. A new scan of either kind replaces them.
-        using ScannedCamera = std::variant<cameras::visca::ViscaIpEndpoint, cameras::visca::ViscaSerialEndpoint>;
+        // ONVIF absolute move. Failed leaves detail set; AlreadyPresent adds nothing.
+        std::function<cameras::onvif::OnvifAddResult(const cameras::onvif::OnvifEndpoint&)> addOnvif;
+        std::vector<cameras::onvif::OnvifEndpoint> onvifEndpoints;
+        // Rows of the last `camera scan` (no VISCA profile, and no ONVIF
+        // user or password yet), for `camera add scanned <n>`. nullopt until
+        // a scan has run. A new scan replaces them.
+        using ScannedCamera = std::variant<cameras::visca::ViscaIpEndpoint,
+                                            cameras::visca::ViscaSerialEndpoint,
+                                            cameras::onvif::OnvifEndpoint>;
         std::optional<std::vector<ScannedCamera>> lastScan;
 
         Context(cameras::CameraManager& mgr,

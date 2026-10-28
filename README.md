@@ -40,8 +40,10 @@ The `zoom` argument is an integer between 0 and 100, where 0 is the camera's min
 | `camera add serial`            | `<COMn> [baud] [address] [profile]`     | Adds a VISCA camera on a COM port (default 9600 baud, address 1, profile lumens-vc-a51p) if it answers a position inquiry. One camera per port. Survives `setup save` / `setup load`. |
 | `camera scan visca-ip`         | `[subnet] [port]`                       | Lists the VISCA-over-IP cameras that answer on the local networks (each narrowed to a /24), or on a subnet such as `192.168.1.0/24` (down to /16). Default port 52381. Only sends position inquiries: nothing is added or moved. Rows are numbered for `camera add scanned`. |
 | `camera scan serial`           | `[COMn...]`                             | Lists the COM ports (all, or the ones named) where a VISCA camera answers, trying 9600 and 38400 baud and addresses 1-7. Only sends position inquiries: nothing is added or moved. Rows are numbered for `camera add scanned`. |
-| `camera scan *`                | None                                    | Runs `camera scan visca-ip` and `camera scan serial` at the same time with their defaults, and lists what both found in one numbered table. If one scan can't run or fails, it says why under the table and the other's results still show. |
-| `camera add scanned`           | `<n...\|*> [profile]`                  | Adds cameras by their row number in the last `camera scan` of any kind (e.g. `camera add scanned 1 3`, or `*` for every row). Rows already added are skipped. Default profile tenveo-30x for VISCA-IP rows, lumens-vc-a51p for serial rows. |
+| `camera scan onvif`            | None                                    | Lists ONVIF cameras that answer WS-Discovery. Nothing is added or moved. Rows are numbered for `camera add scanned`. A fixed camera that answers discovery is listed too; adding it fails when it has no PTZ profile. |
+| `camera add onvif`             | `<host> <user> <password> [port]`       | Adds an ONVIF camera (default port 80) if it answers and has a PTZ profile. The password is one word. Survives `setup save` / `setup load`. |
+| `camera scan *`                | None                                    | Runs `camera scan visca-ip`, `camera scan serial`, and `camera scan onvif` at the same time with their defaults, and lists what all three found in one numbered table. If one scan can't run or fails, it says why under the table and the others' results still show. |
+| `camera add scanned`           | `<n...\|*> [profile]`                  | Adds cameras by their row number in the last `camera scan` of any kind (e.g. `camera add scanned 1 3`, or `*` for every row). Rows already added are skipped. Default profile tenveo-30x for VISCA-IP rows, lumens-vc-a51p for serial rows. An ONVIF row takes a user and password instead of a profile: `camera add scanned <n> <user> <password>`. `camera add scanned *` adds the VISCA rows and leaves the ONVIF rows for that form. |
 | `camera calibrate`             | `<id> [panSpan] [tiltDown] [tiltUp]`    | Measures a VISCA camera's (IP or serial) pan, tilt and zoom stops and switches it to the measured profile. **Moves the camera through its full range** (about 25 seconds), then leaves it at home with zoom fully wide. The degree arguments come from the spec sheet (defaults `340 90 90`). Existing presets keep their positions. |
 | `camera move`                  | ```<id\|*> <pan> <tilt> <zoom>```            | Moves camera(s) to PTZ — ```pan```, ```tilt``` (float), ```zoom``` (int, 0-100). Asterisk moves all cameras.          |
 | `camera show`                  | ```<id\|*>```                                | Shows camera details.           |
@@ -118,7 +120,7 @@ Example `.ptzc` file structure (per-camera):
 - **Future**: `push/pull/pan`—speed control.
 
 ## Finding VISCA cameras at a new venue
-`camera scan *` looks on the local networks and every COM port at once (about 3 seconds), so you don't need to know which kind of camera is there:
+`camera scan *` looks on the local networks, every COM port, and for ONVIF cameras at once (about 3 seconds), so you don't need to know which kind of camera is there:
 
 ```
 camera scan *
@@ -126,7 +128,7 @@ camera add scanned *
 setup save
 ```
 
-`camera add scanned *` gives VISCA-IP rows the tenveo-30x profile and serial rows lumens-vc-a51p; name a profile to use another, or calibrate the camera afterwards. The sections below cover each kind.
+`camera add scanned *` gives VISCA-IP rows the tenveo-30x profile and serial rows lumens-vc-a51p; name a profile to use another, or calibrate the camera afterwards. ONVIF rows are listed and then left out of that add, because they need a user and password: `camera add scanned <n> <user> <password>`. The sections below cover each kind.
 
 ## VISCA Serial Camera Support (Windows)
 Serial cameras aren't looked for at startup. Find the camera, add it by its row in the scan, then save the setup so `setup load` brings it back:
@@ -174,3 +176,19 @@ Calibration moves the camera to every mechanical stop and through its full zoom 
 The row numbers belong to the last scan in the current session: a new scan replaces them, and they aren't saved. `camera add visca-ip <host>` still works for a camera you already know the address of. A scan can't tell models apart, so cameras added from it get the tenveo-30x profile unless one is given; calibrate any other camera.
 
 Both forms of `camera add` send the same position inquiry first and add the camera only if a VISCA reply comes back (an error reply counts), so a wrong address or port fails when you add it instead of leaving a camera that never moves. Waiting for a camera that isn't there takes about 2 seconds. `setup load` doesn't check: a saved camera still loads while it's switched off.
+
+## ONVIF Camera Support
+
+Find the camera, then add that row with its ONVIF user and password. The password is one word, with no spaces:
+
+```
+camera scan onvif
+camera add scanned 1 user password
+setup save
+```
+
+`camera add onvif <host> <user> <password> [port]` adds a camera whose address you already know. The default port is 80. The camera is added only if it answers and exposes a PTZ profile, so a wrong address or a fixed camera fails here instead of showing up as a camera that never moves. `setup load` asks again; a camera that is switched off is left out, and the rest of the setup still loads.
+
+Pan is continuous, in degrees from -180 to 180. -180 and 180 are the same heading, and the head is not driven to a stop to find one. Tilt for this speed-dome class is -15 to 90 (the camera auto-flips past 90). Zoom is 0 to 100, wide to tele. Presets stay in the app and are replayed as an absolute move. Presets stored on the camera are not imported.
+
+`setup save` writes the host, port, user, password, and service path in an `onvif` list in the local `.ptzc` file. The password is not logged and is not part of the WebSocket snapshot. Ids look like `ONVIF:192.168.1.211:80`. `camera scan *` includes this discovery along with the VISCA scans.

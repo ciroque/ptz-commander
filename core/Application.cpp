@@ -14,6 +14,7 @@ namespace core {
     Application::Application()
         : obsbotAdapter_(std::make_unique<cameras::obsbot::ObsbotCameraAdapter>(cameraMgr_)),
           viscaAdapter_(std::make_unique<cameras::visca::ViscaCameraAdapter>(cameraMgr_)),
+          onvifAdapter_(std::make_unique<cameras::onvif::OnvifCameraAdapter>(cameraMgr_)),
           context_(cameraMgr_, sceneStore_),
           commandHandler_(),
           sceneControlServer_(cameraMgr_, sceneStore_),
@@ -47,6 +48,11 @@ namespace core {
             const bool ok = viscaAdapter_->loadSerialCamera(endpoint);
             context_.viscaSerialEndpoints = viscaAdapter_->serialEndpoints();
             return ok;
+        };
+        context_.addOnvif = [this](const cameras::onvif::OnvifEndpoint& endpoint) {
+            const auto result = onvifAdapter_->add(endpoint);
+            context_.onvifEndpoints = onvifAdapter_->endpoints();
+            return result;
         };
         sceneControlServer_.setOnSceneApply([this](const std::string& name) {
             std::lock_guard<std::mutex> lock(commandMutex_);
