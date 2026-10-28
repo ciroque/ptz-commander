@@ -77,6 +77,9 @@ namespace commands::camera {
             const bool anyOnvif = std::any_of(indexes.begin(), indexes.end(), [&](size_t n) {
                 return std::holds_alternative<cameras::onvif::OnvifEndpoint>(rows[n - 1]);
             });
+            const bool anyVisca = std::any_of(indexes.begin(), indexes.end(), [&](size_t n) {
+                return !std::holds_alternative<cameras::onvif::OnvifEndpoint>(rows[n - 1]);
+            });
             std::string profile;
             std::string user;
             std::string password;
@@ -86,12 +89,15 @@ namespace commands::camera {
                 user = words[0];
                 password = words[1];
             }
-            if (!profile.empty() && anyOnvif) {
+            // A selection that is only ONVIF cameras can't be added without
+            // credentials. Mixed with VISCA, those rows are skipped below so
+            // `camera add scanned *` still adds the VISCA cameras.
+            if (!profile.empty() && anyOnvif && !anyVisca) {
                 ctx.err << "ONVIF rows don't take a profile. Add them with "
                            "camera add scanned <n> <user> <password>" << std::endl;
                 return;
             }
-            if (anyOnvif && user.empty()) {
+            if (anyOnvif && user.empty() && !anyVisca) {
                 ctx.err << "ONVIF rows need a user and password: "
                            "camera add scanned <n> <user> <password>" << std::endl;
                 return;
@@ -105,8 +111,10 @@ namespace commands::camera {
                 return;
             }
 
+            const bool skipOnvif = anyOnvif && user.empty();
             bool addedAny = false;
             bool addedIpWithDefault = false;
+            bool skippedOnvif = false;
             for (const size_t n : indexes) {
                 std::string error;
                 if (const auto* row = std::get_if<cameras::visca::ViscaIpEndpoint>(&rows[n - 1])) {
@@ -140,6 +148,10 @@ namespace commands::camera {
                     ctx.out << "Added #" << n << " " << cameras::visca::serialCameraId(ep) << " baud=" << ep.baud
                             << " profile=" << ep.profile << std::endl;
                 } else if (const auto* row = std::get_if<cameras::onvif::OnvifEndpoint>(&rows[n - 1])) {
+                    if (skipOnvif) {
+                        skippedOnvif = true;
+                        continue;
+                    }
                     auto ep = *row;
                     ep.user = user;
                     ep.password = password;
@@ -173,6 +185,10 @@ namespace commands::camera {
                     ctx.out << "If a camera isn't a Tenveo 30x, run `camera calibrate <id>` to measure its ranges."
                             << std::endl;
                 }
+            }
+            if (skippedOnvif) {
+                ctx.out << "ONVIF rows were not added. Add one with "
+                           "camera add scanned <n> <user> <password>" << std::endl;
             }
         }
 

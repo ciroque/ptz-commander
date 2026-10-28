@@ -14,7 +14,7 @@ namespace commands::camera {
                       "`camera add onvif <host> <user> <password> [port]` adds an ONVIF camera "
                       "(default port 80) if it answers; "
                       "`camera add scanned <n...|*> [profile]` adds VISCA rows of the last `camera scan`; "
-                      "ONVIF rows take `<user> <password>` instead of a profile") {}
+                      "an ONVIF row takes `<user> <password>` instead, and `*` skips those rows until then") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 }

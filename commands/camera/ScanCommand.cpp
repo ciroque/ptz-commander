@@ -412,21 +412,15 @@ namespace commands::camera {
             report(ctx, {foundSerial(*plan, visca::scanViscaSerial(plan->toScan))});
         }
 
-        // WS-Discovery. Nothing is added. Credentials come later, with
+        // WS-Discovery hits. Nothing is added. Credentials come later, with
         // `camera add scanned <n> <user> <password>`.
-        void scanOnvif(data::Context& ctx, const std::vector<std::string>& args) {
-            if (!args.empty()) {
-                ctx.err << "Usage: camera scan onvif" << std::endl;
-                return;
-            }
-            ctx.out << "Scanning for ONVIF cameras..." << std::endl;
-            const auto outcome = cameras::onvif::OnvifDiscovery::probe();
-            if (!outcome.error.empty()) {
-                ctx.err << "Scan failed: " << outcome.error << std::endl;
-                return;
-            }
+        Found foundOnvif(const data::Context& ctx, const cameras::onvif::OnvifScanResult& outcome) {
             Found found;
             found.kind = "ONVIF";
+            if (!outcome.error.empty()) {
+                found.remarks.push_back("ONVIF scan failed: " + outcome.error);
+                return found;
+            }
             found.ran = true;
             for (auto device : outcome.devices) {
                 const bool added = ctx.cameraMgr.findBySerial(device.serial()) != nullptr;
@@ -441,11 +435,25 @@ namespace commands::camera {
                 row.scanned = std::move(device);
                 found.rows.push_back(std::move(row));
             }
-            report(ctx, {found});
+            return found;
         }
 
-        // Both scans at once, with the defaults. A scan that can't run or
-        // fails is reported under the table; the other still shows.
+        void scanOnvif(data::Context& ctx, const std::vector<std::string>& args) {
+            if (!args.empty()) {
+                ctx.err << "Usage: camera scan onvif" << std::endl;
+                return;
+            }
+            ctx.out << "Scanning for ONVIF cameras..." << std::endl;
+            const auto outcome = cameras::onvif::OnvifDiscovery::probe();
+            if (!outcome.error.empty()) {
+                ctx.err << "Scan failed: " << outcome.error << std::endl;
+                return;
+            }
+            report(ctx, {foundOnvif(ctx, outcome)});
+        }
+
+        // All three scans at once, with the defaults. A scan that can't run
+        // or fails is reported under the table; the others still show.
         void scanAll(data::Context& ctx) {
             std::string ipError;
             const auto ipPlan = planIp({}, ipError);
@@ -459,11 +467,13 @@ namespace commands::camera {
             if (!serialPlan.toScan.empty()) {
                 ctx.out << "Scanning serial: " << serialPlan.describe() << std::endl;
             }
+            ctx.out << "Scanning for ONVIF cameras..." << std::endl;
 
             std::future<IpOutcome> ip;
             if (ipPlan) {
                 ip = std::async(std::launch::async, runIp, *ipPlan);
             }
+            auto onvif = std::async(std::launch::async, [] { return cameras::onvif::OnvifDiscovery::probe(); });
             const auto serialResults = visca::scanViscaSerial(serialPlan.toScan);
 
             Found ipFound;
@@ -473,7 +483,7 @@ namespace commands::camera {
             } else {
                 ipFound.remarks.push_back("VISCA-IP not scanned: " + ipError);
             }
-            report(ctx, {ipFound, foundSerial(serialPlan, serialResults)});
+            report(ctx, {ipFound, foundSerial(serialPlan, serialResults), foundOnvif(ctx, onvif.get())});
         }
     }
 
