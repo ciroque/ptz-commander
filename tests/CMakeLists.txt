@@ -16,7 +16,9 @@ add_executable(ptz_tests
     ViscaRangeTest.cpp
     ViscaIpFramingTest.cpp
     OnvifParseTest.cpp
+    OnvifPasswordTest.cpp
     "${CMAKE_SOURCE_DIR}/cameras/visca/ViscaCommands.cpp"
+    "${CMAKE_SOURCE_DIR}/cameras/onvif/OnvifPassword.cpp"
 )
 
 target_include_directories(ptz_tests PRIVATE
@@ -27,6 +29,9 @@ target_include_directories(ptz_tests PRIVATE
 
 target_link_libraries(ptz_tests PRIVATE GTest::gtest_main)
 target_compile_features(ptz_tests PRIVATE cxx_std_20)
+if(WIN32)
+    target_link_libraries(ptz_tests PRIVATE crypt32)
+endif()
 ptz_pin_msvc_x64_libs(ptz_tests)
 
 include(GoogleTest)
