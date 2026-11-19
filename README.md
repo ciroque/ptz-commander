@@ -89,6 +89,10 @@ A setup is the on-disk collection: per-camera aliases and presets plus scenes. F
 
 `setup load` replaces in-memory presets and scenes (it does not merge).
 
+### ONVIF passwords
+
+`setup save` writes each ONVIF password with Windows DPAPI (`CryptProtectData`). The file stores `dpapi:` plus the base64 of that blob, not the password. The blob decrypts only for the Windows user who saved it, which matches `.ptzc` files living in `%LOCALAPPDATA%\PTZCommander`. Copying a file to another Windows account does not reveal the password, and `setup load` there reports that the password could not be decrypted. A password saved before this change is still plaintext and still loads. The next `setup save` rewrites it. The WebSocket setup snapshot does not include passwords.
+
 ## WebSocket
 
 On start the REPL listens on `ws://127.0.0.1:7420`. A client receives the current setup JSON on connect (and again whenever setup changes). Clients may apply a scene — the same cue as `scene apply <name>`:
