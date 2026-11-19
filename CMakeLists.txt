@@ -183,3 +183,11 @@ if(WIN32)
     # or simply: cpack -G WIX
     include(CPack)
 endif()
+
+# Unit tests are pure functions (VISCA mapping, framing, ONVIF parsing,
+# argument splitting) and do not link the OBSBOT SDK.
+option(PTZ_BUILD_TESTS "Build the unit tests" ON)
+if(PTZ_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
