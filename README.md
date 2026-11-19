@@ -1,15 +1,44 @@
 ﻿# PTZ Commander
 
-A C++ command-line tool for controlling PTZ (Pan-Tilt-Zoom) cameras, built with extensibility in mind. Supports OBSBOT Tiny 2/4K cameras via the OBSBOT SDK (`libdev.dll`), with plans for Lumens, VISCA, PELCO-D, and PELCO-P. Run from a REPL—type commands, move cameras, store presets, compose scenes, and save/load setups to named `.ptzc` files (e.g. `presets.ptzc`, `my-show.ptzc`).
+PTZ Commander is a Windows command-line tool that drives PTZ cameras from one REPL. The same commands move an OBSBOT, a VISCA camera (Lumens VC-A51P or another camera on a COM port or over IP), or an ONVIF camera. Presets, scenes, and `.ptzc` setup files are shared across all three.
 
-## Basic Operation
+## How it is put together
 
-- **Build**: Requires C++20, CMake, and `libdev.dll` (OBSBOT SDK). Clone, drop `libdev.dll` in `out/build/x64-Release/`, then configure + build with your generator (the repo uses Ninja + Visual Studio via `CMakeSettings.json`; the `x64-Release` configuration is **RelWithDebInfo**):
-  - Example: `cmake -S . -B out/build/x64-Release -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo && cmake --build out/build/x64-Release`
-- **Installer (Windows)**: After building RelWithDebInfo into `out/build/x64-Release`, run `installer\build-installer.bat` (from the `installer` directory). This uses `cmake --install ... --config RelWithDebInfo` to stage files and produces `PTZCommander.msi` (using WiX). The installer adds the tool to Program Files, appends the install directory to the system PATH, and always creates a Start Menu entry (under "PTZCommander"). A checkbox on the Options page controls whether a desktop shortcut (public desktop) is also created (default: checked). You can still force it from the command line: `msiexec /i PTZCommander.msi DESKTOPSHORTCUT=0`. The MSI also installs `obs-panel\` (OBS Custom Browser Dock HTML plus an operator Getting Started guide) and offers to open that guide when setup finishes (default: checked). Pushing a version tag (`v1.2.3`) runs a GitHub Action that builds the MSI and attaches it to a GitHub Release. The MSI product version is that tag as four numbers (`v0.3.1` becomes `0.3.1.0`). Installers built before this stamp all reported `1.0.0.0`, which Windows treats as newer than `0.x`, so those copies must be uninstalled once before a tag-stamped MSI will replace them. Operators should use the installed Getting Started document, not this README.
-- **Run**: ./out/build/x64-Release/ptz_commander—REPL starts and prints the build version—`> ` prompt—type commands—`exit` to quit.
-- **Camera Detection**: Threaded—`ObsbotCameraAdapter`—auto-adds/removes cameras—logs on connect/disconnect.
-- **Input**: `<serialNumber>`—SN (e.g., `RMOWTHF7211JGR`), alias (e.g., `"LeftCam"`), or name (e.g., `"OWB-2105-CE"`)—`*` for all cameras.
+```text
+commands
+  → CameraManager
+      → ObsbotCameraAdapter → OBSBOT SDK (libdev.dll)
+      → ViscaCameraAdapter  → serial port, or VISCA-IP over UDP
+      → OnvifCameraAdapter  → ONVIF over HTTP
+```
+
+A command names a camera by alias, serial, or product name. `CameraManager` finds that camera. The adapter for its protocol turns pan, tilt, and zoom into what that camera expects, and the transport sends the bytes.
+
+## What is interesting here
+
+VISCA cameras report raw positions, not degrees. Built-in profiles cover the Lumens VC-A51P and the Tenveo 30x, and `camera calibrate` measures the stops when a profile is wrong. VISCA-over-IP wraps every message in an 8-byte header. ONVIF finds cameras with WS-Discovery and aims them with an absolute move. The ranges are not one pair of numbers: a Lumens profile is pan ±170° and tilt −30° to +90°, a Tenveo profile starts at pan ±175° and tilt ±90°, and the ONVIF speed-dome mapping is pan (−180, 180] and tilt −15° to +90°.
+
+ONVIF passwords in a `.ptzc` file are DPAPI blobs for the Windows user who saved the file. Scenes store camera-to-preset names, not baked positions, and an OBS browser dock applies a scene over a localhost WebSocket.
+
+The unit tests cover the degree mapping, the VISCA-IP header, ONVIF URL and XML parsing, argument splitting, and the password round trip. GitHub Actions builds the app and runs those tests on every pull request.
+
+## Build and run
+
+The build needs C++20, CMake 3.28, and a Visual Studio x64 toolchain. `libdev.dll` and `libdev.lib` are already in `lib/obsbot/` (see that directory's README for the license gap). Configure fetches spdlog 1.13.0, nlohmann/json 3.11.3, IXWebSocket, and GoogleTest. The build copies `libdev.dll` next to the executable.
+
+```text
+cmake -S . -B out/build/x64-Release -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build out/build/x64-Release
+ctest --test-dir out/build/x64-Release --output-on-failure
+```
+
+`out\build\x64-Release\ptz_commander.exe` starts the REPL, prints the build version, and waits at `> `. `exit` quits.
+
+After a RelWithDebInfo build into `out/build/x64-Release`, run `installer\build-installer.bat` from the `installer` directory. That stages files with `cmake --install` and produces `PTZCommander.msi` with WiX. The installer adds the tool to Program Files, appends that directory to the system PATH, and creates a Start Menu entry. A checkbox on the Options page also creates a public desktop shortcut (default: checked). `msiexec /i PTZCommander.msi DESKTOPSHORTCUT=0` turns the shortcut off. The MSI installs `obs-panel\` (the OBS browser dock plus a Getting Started guide) and can open that guide when setup finishes. Pushing a version tag such as `v1.2.3` runs a GitHub Action that builds the MSI and attaches it to a GitHub Release. The MSI product version is that tag as four numbers (`v0.3.1` becomes `0.3.1.0`). Installers built before this stamp all reported `1.0.0.0`, which Windows treats as newer than `0.x`, so those copies must be uninstalled once before a tag-stamped MSI will replace them. Operators should use the installed Getting Started document, not this README.
+
+The OBSBOT adapter watches USB connect and disconnect on its own thread, and adds or removes those cameras as they appear. VISCA and ONVIF cameras are not discovered at startup. Use `camera scan` and `camera add`.
+
+A camera id is a serial number (`RMOWTHF7211JGR`), an alias (`LeftCam`), or a product name (`OWB-2105-CE`). `*` means every camera the command can reach.
 
 ## Commands
 
