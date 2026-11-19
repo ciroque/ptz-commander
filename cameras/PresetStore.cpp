@@ -1,5 +1,6 @@
 #include "PresetStore.h"
 #include "onvif/OnvifEndpoint.h"
+#include "onvif/OnvifPassword.h"
 #include "visca/ViscaCalibration.h"
 #include "visca/ViscaCamera.h"
 #include "../core/Logger.h"
@@ -237,7 +238,12 @@ namespace cameras {
                 ep.host = item["host"].get<std::string>();
                 ep.port = item.value("port", 80);
                 ep.user = item["user"].get<std::string>();
-                ep.password = item["password"].get<std::string>();
+                const auto password = onvif::unprotectPassword(item["password"].get<std::string>());
+                if (!password) {
+                    throw std::runtime_error("ONVIF password for " + ep.host +
+                                             " could not be decrypted on this Windows account");
+                }
+                ep.password = *password;
                 ep.servicePath = item.value("path", std::string("/onvif/device_service"));
                 out.push_back(std::move(ep));
             }
@@ -452,10 +458,15 @@ namespace cameras {
         if (!onvif.empty()) {
             nlohmann::json arr = nlohmann::json::array();
             for (const auto& ep : onvif) {
+                const auto password = onvif::protectPassword(ep.password);
+                if (!password) {
+                    core::Logger::error("Could not encrypt the ONVIF password for " + ep.host);
+                    return false;
+                }
                 arr.push_back({{"host", ep.host},
                                {"port", ep.port},
                                {"user", ep.user},
-                               {"password", ep.password},
+                               {"password", *password},
                                {"path", ep.servicePath}});
             }
             j["onvif"] = std::move(arr);

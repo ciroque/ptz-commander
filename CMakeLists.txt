@@ -106,7 +106,7 @@ target_link_libraries(ptz_commander PRIVATE
 # and the VISCA-IP scan uses IP Helper to find the local networks.
 # ONVIF uses WinHTTP plus bcrypt (WS-Security digest) and the same IP Helper for WS-Discovery.
 if(WIN32)
-    target_link_libraries(ptz_commander PRIVATE setupapi ws2_32 winhttp bcrypt iphlpapi)
+    target_link_libraries(ptz_commander PRIVATE setupapi ws2_32 winhttp bcrypt iphlpapi crypt32)
 
     ptz_pin_msvc_x64_libs(ptz_commander)
 

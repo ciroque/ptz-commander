@@ -60,8 +60,8 @@ namespace cameras {
         // One per VISCA:COMn:a camera entry; the port and address come from
         // the key.
         std::vector<visca::ViscaSerialEndpoint> viscaSerial;
-        // Connection records. The password is written only by save(), never
-        // by toJsonString() (the WebSocket snapshot).
+        // Connection records. save() writes the password with DPAPI.
+        // toJsonString() (the WebSocket snapshot) never includes it.
         std::vector<onvif::OnvifEndpoint> onvif;
     };
 
