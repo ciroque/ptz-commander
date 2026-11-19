@@ -14,6 +14,7 @@ FetchContent_MakeAvailable(googletest)
 add_executable(ptz_tests
     SplitArgsTest.cpp
     ViscaRangeTest.cpp
+    ViscaIpFramingTest.cpp
     "${CMAKE_SOURCE_DIR}/cameras/visca/ViscaCommands.cpp"
 )
 
