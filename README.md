@@ -55,11 +55,9 @@ If the check cannot reach the published version, it says so and still prints the
 
 The `id` argument can be the camera's alias, serial number, or name. These values can be found with the `camera list` command.
 
-The `pan` argument is a floating-point value between -180 and 180, where 0.0 is the camera's center position.
+`pan` and `tilt` are degrees. Which values a camera accepts depends on the protocol and, for VISCA, on its profile. The sections below give those ranges. There is no single tilt interval for every camera.
 
-The `tilt` argument is a floating-point value between -45.0 and 45.0, where 0.0 is the camera's center position. 
-
-The `zoom` argument is an integer between 0 and 100, where 0 is the camera's minimum zoom and 100 is the maximum.
+`zoom` is an integer from 0 to 100 on every camera. 0 is wide and 100 is telephoto.
 
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
@@ -74,7 +72,8 @@ The `zoom` argument is an integer between 0 and 100, where 0 is the camera's min
 | `camera scan *`                | None                                    | Runs `camera scan visca-ip`, `camera scan serial`, and `camera scan onvif` at the same time with their defaults, and lists what all three found in one numbered table. If one scan can't run or fails, it says why under the table and the others' results still show. |
 | `camera add scanned`           | `<n...\|*> [profile]`                  | Adds cameras by their row number in the last `camera scan` of any kind (e.g. `camera add scanned 1 3`, or `*` for every row). Rows already added are skipped. Default profile tenveo-30x for VISCA-IP rows, lumens-vc-a51p for serial rows. An ONVIF row takes a user and password instead of a profile: `camera add scanned <n> <user> <password>`. `camera add scanned *` adds the VISCA rows and leaves the ONVIF rows for that form. |
 | `camera calibrate`             | `<id> [panSpan] [tiltDown] [tiltUp]`    | Measures a VISCA camera's (IP or serial) pan, tilt and zoom stops and switches it to the measured profile. **Moves the camera through its full range** (about 25 seconds), then leaves it at home with zoom fully wide. The degree arguments come from the spec sheet (defaults `340 90 90`). Existing presets keep their positions. |
-| `camera move`                  | ```<id\|*> <pan> <tilt> <zoom>```            | Moves camera(s) to PTZ — ```pan```, ```tilt``` (float), ```zoom``` (int, 0-100). Asterisk moves all cameras.          |
+| `camera move`                  | ```<id\|*> <pan> <tilt> <zoom>```            | Moves camera(s) to an absolute pan, tilt, and zoom. Asterisk moves all cameras.          |
+| `camera push`                  | ```<id\|*> <zoom> [speed]```                 | Zooms gradually to a target zoom (speed 0–100, default 50). Does nothing if the camera is already there or closer. |
 | `camera show`                  | ```<id\|*>```                                | Shows camera details.           |
 
 
@@ -82,7 +81,7 @@ The `zoom` argument is an integer between 0 and 100, where 0 is the camera's min
 
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
-| `preset apply`                 | ```<id\|*> <name>```                         | Applies a named preset — moves camera(s) to stored PTZ.                      |
+| `preset apply`                 | ```<id\|*> <name\|*> [delay_ms]```           | Applies a named preset, or every preset when the name is `*`. `delay_ms` is the pause between presets in that cycle. |
 | `preset discard`               | ```<id\|*> <name>```                         | Removes a named preset from memory.                                        |
 | `preset list`                  | None                                    | Lists all presets for all cameras.  |
 | `preset store`                 | ```<id\|*> <name>```                         | Stores current PTZ as a named preset in memory—e.g., ```"intro"```.            |
@@ -148,9 +147,12 @@ Example `.ptzc` file structure (per-camera):
 ```
 
 ## Notes
-- **Tech Debt**: Preset name dupes—first match wins—<10 cameras—O(n) lookups.
-- **Dependencies**: `nlohmann/json`—`$PROJ_DIR/include/nlohmann/json.hpp`—CMake—`include_directories(include)`.
-- **Future**: `push/pull/pan`—speed control.
+
+Preset lookup walks the presets stored on that camera.
+
+spdlog 1.13.0 and nlohmann/json 3.11.3 are fetched by CMake. The OBSBOT SDK is the dependency that stays in the tree. `lib/obsbot/README.md` explains why, and that the SDK drop has no license file.
+
+`camera push` is the gradual zoom. There is no separate pull command.
 
 ## Finding VISCA cameras at a new venue
 `camera scan *` looks on the local networks, every COM port, and for ONVIF cameras at once (about 3 seconds), so you don't need to know which kind of camera is there:
@@ -224,4 +226,4 @@ setup save
 
 Pan is continuous, in degrees from -180 to 180. -180 and 180 are the same heading, and the head is not driven to a stop to find one. Tilt for this speed-dome class is -15 to 90 (the camera auto-flips past 90). Zoom is 0 to 100, wide to tele. Presets stay in the app and are replayed as an absolute move. Presets stored on the camera are not imported.
 
-`setup save` writes the host, port, user, password, and service path in an `onvif` list in the local `.ptzc` file. The password is not logged and is not part of the WebSocket snapshot. Ids look like `ONVIF:192.168.1.211:80`. `camera scan *` includes this discovery along with the VISCA scans.
+`setup save` writes the host, port, user, service path, and password in an `onvif` list in the local `.ptzc` file. The password is a DPAPI blob, described under [ONVIF passwords](#onvif-passwords). It is not logged and is not part of the WebSocket snapshot. Ids look like `ONVIF:192.168.1.211:80`. `camera scan *` includes this discovery along with the VISCA scans.
