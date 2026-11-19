@@ -13,3 +13,12 @@ installer/build_output.txt
 
 # Local scratch (setup files, notes); never ship
 misc/
+
+# Local build logs, including the OBSBOT SDK log written next to the process
+*.log
+
+# Visual Studio resource-editor state
+*.aps
+
+# Screenshots dropped in the repo root. Icons in the tree are .ico and .png.
+/*.jpg
