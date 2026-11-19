@@ -1,15 +1,44 @@
 ﻿# PTZ Commander
 
-A C++ command-line tool for controlling PTZ (Pan-Tilt-Zoom) cameras, built with extensibility in mind. Supports OBSBOT Tiny 2/4K cameras via the OBSBOT SDK (`libdev.dll`), with plans for Lumens, VISCA, PELCO-D, and PELCO-P. Run from a REPL—type commands, move cameras, store presets, compose scenes, and save/load setups to named `.ptzc` files (e.g. `presets.ptzc`, `my-show.ptzc`).
+PTZ Commander is a Windows command-line tool that drives PTZ cameras from one REPL. The same commands move an OBSBOT, a VISCA camera (Lumens VC-A51P or another camera on a COM port or over IP), or an ONVIF camera. Presets, scenes, and `.ptzc` setup files are shared across all three.
 
-## Basic Operation
+## How it is put together
 
-- **Build**: Requires C++20, CMake, and `libdev.dll` (OBSBOT SDK). Clone, drop `libdev.dll` in `out/build/x64-Release/`, then configure + build with your generator (the repo uses Ninja + Visual Studio via `CMakeSettings.json`; the `x64-Release` configuration is **RelWithDebInfo**):
-  - Example: `cmake -S . -B out/build/x64-Release -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo && cmake --build out/build/x64-Release`
-- **Installer (Windows)**: After building RelWithDebInfo into `out/build/x64-Release`, run `installer\build-installer.bat` (from the `installer` directory). This uses `cmake --install ... --config RelWithDebInfo` to stage files and produces `PTZCommander.msi` (using WiX). The installer adds the tool to Program Files, appends the install directory to the system PATH, and always creates a Start Menu entry (under "PTZCommander"). A checkbox on the Options page controls whether a desktop shortcut (public desktop) is also created (default: checked). You can still force it from the command line: `msiexec /i PTZCommander.msi DESKTOPSHORTCUT=0`. The MSI also installs `obs-panel\` (OBS Custom Browser Dock HTML plus an operator Getting Started guide) and offers to open that guide when setup finishes (default: checked). Pushing a version tag (`v1.2.3`) runs a GitHub Action that builds the MSI and attaches it to a GitHub Release. The MSI product version is that tag as four numbers (`v0.3.1` becomes `0.3.1.0`). Installers built before this stamp all reported `1.0.0.0`, which Windows treats as newer than `0.x`, so those copies must be uninstalled once before a tag-stamped MSI will replace them. Operators should use the installed Getting Started document, not this README.
-- **Run**: ./out/build/x64-Release/ptz_commander—REPL starts and prints the build version—`> ` prompt—type commands—`exit` to quit.
-- **Camera Detection**: Threaded—`ObsbotCameraAdapter`—auto-adds/removes cameras—logs on connect/disconnect.
-- **Input**: `<serialNumber>`—SN (e.g., `RMOWTHF7211JGR`), alias (e.g., `"LeftCam"`), or name (e.g., `"OWB-2105-CE"`)—`*` for all cameras.
+```text
+commands
+  → CameraManager
+      → ObsbotCameraAdapter → OBSBOT SDK (libdev.dll)
+      → ViscaCameraAdapter  → serial port, or VISCA-IP over UDP
+      → OnvifCameraAdapter  → ONVIF over HTTP
+```
+
+A command names a camera by alias, serial, or product name. `CameraManager` finds that camera. The adapter for its protocol turns pan, tilt, and zoom into what that camera expects, and the transport sends the bytes.
+
+## What is interesting here
+
+VISCA cameras report raw positions, not degrees. Built-in profiles cover the Lumens VC-A51P and the Tenveo 30x, and `camera calibrate` measures the stops when a profile is wrong. VISCA-over-IP wraps every message in an 8-byte header. ONVIF finds cameras with WS-Discovery and aims them with an absolute move. The ranges are not one pair of numbers: a Lumens profile is pan ±170° and tilt −30° to +90°, a Tenveo profile starts at pan ±175° and tilt ±90°, and the ONVIF speed-dome mapping is pan (−180, 180] and tilt −15° to +90°.
+
+ONVIF passwords in a `.ptzc` file are DPAPI blobs for the Windows user who saved the file. Scenes store camera-to-preset names, not baked positions, and an OBS browser dock applies a scene over a localhost WebSocket.
+
+The unit tests cover the degree mapping, the VISCA-IP header, ONVIF URL and XML parsing, argument splitting, and the password round trip. GitHub Actions builds the app and runs those tests on every pull request.
+
+## Build and run
+
+The build needs C++20, CMake 3.28, and a Visual Studio x64 toolchain. `libdev.dll` and `libdev.lib` are already in `lib/obsbot/` (see that directory's README for the license gap). Configure fetches spdlog 1.13.0, nlohmann/json 3.11.3, IXWebSocket, and GoogleTest. The build copies `libdev.dll` next to the executable.
+
+```text
+cmake -S . -B out/build/x64-Release -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build out/build/x64-Release
+ctest --test-dir out/build/x64-Release --output-on-failure
+```
+
+`out\build\x64-Release\ptz_commander.exe` starts the REPL, prints the build version, and waits at `> `. `exit` quits.
+
+After a RelWithDebInfo build into `out/build/x64-Release`, run `installer\build-installer.bat` from the `installer` directory. That stages files with `cmake --install` and produces `PTZCommander.msi` with WiX. The installer adds the tool to Program Files, appends that directory to the system PATH, and creates a Start Menu entry. A checkbox on the Options page also creates a public desktop shortcut (default: checked). `msiexec /i PTZCommander.msi DESKTOPSHORTCUT=0` turns the shortcut off. The MSI installs `obs-panel\` (the OBS browser dock plus a Getting Started guide) and can open that guide when setup finishes. Pushing a version tag such as `v1.2.3` runs a GitHub Action that builds the MSI and attaches it to a GitHub Release. The MSI product version is that tag as four numbers (`v0.3.1` becomes `0.3.1.0`). Installers built before this stamp all reported `1.0.0.0`, which Windows treats as newer than `0.x`, so those copies must be uninstalled once before a tag-stamped MSI will replace them. Operators should use the installed Getting Started document, not this README.
+
+The OBSBOT adapter watches USB connect and disconnect on its own thread, and adds or removes those cameras as they appear. VISCA and ONVIF cameras are not discovered at startup. Use `camera scan` and `camera add`.
+
+A camera id is a serial number (`RMOWTHF7211JGR`), an alias (`LeftCam`), or a product name (`OWB-2105-CE`). `*` means every camera the command can reach.
 
 ## Commands
 
@@ -26,11 +55,9 @@ If the check cannot reach the published version, it says so and still prints the
 
 The `id` argument can be the camera's alias, serial number, or name. These values can be found with the `camera list` command.
 
-The `pan` argument is a floating-point value between -180 and 180, where 0.0 is the camera's center position.
+`pan` and `tilt` are degrees. Which values a camera accepts depends on the protocol and, for VISCA, on its profile. The sections below give those ranges. There is no single tilt interval for every camera.
 
-The `tilt` argument is a floating-point value between -45.0 and 45.0, where 0.0 is the camera's center position. 
-
-The `zoom` argument is an integer between 0 and 100, where 0 is the camera's minimum zoom and 100 is the maximum.
+`zoom` is an integer from 0 to 100 on every camera. 0 is wide and 100 is telephoto.
 
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
@@ -45,7 +72,8 @@ The `zoom` argument is an integer between 0 and 100, where 0 is the camera's min
 | `camera scan *`                | None                                    | Runs `camera scan visca-ip`, `camera scan serial`, and `camera scan onvif` at the same time with their defaults, and lists what all three found in one numbered table. If one scan can't run or fails, it says why under the table and the others' results still show. |
 | `camera add scanned`           | `<n...\|*> [profile]`                  | Adds cameras by their row number in the last `camera scan` of any kind (e.g. `camera add scanned 1 3`, or `*` for every row). Rows already added are skipped. Default profile tenveo-30x for VISCA-IP rows, lumens-vc-a51p for serial rows. An ONVIF row takes a user and password instead of a profile: `camera add scanned <n> <user> <password>`. `camera add scanned *` adds the VISCA rows and leaves the ONVIF rows for that form. |
 | `camera calibrate`             | `<id> [panSpan] [tiltDown] [tiltUp]`    | Measures a VISCA camera's (IP or serial) pan, tilt and zoom stops and switches it to the measured profile. **Moves the camera through its full range** (about 25 seconds), then leaves it at home with zoom fully wide. The degree arguments come from the spec sheet (defaults `340 90 90`). Existing presets keep their positions. |
-| `camera move`                  | ```<id\|*> <pan> <tilt> <zoom>```            | Moves camera(s) to PTZ — ```pan```, ```tilt``` (float), ```zoom``` (int, 0-100). Asterisk moves all cameras.          |
+| `camera move`                  | ```<id\|*> <pan> <tilt> <zoom>```            | Moves camera(s) to an absolute pan, tilt, and zoom. Asterisk moves all cameras.          |
+| `camera push`                  | ```<id\|*> <zoom> [speed]```                 | Zooms gradually to a target zoom (speed 0–100, default 50). Does nothing if the camera is already there or closer. |
 | `camera show`                  | ```<id\|*>```                                | Shows camera details.           |
 
 
@@ -53,7 +81,7 @@ The `zoom` argument is an integer between 0 and 100, where 0 is the camera's min
 
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
-| `preset apply`                 | ```<id\|*> <name>```                         | Applies a named preset — moves camera(s) to stored PTZ.                      |
+| `preset apply`                 | ```<id\|*> <name\|*> [delay_ms]```           | Applies a named preset, or every preset when the name is `*`. `delay_ms` is the pause between presets in that cycle. |
 | `preset discard`               | ```<id\|*> <name>```                         | Removes a named preset from memory.                                        |
 | `preset list`                  | None                                    | Lists all presets for all cameras.  |
 | `preset store`                 | ```<id\|*> <name>```                         | Stores current PTZ as a named preset in memory—e.g., ```"intro"```.            |
@@ -119,9 +147,12 @@ Example `.ptzc` file structure (per-camera):
 ```
 
 ## Notes
-- **Tech Debt**: Preset name dupes—first match wins—<10 cameras—O(n) lookups.
-- **Dependencies**: `nlohmann/json`—`$PROJ_DIR/include/nlohmann/json.hpp`—CMake—`include_directories(include)`.
-- **Future**: `push/pull/pan`—speed control.
+
+Preset lookup walks the presets stored on that camera.
+
+spdlog 1.13.0 and nlohmann/json 3.11.3 are fetched by CMake. The OBSBOT SDK is the dependency that stays in the tree. `lib/obsbot/README.md` explains why, and that the SDK drop has no license file.
+
+`camera push` is the gradual zoom. There is no separate pull command.
 
 ## Finding VISCA cameras at a new venue
 `camera scan *` looks on the local networks, every COM port, and for ONVIF cameras at once (about 3 seconds), so you don't need to know which kind of camera is there:
@@ -195,4 +226,4 @@ setup save
 
 Pan is continuous, in degrees from -180 to 180. -180 and 180 are the same heading, and the head is not driven to a stop to find one. Tilt for this speed-dome class is -15 to 90 (the camera auto-flips past 90). Zoom is 0 to 100, wide to tele. Presets stay in the app and are replayed as an absolute move. Presets stored on the camera are not imported.
 
-`setup save` writes the host, port, user, password, and service path in an `onvif` list in the local `.ptzc` file. The password is not logged and is not part of the WebSocket snapshot. Ids look like `ONVIF:192.168.1.211:80`. `camera scan *` includes this discovery along with the VISCA scans.
+`setup save` writes the host, port, user, service path, and password in an `onvif` list in the local `.ptzc` file. The password is a DPAPI blob, described under [ONVIF passwords](#onvif-passwords). It is not logged and is not part of the WebSocket snapshot. Ids look like `ONVIF:192.168.1.211:80`. `camera scan *` includes this discovery along with the VISCA scans.
