@@ -73,7 +73,7 @@ namespace commands::preset {
                 }
             } else {
                 // Apply single preset by name
-                const cameras::Preset* preset = camera->GetPresetByName(presetNameOrWildcard);
+                const cameras::Preset* preset = camera->getPresetByName(presetNameOrWildcard);
                 if (!preset) {
                     ctx.err << "Preset not found: " << presetNameOrWildcard << " for " << camera->getSerialNumber() << std::endl;
                     allGood = false;

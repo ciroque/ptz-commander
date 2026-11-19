@@ -35,7 +35,7 @@ namespace commands::scene {
                 ctx.err << "Camera not found: " << id << std::endl;
                 return;
             }
-            if (!camera->GetPresetByName(presetName)) {
+            if (!camera->getPresetByName(presetName)) {
                 ctx.err << "Preset not found: " << presetName
                         << " for " << camera->getSerialNumber() << std::endl;
                 return;

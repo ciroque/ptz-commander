@@ -38,20 +38,20 @@ namespace cameras {
             return list;
         }
 
-        void AddPreset(const std::string& name, Preset preset) {
+        void addPreset(const std::string& name, Preset preset) {
             presets_[name] = std::make_shared<Preset>(preset);
         }
 
-        const Preset* GetPresetByName(const std::string& name) const {
+        const Preset* getPresetByName(const std::string& name) const {
             auto it = presets_.find(name);
             return (it != presets_.end()) ? it->second.get() : nullptr;
         }
 
-        void RemovePreset(const std::string& name) {
+        void removePreset(const std::string& name) {
             presets_.erase(name);
         }
 
-        void ClearPresets() {
+        void clearPresets() {
             presets_.clear();
         }
     };

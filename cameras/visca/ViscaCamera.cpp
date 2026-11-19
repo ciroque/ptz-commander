@@ -151,7 +151,7 @@ namespace cameras::visca {
 
     void ViscaCamera::applyProfile(const ViscaProfile& profile) {
         for (const auto& preset : getPresets()) {
-            AddPreset(preset->name, Preset(preset->name, remapPtz(preset->ptz, profile_, profile)));
+            addPreset(preset->name, Preset(preset->name, remapPtz(preset->ptz, profile_, profile)));
         }
         lastPtz_ = remapPtz(lastPtz_, profile_, profile);
         profile_ = profile;

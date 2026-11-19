@@ -389,7 +389,7 @@ namespace cameras {
 
     void PresetStore::apply(CameraManager& mgr, SceneStore& scenes, const StagedSetup& staged) const {
         for (auto& camera : mgr.getCameras()) {
-            camera->ClearPresets();
+            camera->clearPresets();
 
             auto it = staged.cameras.find(camera->getSerialNumber());
             if (it == staged.cameras.end()) {
@@ -407,10 +407,10 @@ namespace cameras {
             const auto* lumens = it->second.legacyLumensMapping ? onLumensProfile(*camera) : nullptr;
             for (const auto& preset : it->second.presets) {
                 if (lumens) {
-                    camera->AddPreset(preset.name, Preset(preset.name,
+                    camera->addPreset(preset.name, Preset(preset.name,
                                                           visca::remapPtz(preset.ptz, visca::lumensVcA51pLegacy(), lumens->profile())));
                 } else {
-                    camera->AddPreset(preset.name, preset);
+                    camera->addPreset(preset.name, preset);
                 }
             }
             if (lumens && !it->second.presets.empty()) {

@@ -33,7 +33,7 @@ namespace commands::scene {
                 continue;
             }
 
-            const cameras::Preset* preset = camera->GetPresetByName(presetName);
+            const cameras::Preset* preset = camera->getPresetByName(presetName);
             if (!preset) {
                 ctx.err << "Preset not found: " << presetName
                         << " for " << serial << " (skipping)" << std::endl;

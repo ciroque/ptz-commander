@@ -27,7 +27,7 @@ namespace commands::preset {
             cameras::Preset preset;
             preset.name = presetName;
             preset.ptz = camera->getCurrentPtz();
-            camera->AddPreset(presetName, preset);
+            camera->addPreset(presetName, preset);
         }
 
         ctx.notifySetupChanged();
