@@ -15,12 +15,14 @@ add_executable(ptz_tests
     SplitArgsTest.cpp
     ViscaRangeTest.cpp
     ViscaIpFramingTest.cpp
+    OnvifParseTest.cpp
     "${CMAKE_SOURCE_DIR}/cameras/visca/ViscaCommands.cpp"
 )
 
 target_include_directories(ptz_tests PRIVATE
     "${CMAKE_SOURCE_DIR}/commands"
     "${CMAKE_SOURCE_DIR}/cameras/visca"
+    "${CMAKE_SOURCE_DIR}/cameras/onvif"
 )
 
 target_link_libraries(ptz_tests PRIVATE GTest::gtest_main)
