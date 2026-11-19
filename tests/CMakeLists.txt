@@ -13,10 +13,13 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(ptz_tests
     SplitArgsTest.cpp
+    ViscaRangeTest.cpp
+    "${CMAKE_SOURCE_DIR}/cameras/visca/ViscaCommands.cpp"
 )
 
 target_include_directories(ptz_tests PRIVATE
     "${CMAKE_SOURCE_DIR}/commands"
+    "${CMAKE_SOURCE_DIR}/cameras/visca"
 )
 
 target_link_libraries(ptz_tests PRIVATE GTest::gtest_main)
