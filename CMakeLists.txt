@@ -40,8 +40,36 @@ if(WIN32)
     target_link_libraries(ixwebsocket PUBLIC wsock32 ws2_32 shlwapi)
 endif()
 
-# Include directories for third-party headers (nlohmann/json, obsbot SDK, spdlog)
-# and the generated version stamp (ptz_version.h).
+# Same versions that used to be vendored under include/. Header-only: the
+# build does not compile a spdlog or json library.
+set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
+set(JSON_Install OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3
+    GIT_SHALLOW TRUE
+    EXCLUDE_FROM_ALL
+)
+set(SPDLOG_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "" FORCE)
+set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG v1.13.0
+    GIT_SHALLOW TRUE
+    EXCLUDE_FROM_ALL
+)
+set(_ptz_cxx_standard ${CMAKE_CXX_STANDARD})
+FetchContent_MakeAvailable(nlohmann_json spdlog)
+set(CMAKE_CXX_STANDARD ${_ptz_cxx_standard})
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Include directories for the OBSBOT headers and the generated version stamp
+# (ptz_version.h). nlohmann/json and spdlog come from the FetchContent targets.
 target_include_directories(ptz_commander PRIVATE
     "${CMAKE_SOURCE_DIR}/include/"
     "${CMAKE_SOURCE_DIR}"
@@ -70,6 +98,8 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/MsvcX64LibPaths.cmake")
 target_link_libraries(ptz_commander PRIVATE
     "${CMAKE_SOURCE_DIR}/lib/obsbot/libdev.lib"
     ixwebsocket
+    nlohmann_json::nlohmann_json
+    spdlog::spdlog_header_only
 )
 
 # VISCA serial discovery uses SetupAPI on Windows (VID/PID enumeration for Keyspan etc.)
