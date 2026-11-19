@@ -27,6 +27,7 @@ target_include_directories(ptz_tests PRIVATE
 
 target_link_libraries(ptz_tests PRIVATE GTest::gtest_main)
 target_compile_features(ptz_tests PRIVATE cxx_std_20)
+ptz_pin_msvc_x64_libs(ptz_tests)
 
 include(GoogleTest)
 # PRE_TEST discovers cases when ctest runs, which works for the Visual Studio
