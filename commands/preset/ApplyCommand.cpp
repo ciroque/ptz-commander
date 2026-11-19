@@ -61,11 +61,11 @@ namespace commands::preset {
 
                 for (auto it = presets.begin(); it != presets.end(); ++it) {
                     const auto& preset = *it;
-                    if (!camera->setPosition(preset->ptz.pan, preset->ptz.tilt, preset->ptz.zoom)) {
-                        ctx.err << "Failed to apply preset '" << preset->name << "' to " << camera->getSerialNumber() << std::endl;
+                    if (!camera->setPosition(preset.ptz.pan, preset.ptz.tilt, preset.ptz.zoom)) {
+                        ctx.err << "Failed to apply preset '" << preset.name << "' to " << camera->getSerialNumber() << std::endl;
                         allGood = false;
                     } else {
-                        ctx.out << "Applied preset '" << preset->name << "' to " << camera->getSerialNumber() << std::endl;
+                        ctx.out << "Applied preset '" << preset.name << "' to " << camera->getSerialNumber() << std::endl;
                     }
                     if (std::next(it) != presets.end() && delayMs > 0) {
                         std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));

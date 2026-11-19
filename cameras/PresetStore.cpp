@@ -113,11 +113,11 @@ namespace cameras {
                 nlohmann::json presetsObj;
                 for (const auto& preset : camera->getPresets()) {
                     nlohmann::json presetJson;
-                    presetJson["name"] = preset->name;
-                    presetJson["pan"] = preset->ptz.pan;
-                    presetJson["tilt"] = preset->ptz.tilt;
-                    presetJson["zoom"] = preset->ptz.zoom;
-                    presetsObj[preset->name] = presetJson;
+                    presetJson["name"] = preset.name;
+                    presetJson["pan"] = preset.ptz.pan;
+                    presetJson["tilt"] = preset.ptz.tilt;
+                    presetJson["zoom"] = preset.ptz.zoom;
+                    presetsObj[preset.name] = presetJson;
                 }
                 camEntry["presets"] = presetsObj;
                 if (onLumensProfile(*camera)) {

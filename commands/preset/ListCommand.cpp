@@ -28,10 +28,10 @@ namespace commands::preset {
 
             for (const auto& preset : presets) {
                 ctx.out << std::left
-                        << std::setw(20) << preset->name << " | "
-                        << std::setw(10) << preset->ptz.pan << " | "
-                        << std::setw(10) << preset->ptz.tilt << " | "
-                        << std::setw(10) << preset->ptz.zoom << std::endl;
+                        << std::setw(20) << preset.name << " | "
+                        << std::setw(10) << preset.ptz.pan << " | "
+                        << std::setw(10) << preset.ptz.tilt << " | "
+                        << std::setw(10) << preset.ptz.zoom << std::endl;
             }
             ctx.out << std::endl;
         }
