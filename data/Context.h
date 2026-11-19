@@ -32,7 +32,8 @@ namespace data {
             const std::string& serial,
             const cameras::visca::CalibrationRanges&,
             const cameras::visca::ViscaCalibrator::Progress&,
-            std::string& error)> calibrateVisca;
+            std::string& error)>
+            calibrateVisca;
         std::vector<cameras::visca::ViscaIpEndpoint> viscaIpEndpoints;
         // The same for VISCA cameras on COM ports.
         std::function<bool(const cameras::visca::ViscaSerialEndpoint&, std::string& error)> addViscaSerial;
@@ -45,8 +46,8 @@ namespace data {
         // user or password yet), for `camera add scanned <n>`. nullopt until
         // a scan has run. A new scan replaces them.
         using ScannedCamera = std::variant<cameras::visca::ViscaIpEndpoint,
-                                            cameras::visca::ViscaSerialEndpoint,
-                                            cameras::onvif::OnvifEndpoint>;
+                                           cameras::visca::ViscaSerialEndpoint,
+                                           cameras::onvif::OnvifEndpoint>;
         std::optional<std::vector<ScannedCamera>> lastScan;
 
         Context(cameras::CameraManager& mgr,
@@ -61,6 +62,6 @@ namespace data {
             }
         }
     };
-}
+} // namespace data
 
 #endif // DATA_CONTEXT_H

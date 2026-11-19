@@ -9,6 +9,6 @@ namespace commands::scene {
         ListCommand() : Command("scene", "list", "scene list", "List scenes") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::scene
 
 #endif // COMMANDS_SCENE_LISTCOMMAND_H

@@ -12,24 +12,24 @@ namespace core {
             return nlohmann::json{
                 {"ok", true},
                 {"op", "scene.apply"},
-                {"name", name}
-            }.dump();
+                {"name", name}}
+                .dump();
         }
 
         std::string replyError(const std::string& error) {
             return nlohmann::json{
                 {"ok", false},
-                {"error", error}
-            }.dump();
+                {"error", error}}
+                .dump();
         }
 
         bool hasWhitespace(const std::string& s) {
             return s.find_first_of(" \t\r\n") != std::string::npos;
         }
-    }
+    } // namespace
 
     SceneControlServer::SceneControlServer(cameras::CameraManager& cameraMgr,
-                                     cameras::SceneStore& sceneStore)
+                                           cameras::SceneStore& sceneStore)
         : cameraMgr_(cameraMgr),
           sceneStore_(sceneStore),
           server_(port_, host_) {
@@ -63,8 +63,7 @@ namespace core {
 
         auto res = server_.listen();
         if (!res.first) {
-            Logger::error("SceneControlServer listen failed on " + host_ + ":"
-                          + std::to_string(port_) + ": " + res.second);
+            Logger::error("SceneControlServer listen failed on " + host_ + ":" + std::to_string(port_) + ": " + res.second);
             ix::uninitNetSystem();
             netInitialized_ = false;
             return false;
@@ -72,8 +71,7 @@ namespace core {
 
         server_.start();
         started_ = true;
-        Logger::info("SceneControlServer listening on ws://" + host_ + ":"
-                     + std::to_string(port_));
+        Logger::info("SceneControlServer listening on ws://" + host_ + ":" + std::to_string(port_));
         return true;
     }
 
@@ -106,7 +104,7 @@ namespace core {
     }
 
     void SceneControlServer::onClientMessage(ix::WebSocket& webSocket,
-                                          const ix::WebSocketMessagePtr& msg) {
+                                             const ix::WebSocketMessagePtr& msg) {
         if (msg->type == ix::WebSocketMessageType::Open) {
             webSocket.sendText(stateJson());
             return;
@@ -147,8 +145,7 @@ namespace core {
             nlohmann::json j;
             try {
                 j = nlohmann::json::parse(payload);
-            }
-            catch (const nlohmann::json::parse_error&) {
+            } catch (const nlohmann::json::parse_error&) {
                 webSocket.sendText(replyError("invalid JSON"));
                 return;
             }
@@ -178,4 +175,4 @@ namespace core {
         webSocket.sendText(replyError("expected scene apply"));
     }
 
-}
+} // namespace core

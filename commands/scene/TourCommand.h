@@ -10,6 +10,6 @@ namespace commands::scene {
                                 "Apply every scene in list order; wait between (default 7s)") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::scene
 
 #endif // COMMANDS_SCENE_TOURCOMMAND_H

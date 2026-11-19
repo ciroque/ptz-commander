@@ -11,6 +11,6 @@ namespace commands::console {
                       "Print this build's version. 'version check' compares it with the latest release") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::console
 
 #endif // COMMANDS_CONSOLE_VERSIONCOMMAND_H

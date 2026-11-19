@@ -4,7 +4,7 @@
 #include "../Command.h"
 #include "../Arguments.h"
 #include "../../cameras/Camera.h"
-#include "../../cameras/Preset.h"  // For Ptz
+#include "../../cameras/Preset.h" // For Ptz
 
 namespace commands::camera {
     class MoveCommand : public Command {
@@ -16,6 +16,6 @@ namespace commands::camera {
     private:
         cameras::Ptz parsePtz(const std::vector<std::string>& tokens, size_t start, size_t count) const;
     };
-}
+} // namespace commands::camera
 
 #endif // COMMANDS_CAMERA_MOVECOMMAND_H

@@ -12,6 +12,6 @@ namespace commands::preset {
                                  "Store current position as a named preset") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::preset
 
 #endif // COMMANDS_PRESET_STORECOMMAND_H

@@ -9,6 +9,6 @@ namespace commands::console {
         ClearCommand() : Command("", "cls", "cls", "Clear the screen") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::console
 
 #endif // COMMANDS_CONSOLE_CLEARCOMMAND_H

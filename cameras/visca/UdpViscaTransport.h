@@ -16,32 +16,32 @@
 
 namespace cameras::visca {
 
-class UdpViscaTransport : public ViscaTransport {
-public:
-    UdpViscaTransport(std::string host, int port = 52381);
-    ~UdpViscaTransport() override;
+    class UdpViscaTransport : public ViscaTransport {
+    public:
+        UdpViscaTransport(std::string host, int port = 52381);
+        ~UdpViscaTransport() override;
 
-    bool open() override;
-    bool isOpen() const override;
-    void close() override;
-    bool write(const std::vector<uint8_t>& data) override;
-    void purgeInput() override;
-    std::vector<uint8_t> readPacket(int timeoutMs = 1000) override;
+        bool open() override;
+        bool isOpen() const override;
+        void close() override;
+        bool write(const std::vector<uint8_t>& data) override;
+        void purgeInput() override;
+        std::vector<uint8_t> readPacket(int timeoutMs = 1000) override;
 
-    const std::string& host() const { return host_; }
-    int port() const { return port_; }
+        const std::string& host() const { return host_; }
+        int port() const { return port_; }
 
-private:
-    static std::string toHex(const std::vector<uint8_t>& data);
+    private:
+        static std::string toHex(const std::vector<uint8_t>& data);
 
-    std::string host_;
-    int port_ = 52381;
-    uint32_t sequence_ = 0;
+        std::string host_;
+        int port_ = 52381;
+        uint32_t sequence_ = 0;
 #ifdef _WIN32
-    SOCKET socket_ = INVALID_SOCKET;
-    sockaddr_in dest_{};
+        SOCKET socket_ = INVALID_SOCKET;
+        sockaddr_in dest_{};
 #endif
-};
+    };
 
 } // namespace cameras::visca
 

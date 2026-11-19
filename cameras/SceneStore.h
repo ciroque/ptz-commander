@@ -48,6 +48,6 @@ namespace cameras {
         std::map<std::string, Scene> scenes_;
     };
 
-}
+} // namespace cameras
 
 #endif // CAMERAS_SCENESTORE_H

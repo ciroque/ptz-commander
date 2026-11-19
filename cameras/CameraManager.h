@@ -8,7 +8,7 @@
 #include <optional>
 #include <string>
 
-namespace cameras {  // Note: Using 'cameras' namespace per directory structure
+namespace cameras { // Note: Using 'cameras' namespace per directory structure
     class CameraManager {
     public:
         CameraManager() = default;
@@ -31,9 +31,9 @@ namespace cameras {  // Note: Using 'cameras' namespace per directory structure
         void removeCamera(const std::string& serialNumber);
 
     private:
-        mutable std::mutex mutex_;  // Protects the camera list
-        std::list<std::shared_ptr<Camera>> cameras_;  // List of cameras
+        mutable std::mutex mutex_;                   // Protects the camera list
+        std::list<std::shared_ptr<Camera>> cameras_; // List of cameras
     };
-}
+} // namespace cameras
 
 #endif // CAMERAS_CAMERA_MANAGER_H

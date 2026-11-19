@@ -19,11 +19,10 @@ namespace cameras {
                 return std::make_unique<cameras::obsbot::strategies::TinyFamilyStrategy>();
             }
         }
-    }
+    } // namespace
 
     ObsbotCamera::ObsbotCamera(std::shared_ptr<Device> dev)
-        : device_(std::move(dev))
-    {
+        : device_(std::move(dev)) {
         if (!device_) return;
 
         strategy_ = createStrategy(device_->productType());
@@ -33,13 +32,12 @@ namespace cameras {
 
         if (strategy_ && strategy_->disableAI(device_.get())) {
             core::Logger::info("AI / Tracking fully disabled for " + sn);
-        }
-        else {
+        } else {
             core::Logger::warn("Failed to fully disable AI for " + sn);
         }
     }
 
-    ObsbotCamera::~ObsbotCamera() = default;   // crucial
+    ObsbotCamera::~ObsbotCamera() = default; // crucial
 
     std::string ObsbotCamera::getSerialNumber() const {
         return device_ ? device_->devSn() : "Unknown";
@@ -62,7 +60,7 @@ namespace cameras {
     }
 
     Ptz ObsbotCamera::getCurrentPtz() const {
-        return strategy_ ? strategy_->getCurrentPtz(device_.get()) : Ptz{ 0.0f, 0.0f, 0 };
+        return strategy_ ? strategy_->getCurrentPtz(device_.get()) : Ptz{0.0f, 0.0f, 0};
     }
 
 } // namespace cameras

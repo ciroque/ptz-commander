@@ -55,4 +55,6 @@ target_sources(ptz_commander PRIVATE
     onvif/OnvifEndpoint.h
     onvif/OnvifMap.h
     onvif/OnvifParse.h
+    onvif/OnvifPassword.cpp
+    onvif/OnvifPassword.h
 )

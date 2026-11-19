@@ -9,7 +9,7 @@ namespace cameras::obsbot::strategies {
     /**
      * Shared clamp helper (previously duplicated in each strategy .cpp).
      */
-    template<typename T>
+    template <typename T>
     inline T clamp(const T& val, const T& minVal, const T& maxVal) {
         return std::min(std::max(val, minVal), maxVal);
     }
@@ -58,10 +58,10 @@ namespace cameras::obsbot::strategies {
      * customized per-strategy later if the SDK reports differ (e.g. different pos indices).
      */
     inline cameras::Ptz readCommonPtzFromDevice(Device* dev) {
-        cameras::Ptz ptz{ 0.0f, 0.0f, 0 };
+        cameras::Ptz ptz{0.0f, 0.0f, 0};
         if (!dev) return ptz;
 
-        float pos[3] = { 0 };
+        float pos[3] = {0};
         if (dev->gimbalGetAttitudeInfoR(pos) == RM_RET_OK) {
             ptz.tilt = pos[1];
             ptz.pan = pos[2];

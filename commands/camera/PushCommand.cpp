@@ -14,18 +14,16 @@ namespace commands::camera {
         int targetZoom = 0;
         try {
             targetZoom = std::stoi(tokens[1]);
-        }
-        catch (const std::exception&) {
+        } catch (const std::exception&) {
             ctx.err << "Invalid target zoom value." << std::endl;
             return;
         }
 
-        int speed = 50;  // Default speed (0-100)
+        int speed = 50; // Default speed (0-100)
         if (tokens.size() > 2) {
             try {
                 speed = std::stoi(tokens[2]);
-            }
-            catch (const std::exception&) {
+            } catch (const std::exception&) {
                 ctx.err << "Invalid speed value, using default 50." << std::endl;
             }
         }
@@ -37,17 +35,16 @@ namespace commands::camera {
 
         bool allGood = true;
         for (auto& camera : cameras) {
-			auto currentPtz = camera->getCurrentPtz();
+            auto currentPtz = camera->getCurrentPtz();
             if (currentPtz.zoom >= targetZoom) {
-				ctx.out << "Camera " << camera->getSerialNumber() << " already at or past target zoom." << std::endl;
-				continue;
-			}
+                ctx.out << "Camera " << camera->getSerialNumber() << " already at or past target zoom." << std::endl;
+                continue;
+            }
 
             if (!camera->setZoom(targetZoom, speed)) {
                 ctx.err << "Failed to push zoom for " << camera->getSerialNumber() << std::endl;
                 allGood = false;
-            }
-            else {
+            } else {
                 ctx.out << "Pushed zoom to " << targetZoom << " for " << camera->getSerialNumber() << std::endl;
             }
         }
@@ -56,4 +53,4 @@ namespace commands::camera {
             ctx.err << "Some cameras failed to push zoom." << std::endl;
         }
     }
-}
+} // namespace commands::camera

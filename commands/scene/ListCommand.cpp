@@ -17,4 +17,4 @@ namespace commands::scene {
         }
     }
 
-}
+} // namespace commands::scene

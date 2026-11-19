@@ -1,5 +1,6 @@
 #include "PresetStore.h"
 #include "onvif/OnvifEndpoint.h"
+#include "onvif/OnvifPassword.h"
 #include "visca/ViscaCalibration.h"
 #include "visca/ViscaCamera.h"
 #include "../core/Logger.h"
@@ -73,7 +74,7 @@ namespace cameras {
         // Just a bare filename — place it in the user app data directory
         std::filesystem::path dir = getDefaultPresetDir();
         std::error_code ec;
-        std::filesystem::create_directories(dir, ec);  // best effort
+        std::filesystem::create_directories(dir, ec); // best effort
         return (dir / p).string();
     }
 
@@ -113,11 +114,11 @@ namespace cameras {
                 nlohmann::json presetsObj;
                 for (const auto& preset : camera->getPresets()) {
                     nlohmann::json presetJson;
-                    presetJson["name"] = preset->name;
-                    presetJson["pan"] = preset->ptz.pan;
-                    presetJson["tilt"] = preset->ptz.tilt;
-                    presetJson["zoom"] = preset->ptz.zoom;
-                    presetsObj[preset->name] = presetJson;
+                    presetJson["name"] = preset.name;
+                    presetJson["pan"] = preset.ptz.pan;
+                    presetJson["tilt"] = preset.ptz.tilt;
+                    presetJson["zoom"] = preset.ptz.zoom;
+                    presetsObj[preset.name] = presetJson;
                 }
                 camEntry["presets"] = presetsObj;
                 if (onLumensProfile(*camera)) {
@@ -150,16 +151,14 @@ namespace cameras {
                 {"home_raw", axis.homeRaw},
                 {"max_raw", axis.maxRaw},
                 {"through_home", axis.throughHome},
-                {"signed", axis.signedRaw}
-            };
+                {"signed", axis.signedRaw}};
         }
 
         nlohmann::json calibrationToJson(const visca::ViscaProfile& profile) {
             return {
                 {"pan", axisToJson(profile.pan)},
                 {"tilt", axisToJson(profile.tilt)},
-                {"zoom", {{"min_raw", profile.zoomMinRaw}, {"max_raw", profile.zoomMaxRaw}}}
-            };
+                {"zoom", {{"min_raw", profile.zoomMinRaw}, {"max_raw", profile.zoomMaxRaw}}}};
         }
 
         // Throws on missing or out-of-range fields; callers turn that into ParseError.
@@ -215,8 +214,7 @@ namespace cameras {
                 if (item.contains("calibration")) {
                     try {
                         ep.calibration = calibrationFromJson(item["calibration"]);
-                    }
-                    catch (const std::exception& e) {
+                    } catch (const std::exception& e) {
                         throw std::runtime_error("VISCA-IP camera " + ep.host + ": " + e.what());
                     }
                 }
@@ -233,22 +231,25 @@ namespace cameras {
                 return false;
             }
             for (const auto& item : j["onvif"]) {
-                if (!item.is_object() || !item.contains("host") || !item["host"].is_string()
-                    || !item.contains("user") || !item["user"].is_string()
-                    || !item.contains("password") || !item["password"].is_string()) {
+                if (!item.is_object() || !item.contains("host") || !item["host"].is_string() || !item.contains("user") || !item["user"].is_string() || !item.contains("password") || !item["password"].is_string()) {
                     return false;
                 }
                 onvif::OnvifEndpoint ep;
                 ep.host = item["host"].get<std::string>();
                 ep.port = item.value("port", 80);
                 ep.user = item["user"].get<std::string>();
-                ep.password = item["password"].get<std::string>();
+                const auto password = onvif::unprotectPassword(item["password"].get<std::string>());
+                if (!password) {
+                    throw std::runtime_error("ONVIF password for " + ep.host +
+                                             " could not be decrypted on this Windows account");
+                }
+                ep.password = *password;
                 ep.servicePath = item.value("path", std::string("/onvif/device_service"));
                 out.push_back(std::move(ep));
             }
             return true;
         }
-    }
+    } // namespace
 
     std::string PresetStore::toJsonString(const CameraManager& mgr, const SceneStore& scenes) const {
         return serializeSetup(mgr, scenes).dump();
@@ -339,14 +340,13 @@ namespace cameras {
                         if (block.contains("calibration")) {
                             try {
                                 serial->calibration = calibrationFromJson(block["calibration"]);
-                            }
-                            catch (const std::exception& e) {
+                            } catch (const std::exception& e) {
                                 return parseError("serial camera " + sn + ": " + e.what());
                             }
                         }
                     }
                     const auto samePort = std::find_if(staged.viscaSerial.begin(), staged.viscaSerial.end(),
-                        [&serial](const visca::ViscaSerialEndpoint& ep) { return ep.port == serial->port; });
+                                                       [&serial](const visca::ViscaSerialEndpoint& ep) { return ep.port == serial->port; });
                     if (samePort != staged.viscaSerial.end()) {
                         return parseError("cameras '" + visca::serialCameraId(*samePort) + "' and '" + sn +
                                           "' are on the same port; only one camera per port is supported");
@@ -354,7 +354,7 @@ namespace cameras {
                     staged.viscaSerial.push_back(std::move(*serial));
                 } else if (camJson.contains(kViscaSerialKey)) {
                     return parseError("camera entry '" + sn + "' has \"visca_serial\" but its key isn't a serial "
-                                      "camera such as VISCA:COM3:1");
+                                                              "camera such as VISCA:COM3:1");
                 }
 
                 staged.cameras.emplace(sn, std::move(entry));
@@ -388,15 +388,14 @@ namespace cameras {
 
             out = std::move(staged);
             return LoadStatus::Ok;
-        }
-        catch (const std::exception& e) {
+        } catch (const std::exception& e) {
             return parseError(e.what());
         }
     }
 
     void PresetStore::apply(CameraManager& mgr, SceneStore& scenes, const StagedSetup& staged) const {
         for (auto& camera : mgr.getCameras()) {
-            camera->ClearPresets();
+            camera->clearPresets();
 
             auto it = staged.cameras.find(camera->getSerialNumber());
             if (it == staged.cameras.end()) {
@@ -406,9 +405,7 @@ namespace cameras {
             if (it->second.alias) {
                 auto takenBy = mgr.assignAlias(camera, *it->second.alias);
                 if (takenBy) {
-                    core::Logger::warn("Skipped alias '" + *it->second.alias
-                        + "' for " + camera->getSerialNumber()
-                        + (takenBy->empty() ? ": invalid alias" : (": already used by " + *takenBy)));
+                    core::Logger::warn("Skipped alias '" + *it->second.alias + "' for " + camera->getSerialNumber() + (takenBy->empty() ? ": invalid alias" : (": already used by " + *takenBy)));
                 }
             }
             // Presets saved with the legacy Lumens mapping keep pointing at
@@ -416,10 +413,10 @@ namespace cameras {
             const auto* lumens = it->second.legacyLumensMapping ? onLumensProfile(*camera) : nullptr;
             for (const auto& preset : it->second.presets) {
                 if (lumens) {
-                    camera->AddPreset(preset.name, Preset(preset.name,
-                        visca::remapPtz(preset.ptz, visca::lumensVcA51pLegacy(), lumens->profile())));
+                    camera->addPreset(preset.name, Preset(preset.name,
+                                                          visca::remapPtz(preset.ptz, visca::lumensVcA51pLegacy(), lumens->profile())));
                 } else {
-                    camera->AddPreset(preset.name, preset);
+                    camera->addPreset(preset.name, preset);
                 }
             }
             if (lumens && !it->second.presets.empty()) {
@@ -450,8 +447,7 @@ namespace cameras {
                 nlohmann::json entry = {
                     {"host", ep.host},
                     {"port", ep.port},
-                    {"profile", ep.profile}
-                };
+                    {"profile", ep.profile}};
                 if (ep.calibration) {
                     entry["calibration"] = calibrationToJson(*ep.calibration);
                 }
@@ -462,21 +458,23 @@ namespace cameras {
         if (!onvif.empty()) {
             nlohmann::json arr = nlohmann::json::array();
             for (const auto& ep : onvif) {
-                arr.push_back({
-                    {"host", ep.host},
-                    {"port", ep.port},
-                    {"user", ep.user},
-                    {"password", ep.password},
-                    {"path", ep.servicePath}
-                });
+                const auto password = onvif::protectPassword(ep.password);
+                if (!password) {
+                    core::Logger::error("Could not encrypt the ONVIF password for " + ep.host);
+                    return false;
+                }
+                arr.push_back({{"host", ep.host},
+                               {"port", ep.port},
+                               {"user", ep.user},
+                               {"password", *password},
+                               {"path", ep.servicePath}});
             }
             j["onvif"] = std::move(arr);
         }
         for (const auto& ep : viscaSerial) {
             nlohmann::json block = {
                 {"baud", ep.baud},
-                {"profile", ep.profile}
-            };
+                {"profile", ep.profile}};
             if (ep.calibration) {
                 block["calibration"] = calibrationToJson(*ep.calibration);
             }

@@ -13,6 +13,6 @@ namespace commands::camera {
                       "`camera scan onvif` finds ONVIF cameras by WS-Discovery; `camera scan *` runs all three") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::camera
 
 #endif // COMMANDS_CAMERA_SCANCOMMAND_H

@@ -12,6 +12,6 @@ namespace commands::camera {
                                 "Gradually zoom camera(s) to target") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::camera
 
 #endif // COMMANDS_CAMERA_PUSHCOMMAND_H

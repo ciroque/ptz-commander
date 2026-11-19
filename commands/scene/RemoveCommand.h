@@ -10,6 +10,6 @@ namespace commands::scene {
                                   "Remove a camera from a scene") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::scene
 
 #endif // COMMANDS_SCENE_REMOVECOMMAND_H

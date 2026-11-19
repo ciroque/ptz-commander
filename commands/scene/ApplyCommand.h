@@ -10,6 +10,6 @@ namespace commands::scene {
                                  "Apply each binding (setPosition)") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::scene
 
 #endif // COMMANDS_SCENE_APPLYCOMMAND_H

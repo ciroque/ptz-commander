@@ -11,6 +11,6 @@ namespace commands::setup {
                                 "Save current presets and scenes to a .ptzc file (default: presets.ptzc)") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::setup
 
 #endif // COMMANDS_SETUP_SAVECOMMAND_H

@@ -1,0 +1,21 @@
+# First-party C++ only. Vendored trees (include/spdlog, include/nlohmann, include/obsbot)
+# are not formatted.
+BasedOnStyle: LLVM
+Standard: c++20
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+NamespaceIndentation: All
+AccessModifierOffset: -4
+ColumnLimit: 0
+BreakBeforeBraces: Attach
+PointerAlignment: Left
+ReferenceAlignment: Left
+DerivePointerAlignment: false
+SortIncludes: Never
+InsertNewlineAtEOF: true
+ReflowComments: false
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLoopsOnASingleLine: true
+SpaceBeforeParens: ControlStatements

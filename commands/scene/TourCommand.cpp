@@ -27,8 +27,7 @@ namespace commands::scene {
                 if (idx != tokens[0].size() || delaySec < 0.0 || !std::isfinite(delaySec)) {
                     throw std::invalid_argument("invalid delay");
                 }
-            }
-            catch (const std::exception&) {
+            } catch (const std::exception&) {
                 ctx.err << "Usage: scene tour [seconds]" << std::endl;
                 return;
             }
@@ -52,4 +51,4 @@ namespace commands::scene {
         }
     }
 
-}
+} // namespace commands::scene

@@ -38,7 +38,7 @@ namespace commands::camera {
             }
             const auto& rows = *ctx.lastScan;
 
-            std::set<size_t> indexes;  // 1-based, in table order
+            std::set<size_t> indexes; // 1-based, in table order
             bool all = false;
             std::vector<std::string> words;
             for (size_t i = 1; i < tokens.size(); ++i) {
@@ -94,12 +94,14 @@ namespace commands::camera {
             // `camera add scanned *` still adds the VISCA cameras.
             if (!profile.empty() && anyOnvif && !anyVisca) {
                 ctx.err << "ONVIF rows don't take a profile. Add them with "
-                           "camera add scanned <n> <user> <password>" << std::endl;
+                           "camera add scanned <n> <user> <password>"
+                        << std::endl;
                 return;
             }
             if (anyOnvif && user.empty() && !anyVisca) {
                 ctx.err << "ONVIF rows need a user and password: "
-                           "camera add scanned <n> <user> <password>" << std::endl;
+                           "camera add scanned <n> <user> <password>"
+                        << std::endl;
                 return;
             }
             if (!user.empty() && !anyOnvif) {
@@ -188,7 +190,8 @@ namespace commands::camera {
             }
             if (skippedOnvif) {
                 ctx.out << "ONVIF rows were not added. Add one with "
-                           "camera add scanned <n> <user> <password>" << std::endl;
+                           "camera add scanned <n> <user> <password>"
+                        << std::endl;
             }
         }
 
@@ -209,8 +212,7 @@ namespace commands::camera {
             if (tokens.size() == 5) {
                 try {
                     ep.port = std::stoi(tokens[4]);
-                }
-                catch (const std::exception&) {
+                } catch (const std::exception&) {
                     ctx.err << "Invalid port." << std::endl;
                     return;
                 }
@@ -295,7 +297,7 @@ namespace commands::camera {
             ctx.out << "Added " << cameras::visca::serialCameraId(ep) << " baud=" << ep.baud
                     << " profile=" << ep.profile << std::endl;
         }
-    }
+    } // namespace
 
     void AddCommand::execute(data::Context& ctx, const std::string& args) {
         auto tokens = commands::splitArgs(args);
@@ -336,8 +338,7 @@ namespace commands::camera {
         if (tokens.size() >= 3) {
             try {
                 ep.port = std::stoi(tokens[2]);
-            }
-            catch (const std::exception&) {
+            } catch (const std::exception&) {
                 ctx.err << "Invalid port." << std::endl;
                 return;
             }
@@ -363,4 +364,4 @@ namespace commands::camera {
         ctx.out << "Added VISCA-IP:" << ep.host << ":" << ep.port
                 << " profile=" << ep.profile << std::endl;
     }
-}
+} // namespace commands::camera

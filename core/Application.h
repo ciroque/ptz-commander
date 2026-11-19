@@ -35,6 +35,6 @@ namespace core {
         ~Application();
         void start();
     };
-}
+} // namespace core
 
 #endif // CORE_APPLICATION_H

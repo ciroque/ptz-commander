@@ -20,4 +20,4 @@ namespace commands::scene {
         ctx.out << "Discarded scene '" << sceneName << "'" << std::endl;
     }
 
-}
+} // namespace commands::scene

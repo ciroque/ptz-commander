@@ -23,7 +23,7 @@ namespace commands::camera {
     inline std::optional<std::string> viscaIpAddedAs(const data::Context& ctx,
                                                      const std::string& host, int port) {
         const bool added = std::any_of(ctx.viscaIpEndpoints.begin(), ctx.viscaIpEndpoints.end(),
-            [&](const auto& ep) { return ep.host == host && ep.port == port; });
+                                       [&](const auto& ep) { return ep.host == host && ep.port == port; });
         if (!added) {
             return std::nullopt;
         }
@@ -33,13 +33,13 @@ namespace commands::camera {
     // The same for the serial camera on a COM port, whatever its address.
     inline std::optional<std::string> viscaSerialAddedAs(const data::Context& ctx, const std::string& port) {
         const auto ep = std::find_if(ctx.viscaSerialEndpoints.begin(), ctx.viscaSerialEndpoints.end(),
-            [&](const auto& candidate) { return candidate.port == port; });
+                                     [&](const auto& candidate) { return candidate.port == port; });
         if (ep == ctx.viscaSerialEndpoints.end()) {
             return std::nullopt;
         }
         return cameraLabel(ctx, cameras::visca::serialCameraId(*ep));
     }
 
-}
+} // namespace commands::camera
 
 #endif // COMMANDS_CAMERA_VISCALABEL_H

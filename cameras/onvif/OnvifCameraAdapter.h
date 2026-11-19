@@ -8,17 +8,17 @@
 
 namespace cameras::onvif {
 
-class OnvifCameraAdapter {
-public:
-    explicit OnvifCameraAdapter(CameraManager& manager);
+    class OnvifCameraAdapter {
+    public:
+        explicit OnvifCameraAdapter(CameraManager& manager);
 
-    OnvifAddResult add(const OnvifEndpoint& endpoint);
-    const std::vector<OnvifEndpoint>& endpoints() const { return endpoints_; }
+        OnvifAddResult add(const OnvifEndpoint& endpoint);
+        const std::vector<OnvifEndpoint>& endpoints() const { return endpoints_; }
 
-private:
-    CameraManager& manager_;
-    std::vector<OnvifEndpoint> endpoints_;
-};
+    private:
+        CameraManager& manager_;
+        std::vector<OnvifEndpoint> endpoints_;
+    };
 
 } // namespace cameras::onvif
 

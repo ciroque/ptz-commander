@@ -11,11 +11,11 @@ namespace cameras {
     };
 
     struct Preset {
-        explicit Preset() : ptz{ 0.0f, 0.0f, 0 }, name("") {} 
-		Preset(const std::string& name, const Ptz& ptz) : ptz(ptz), name(name) {}
+        explicit Preset() : ptz{0.0f, 0.0f, 0}, name("") {}
+        Preset(const std::string& name, const Ptz& ptz) : ptz(ptz), name(name) {}
         Ptz ptz;
         std::string name;
     };
-}
+} // namespace cameras
 
 #endif // CAMERAS_PRESET_H

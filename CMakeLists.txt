@@ -40,8 +40,36 @@ if(WIN32)
     target_link_libraries(ixwebsocket PUBLIC wsock32 ws2_32 shlwapi)
 endif()
 
-# Include directories for third-party headers (nlohmann/json, obsbot SDK, spdlog)
-# and the generated version stamp (ptz_version.h).
+# Same versions that used to be vendored under include/. Header-only: the
+# build does not compile a spdlog or json library.
+set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
+set(JSON_Install OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3
+    GIT_SHALLOW TRUE
+    EXCLUDE_FROM_ALL
+)
+set(SPDLOG_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "" FORCE)
+set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG v1.13.0
+    GIT_SHALLOW TRUE
+    EXCLUDE_FROM_ALL
+)
+set(_ptz_cxx_standard ${CMAKE_CXX_STANDARD})
+FetchContent_MakeAvailable(nlohmann_json spdlog)
+set(CMAKE_CXX_STANDARD ${_ptz_cxx_standard})
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Include directories for the OBSBOT headers and the generated version stamp
+# (ptz_version.h). nlohmann/json and spdlog come from the FetchContent targets.
 target_include_directories(ptz_commander PRIVATE
     "${CMAKE_SOURCE_DIR}/include/"
     "${CMAKE_SOURCE_DIR}"
@@ -64,56 +92,23 @@ add_custom_target(ptz_version_stamp
 )
 add_dependencies(ptz_commander ptz_version_stamp)
 
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/MsvcX64LibPaths.cmake")
+
 # Link against obsbot SDK and IXWebSocket
 target_link_libraries(ptz_commander PRIVATE
     "${CMAKE_SOURCE_DIR}/lib/obsbot/libdev.lib"
     ixwebsocket
+    nlohmann_json::nlohmann_json
+    spdlog::spdlog_header_only
 )
 
 # VISCA serial discovery uses SetupAPI on Windows (VID/PID enumeration for Keyspan etc.)
 # and the VISCA-IP scan uses IP Helper to find the local networks.
 # ONVIF uses WinHTTP plus bcrypt (WS-Security digest) and the same IP Helper for WS-Discovery.
 if(WIN32)
-    target_link_libraries(ptz_commander PRIVATE setupapi ws2_32 winhttp bcrypt iphlpapi)
+    target_link_libraries(ptz_commander PRIVATE setupapi ws2_32 winhttp bcrypt iphlpapi crypt32)
 
-    # Library names on the link line have no directory. Ninja then uses LIB, and a
-    # 32-bit ambient LIB supplies x86 import libraries to an x64 link. Pin the x64
-    # libs that belong to the compiler CMake already selected. The Visual Studio
-    # generator already injects those paths; CMAKE_RC_COMPILER is often just rc.exe
-    # there, so walking it produces a bogus /lib//um/x64.
-    if(MSVC)
-        get_filename_component(_ptz_cl_dir "${CMAKE_CXX_COMPILER}" DIRECTORY)
-        get_filename_component(_ptz_arch "${_ptz_cl_dir}" NAME)
-        if(NOT _ptz_arch STREQUAL "x64")
-            message(FATAL_ERROR
-                "ptz-commander links the x64 OBSBOT library. CMAKE_CXX_COMPILER is ${CMAKE_CXX_COMPILER}")
-        endif()
-        if(NOT CMAKE_GENERATOR MATCHES "Visual Studio")
-            get_filename_component(_ptz_msvc_host "${_ptz_cl_dir}" DIRECTORY)
-            get_filename_component(_ptz_msvc_bin "${_ptz_msvc_host}" DIRECTORY)
-            get_filename_component(_ptz_msvc_root "${_ptz_msvc_bin}" DIRECTORY)
-            set(_ptz_msvc_lib "${_ptz_msvc_root}/lib/x64")
-
-            get_filename_component(_ptz_rc_dir "${CMAKE_RC_COMPILER}" DIRECTORY)
-            get_filename_component(_ptz_sdk_ver_dir "${_ptz_rc_dir}" DIRECTORY)
-            get_filename_component(_ptz_sdk_ver "${_ptz_sdk_ver_dir}" NAME)
-            get_filename_component(_ptz_sdk_bin "${_ptz_sdk_ver_dir}" DIRECTORY)
-            get_filename_component(_ptz_sdk_root "${_ptz_sdk_bin}" DIRECTORY)
-            set(_ptz_sdk_um "${_ptz_sdk_root}/lib/${_ptz_sdk_ver}/um/x64")
-            set(_ptz_sdk_ucrt "${_ptz_sdk_root}/lib/${_ptz_sdk_ver}/ucrt/x64")
-
-            foreach(_ptz_libdir IN ITEMS "${_ptz_msvc_lib}" "${_ptz_sdk_um}" "${_ptz_sdk_ucrt}")
-                if(NOT EXISTS "${_ptz_libdir}")
-                    message(FATAL_ERROR "x64 library directory not found: ${_ptz_libdir}")
-                endif()
-            endforeach()
-            target_link_directories(ptz_commander BEFORE PRIVATE
-                "${_ptz_msvc_lib}"
-                "${_ptz_sdk_um}"
-                "${_ptz_sdk_ucrt}"
-            )
-        endif()
-    endif()
+    ptz_pin_msvc_x64_libs(ptz_commander)
 
     # Embed the application icon into the executable (ptz-commander.rc references ptz-commander.ico).
     # We copy the .ico into the build dir because the resource compiler runs out-of-source
@@ -182,4 +177,12 @@ if(WIN32)
     #   cpack
     # or simply: cpack -G WIX
     include(CPack)
+endif()
+
+# Unit tests are pure functions (VISCA mapping, framing, ONVIF parsing,
+# argument splitting) and do not link the OBSBOT SDK.
+option(PTZ_BUILD_TESTS "Build the unit tests" ON)
+if(PTZ_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
 endif()

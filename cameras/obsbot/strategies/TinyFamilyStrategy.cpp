@@ -29,8 +29,7 @@ namespace cameras::obsbot::strategies {
             // SDK signature: aiSetGimbalMotorAngleR(float pitch, float yaw, float roll)
             // pitch = tilt, yaw = pan. We pass roll=0 explicitly.
             moveResult = dev->aiSetGimbalMotorAngleR(tilt, pan, 0.0f);
-        }
-        else {
+        } else {
             moveResult = dev->gimbalSetSpeedPositionR(0, tilt, pan, 80, 80, 80);
         }
 

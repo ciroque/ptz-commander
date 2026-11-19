@@ -30,6 +30,6 @@ namespace commands {
         std::vector<Command*> rootOrder_;
         std::map<std::string, Command*> rootVerbs_;
     };
-} // commands
+} // namespace commands
 
 #endif // COMMANDHANDLER_H

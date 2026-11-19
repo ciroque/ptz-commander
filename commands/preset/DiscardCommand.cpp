@@ -16,7 +16,7 @@ namespace commands::preset {
         }
 
         std::string serialNumber = tokens[0];
-        std::string presetName = tokens[1];  // TODO: Multi-word names later
+        std::string presetName = tokens[1]; // TODO: Multi-word names later
 
         auto cameras = commands::resolveCameras(ctx, serialNumber);
         if (cameras.empty()) {
@@ -26,12 +26,12 @@ namespace commands::preset {
         bool allFound = true;
         bool changed = false;
         for (auto& camera : cameras) {
-            if (!camera->GetPresetByName(presetName)) {
+            if (!camera->getPresetByName(presetName)) {
                 ctx.err << "Preset not found: " << presetName << " for " << camera->getSerialNumber() << std::endl;
                 allFound = false;
                 continue;
             }
-            camera->RemovePreset(presetName);
+            camera->removePreset(presetName);
             changed = true;
         }
 
@@ -41,11 +41,10 @@ namespace commands::preset {
 
         if (allFound) {
             ctx.out << "Discarded preset '" << presetName << "' from "
-                << (serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber)
-                << std::endl;
-        }
-        else {
+                    << (serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber)
+                    << std::endl;
+        } else {
             ctx.err << "Discarded preset '" << presetName << "' from some cameras." << std::endl;
         }
     }
-}
+} // namespace commands::preset

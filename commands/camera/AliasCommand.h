@@ -12,6 +12,6 @@ namespace commands::camera {
                                  "Set a unique friendly alias for a camera") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::camera
 
 #endif // COMMANDS_CAMERA_ALIASCOMMAND_H

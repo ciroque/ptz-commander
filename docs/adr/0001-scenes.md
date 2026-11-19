@@ -111,7 +111,7 @@ Notes:
 1. Look up the scene in `SceneStore`. Missing scene → error, no motion.
 2. For each binding (in deterministic order by serial):
    - Resolve serial → live `Camera`. Missing camera → warn and skip (show continues).
-   - `GetPresetByName`. Missing preset → warn and skip.
+   - `getPresetByName`. Missing preset → warn and skip.
    - `setPosition(pan, tilt, zoom)` immediately. No inter-camera sleep (`preset apply *` delay is for cycling one camera’s presets, not a cue).
 3. Report applied / skipped counts.
 
