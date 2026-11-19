@@ -20,5 +20,8 @@ misc/
 # Visual Studio resource-editor state
 *.aps
 
+# Debug symbols. libdev.pdb used to sit next to the OBSBOT SDK.
+*.pdb
+
 # Screenshots dropped in the repo root. Icons in the tree are .ico and .png.
 /*.jpg
