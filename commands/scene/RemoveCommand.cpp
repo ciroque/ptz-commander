@@ -31,4 +31,4 @@ namespace commands::scene {
         ctx.out << "Removed " << serial << " from scene '" << sceneName << "'" << std::endl;
     }
 
-}
+} // namespace commands::scene

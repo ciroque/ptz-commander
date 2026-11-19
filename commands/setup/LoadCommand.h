@@ -11,6 +11,6 @@ namespace commands::setup {
                                 "Replace in-memory presets and scenes from a .ptzc file (default: presets.ptzc)") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::setup
 
 #endif // COMMANDS_SETUP_LOADCOMMAND_H

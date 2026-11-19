@@ -11,6 +11,6 @@ namespace commands::scene {
                                "Add camera/preset bindings") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::scene
 
 #endif // COMMANDS_SCENE_ADDCOMMAND_H

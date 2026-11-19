@@ -17,27 +17,27 @@ namespace commands::camera {
         int SerialNumberColWidth = 24;
         int ConnectedColWidth = 10;
 
-
         // Table header
-        ctx.out << "Listing devices..." << std::endl << std::endl;
+        ctx.out << "Listing devices..." << std::endl
+                << std::endl;
         ctx.out << std::left
-            << std::setw(NameColWidth) << "Name" << " | "
-            << std::setw(AliasColWidth) << "Alias" << " | "
-            << std::setw(SerialNumberColWidth) << "Serial Number" << " | "
-            << std::setw(ConnectedColWidth) << "Connected" << std::endl;
-        
+                << std::setw(NameColWidth) << "Name" << " | "
+                << std::setw(AliasColWidth) << "Alias" << " | "
+                << std::setw(SerialNumberColWidth) << "Serial Number" << " | "
+                << std::setw(ConnectedColWidth) << "Connected" << std::endl;
+
         ctx.out << std::string(NameColWidth, '-') << "-+-"
-            << std::string(AliasColWidth, '-') << "-+-"
-            << std::string(SerialNumberColWidth, '-') << "-+-"
-            << std::string(ConnectedColWidth, '-') << std::endl;
+                << std::string(AliasColWidth, '-') << "-+-"
+                << std::string(SerialNumberColWidth, '-') << "-+-"
+                << std::string(ConnectedColWidth, '-') << std::endl;
 
         // Table rows
         for (const auto& camera : cameras) {
             ctx.out << std::left
-                << std::setw(NameColWidth) << camera->getName() << " | "
-                << std::setw(AliasColWidth) << camera->getAlias() << " | "
-                << std::setw(SerialNumberColWidth) << camera->getSerialNumber() << " | "
-                << std::setw(ConnectedColWidth) << (camera->isConnected() ? "Yes" : "No") << std::endl;
+                    << std::setw(NameColWidth) << camera->getName() << " | "
+                    << std::setw(AliasColWidth) << camera->getAlias() << " | "
+                    << std::setw(SerialNumberColWidth) << camera->getSerialNumber() << " | "
+                    << std::setw(ConnectedColWidth) << (camera->isConnected() ? "Yes" : "No") << std::endl;
         }
     }
-}
+} // namespace commands::camera

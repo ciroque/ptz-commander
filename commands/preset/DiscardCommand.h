@@ -12,6 +12,6 @@ namespace commands::preset {
                                    "Remove a named preset") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::preset
 
 #endif // COMMANDS_PRESET_DISCARDCOMMAND_H

@@ -11,6 +11,6 @@ namespace cameras {
         std::map<std::string, std::string> bindings;
     };
 
-}
+} // namespace cameras
 
 #endif // CAMERAS_SCENE_H

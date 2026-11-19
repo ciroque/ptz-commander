@@ -98,8 +98,7 @@ namespace core {
             }
             if (input == StopToken) {
                 running_ = false;
-            }
-            else {
+            } else {
                 std::lock_guard<std::mutex> lock(commandMutex_);
                 if (!input.empty()) {
                     commandHandler_.execute(context_, input);
@@ -108,4 +107,4 @@ namespace core {
             }
         }
     }
-}
+} // namespace core

@@ -12,6 +12,6 @@ namespace commands::preset {
                                  "Apply a named preset, or cycle all (*)") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::preset
 
 #endif // COMMANDS_PRESET_APPLYCOMMAND_H

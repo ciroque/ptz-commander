@@ -19,8 +19,7 @@ namespace commands::camera {
                     return std::nullopt;
                 }
                 return value;
-            }
-            catch (const std::exception&) {
+            } catch (const std::exception&) {
                 return std::nullopt;
             }
         }
@@ -41,7 +40,7 @@ namespace commands::camera {
                << " / " << hex(axis.maxRaw) << (axis.signedRaw ? " (signed)" : "");
             return ss.str();
         }
-    }
+    } // namespace
 
     void CalibrateCommand::execute(data::Context& ctx, const std::string& args) {
         const std::string usage = "Usage: camera calibrate <id> [panSpan] [tiltDown] [tiltUp]";
@@ -92,16 +91,13 @@ namespace commands::camera {
         // (not VISCA) does not announce that it is about to move.
         bool started = false;
         std::string error;
-        const auto profile = ctx.calibrateVisca(serial, ranges,
-            [&ctx, &serial, &started](const std::string& step) {
+        const auto profile = ctx.calibrateVisca(serial, ranges, [&ctx, &serial, &started](const std::string& step) {
                 if (!started) {
                     ctx.out << "Calibrating " << serial
                             << ". The camera will move through its full range." << std::endl;
                     started = true;
                 }
-                ctx.out << "  " << step << std::endl;
-            },
-            error);
+                ctx.out << "  " << step << std::endl; }, error);
         if (!profile) {
             ctx.err << "Calibration failed: " << error << std::endl;
             return;
@@ -115,4 +111,4 @@ namespace commands::camera {
                 << "Existing presets were converted to keep their positions." << std::endl
                 << "Run `setup save` to keep this calibration." << std::endl;
     }
-}
+} // namespace commands::camera

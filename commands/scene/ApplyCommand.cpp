@@ -55,4 +55,4 @@ namespace commands::scene {
                 << skipped << " skipped" << std::endl;
     }
 
-}
+} // namespace commands::scene

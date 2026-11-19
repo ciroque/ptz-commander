@@ -62,4 +62,4 @@ namespace commands::scene {
                 << " to scene '" << sceneName << "'" << std::endl;
     }
 
-}
+} // namespace commands::scene

@@ -17,6 +17,6 @@ namespace commands::camera {
                       "an ONVIF row takes `<user> <password>` instead, and `*` skips those rows until then") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::camera
 
 #endif

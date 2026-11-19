@@ -71,8 +71,7 @@ namespace commands {
         if (raw->family().empty()) {
             rootVerbs_[raw->verb()] = raw;
             rootOrder_.push_back(raw);
-        }
-        else {
+        } else {
             auto& verbs = verbs_[raw->family()];
             if (verbs.empty()) {
                 familyOrder_.push_back(raw->family());
@@ -225,4 +224,4 @@ namespace commands {
         ctx.err << "Unknown command: " << head << std::endl;
     }
 
-} // commands
+} // namespace commands

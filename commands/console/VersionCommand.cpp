@@ -112,7 +112,7 @@ namespace commands::console {
             const DWORD accessType = WINHTTP_ACCESS_TYPE_DEFAULT_PROXY;
 #endif
             WinHttpHandle session(WinHttpOpen(L"PTZCommander", accessType,
-                                               WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0));
+                                              WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0));
             if (!session.handle) {
                 error = winhttpFailure("could not open an HTTP session");
                 return false;
@@ -199,8 +199,7 @@ namespace commands::console {
             nlohmann::json payload;
             try {
                 payload = nlohmann::json::parse(body);
-            }
-            catch (const nlohmann::json::exception&) {
+            } catch (const nlohmann::json::exception&) {
                 error = "the GitHub response was not a release description";
                 return false;
             }
@@ -251,8 +250,7 @@ namespace commands::console {
                     ctx.out << ": " << url;
                 }
                 ctx.out << std::endl;
-            }
-            else {
+            } else {
                 ctx.out << "This version is current." << std::endl;
             }
 #else

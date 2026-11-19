@@ -15,7 +15,7 @@ namespace commands::camera {
         }
 
         std::string serialNumber = tokens[0];
-        std::string alias = tokens[1]; 
+        std::string alias = tokens[1];
 
         auto camera = ctx.cameraMgr.findById(serialNumber);
         if (!camera) {
@@ -32,8 +32,7 @@ namespace commands::camera {
         if (takenBy) {
             if (takenBy->empty()) {
                 ctx.err << "Invalid alias" << std::endl;
-            }
-            else {
+            } else {
                 ctx.err << "Alias '" << alias << "' is already used by " << *takenBy << std::endl;
             }
             return;
@@ -42,4 +41,4 @@ namespace commands::camera {
         ctx.notifySetupChanged();
         ctx.out << "Set alias '" << alias << "' for camera " << serialNumber << std::endl;
     }
-}
+} // namespace commands::camera

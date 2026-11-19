@@ -11,6 +11,6 @@ namespace commands::camera {
                       "Measure a VISCA camera's stops (moves it through its full range; defaults 340 90 90)") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::camera
 
 #endif // COMMANDS_CAMERA_CALIBRATECOMMAND_H

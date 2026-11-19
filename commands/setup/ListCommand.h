@@ -10,6 +10,6 @@ namespace commands::setup {
                                 "List .ptzc files in the user data directory") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::setup
 
 #endif // COMMANDS_SETUP_LISTCOMMAND_H

@@ -13,6 +13,6 @@ namespace commands::camera {
                                 "Show details for one or all cameras") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::camera
 
 #endif // COMMANDS_CAMERA_SHOWCOMMAND_H

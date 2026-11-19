@@ -4,13 +4,13 @@
 #include "Preset.h"
 #include <string>
 #include <list>
-#include <map>  // For std::map
+#include <map> // For std::map
 #include <memory>
 
 namespace cameras {
     class Camera {
     protected:
-        std::map<std::string, std::shared_ptr<Preset>> presets_; 
+        std::map<std::string, std::shared_ptr<Preset>> presets_;
         std::string alias_;
 
     public:
@@ -19,14 +19,14 @@ namespace cameras {
         std::string getAlias() const { return alias_; }
         void setAlias(const std::string& alias) { alias_ = alias; }
 
-		std::string getFriendlyName() const { return alias_.empty() ? getName() : alias_; }
+        std::string getFriendlyName() const { return alias_.empty() ? getName() : alias_; }
 
         // Core PTZ methods (still virtual for overrides)
         virtual std::string getSerialNumber() const = 0;
         virtual std::string getName() const = 0;
         virtual bool isConnected() const = 0;
         virtual bool setPosition(float pan, float tilt, int zoom) = 0;
-		virtual bool setZoom(int zoom, int speed) = 0;
+        virtual bool setZoom(int zoom, int speed) = 0;
         virtual Ptz getCurrentPtz() const = 0;
 
         // Preset methods (concrete in base class)
@@ -55,6 +55,6 @@ namespace cameras {
             presets_.clear();
         }
     };
-}
+} // namespace cameras
 
 #endif // CAMERAS_CAMERA_H

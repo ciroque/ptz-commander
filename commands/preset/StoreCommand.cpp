@@ -16,7 +16,7 @@ namespace commands::preset {
         }
 
         std::string serialNumber = tokens[0];
-        std::string presetName = tokens[1];  
+        std::string presetName = tokens[1];
 
         auto cameras = commands::resolveCameras(ctx, serialNumber);
         if (cameras.empty()) {
@@ -32,7 +32,7 @@ namespace commands::preset {
 
         ctx.notifySetupChanged();
         ctx.out << "Stored preset '" << presetName << "' for "
-            << (serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber)
-            << std::endl;
+                << (serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber)
+                << std::endl;
     }
-}
+} // namespace commands::preset

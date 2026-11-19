@@ -42,6 +42,6 @@ namespace core {
 
     // Static member definition
     inline std::shared_ptr<spdlog::logger> Logger::logger_ = nullptr;
-}
+} // namespace core
 
 #endif // CORE_LOGGER_H

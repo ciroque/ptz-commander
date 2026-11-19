@@ -13,6 +13,6 @@ namespace commands::preset {
         ListCommand() : Command("preset", "list", "preset list", "List all presets") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::preset
 
 #endif // COMMANDS_PRESET_LISTCOMMAND_H

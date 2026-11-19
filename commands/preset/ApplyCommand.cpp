@@ -12,7 +12,7 @@ namespace commands::preset {
         void printUsage(data::Context& ctx) {
             ctx.err << "Usage: preset apply <id|*> <name|*> [delay_ms]" << std::endl;
         }
-    }
+    } // namespace
 
     void ApplyCommand::execute(data::Context& ctx, const std::string& args) {
         if (args.empty()) {
@@ -37,8 +37,7 @@ namespace commands::preset {
                     ctx.err << "Invalid delay_ms, using default " << kDefaultDelayMs << "ms" << std::endl;
                     delayMs = kDefaultDelayMs;
                 }
-            }
-            catch (const std::exception&) {
+            } catch (const std::exception&) {
                 ctx.err << "Invalid delay_ms, using default " << kDefaultDelayMs << "ms" << std::endl;
                 delayMs = kDefaultDelayMs;
             }
@@ -65,16 +64,14 @@ namespace commands::preset {
                     if (!camera->setPosition(preset->ptz.pan, preset->ptz.tilt, preset->ptz.zoom)) {
                         ctx.err << "Failed to apply preset '" << preset->name << "' to " << camera->getSerialNumber() << std::endl;
                         allGood = false;
-                    }
-                    else {
+                    } else {
                         ctx.out << "Applied preset '" << preset->name << "' to " << camera->getSerialNumber() << std::endl;
                     }
                     if (std::next(it) != presets.end() && delayMs > 0) {
                         std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
                     }
                 }
-            }
-            else {
+            } else {
                 // Apply single preset by name
                 const cameras::Preset* preset = camera->GetPresetByName(presetNameOrWildcard);
                 if (!preset) {
@@ -86,8 +83,7 @@ namespace commands::preset {
                 if (!camera->setPosition(preset->ptz.pan, preset->ptz.tilt, preset->ptz.zoom)) {
                     ctx.err << "Failed to apply preset '" << presetNameOrWildcard << "' to " << camera->getSerialNumber() << std::endl;
                     allGood = false;
-                }
-                else {
+                } else {
                     ctx.out << "Applied preset '" << presetNameOrWildcard << "' to " << camera->getSerialNumber() << std::endl;
                 }
             }
@@ -98,13 +94,11 @@ namespace commands::preset {
         if (allGood) {
             if (presetNameOrWildcard == "*") {
                 ctx.out << "Applied presets to " << target << std::endl;
-            }
-            else {
+            } else {
                 ctx.out << "Applied preset '" << presetNameOrWildcard << "' to " << target << std::endl;
             }
-        }
-        else {
+        } else {
             ctx.err << "Some presets failed to apply for " << target << "." << std::endl;
         }
     }
-}
+} // namespace commands::preset

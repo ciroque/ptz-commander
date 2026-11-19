@@ -36,8 +36,8 @@ namespace cameras::obsbot {
 
             const char* levelStr = "UNKNOWN";
             if (lvl == DEV_ERROR) levelStr = "ERROR";
-            else if (lvl == DEV_WARN)  levelStr = "WARN";
-            else if (lvl == DEV_INFO)  levelStr = "INFO";
+            else if (lvl == DEV_WARN) levelStr = "WARN";
+            else if (lvl == DEV_INFO) levelStr = "INFO";
             else if (lvl == DEV_DEBUG) levelStr = "DEBUG";
 
             // Format message into buffer
@@ -45,10 +45,10 @@ namespace cameras::obsbot {
             vsnprintf(buffer.data(), buffer.size(), msg, args);
 
             logFile << "[" << timeStr << "] [" << levelStr << "] "
-                << buffer.data() << std::endl;
+                    << buffer.data() << std::endl;
             logFile.flush();
         }
-    }
+    } // namespace
 
     ObsbotCameraAdapter::ObsbotCameraAdapter(CameraManager& manager)
         : devices_(Devices::get()), manager_(manager), running_(false) {
@@ -71,8 +71,7 @@ namespace cameras::obsbot {
         if (logFile.is_open()) {
             core::Logger::info("OBSBOT SDK logging redirected to: " + logPath);
             dev_set_log_handler(sdkLogHandler, nullptr);
-        }
-        else {
+        } else {
             core::Logger::error("Failed to open OBSBOT SDK log file for writing: " + logPath);
         }
 
@@ -95,8 +94,7 @@ namespace cameras::obsbot {
             int32_t scanResult = devices_.startNetworkScanImmediately();
             if (scanResult == RM_RET_OK) {
                 core::Logger::info("Network scan started successfully");
-            }
-            else {
+            } else {
                 core::Logger::warn("Network scan failed to start (code: " + std::to_string(scanResult) + ") - scanning may already be in progress");
             }
 
@@ -134,8 +132,7 @@ namespace cameras::obsbot {
                     adapter->manager_.addCamera(std::make_shared<ObsbotCamera>(dev));
                 }
             }
-        }
-        else {
+        } else {
             adapter->manager_.removeCamera(devSn);
         }
     }
@@ -144,7 +141,7 @@ namespace cameras::obsbot {
         auto devList = devices_.getDevList();
         for (const auto& dev : devList) {
             if (dev && (dev->devMode() == Device::DevModeUvc ||
-                dev->devMode() == Device::DevModeNet)) {
+                        dev->devMode() == Device::DevModeNet)) {
                 core::Logger::info("Pre-existing device found: " + dev->devName());
                 manager_.addCamera(std::make_shared<ObsbotCamera>(dev));
             }

@@ -38,6 +38,6 @@ namespace core {
         std::atomic<bool> started_{false};
         bool netInitialized_{false};
     };
-}
+} // namespace core
 
 #endif // CORE_SCENECONTROLSERVER_H

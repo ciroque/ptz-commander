@@ -24,4 +24,4 @@ namespace commands::setup {
         }
         ctx.out << std::endl;
     }
-}
+} // namespace commands::setup

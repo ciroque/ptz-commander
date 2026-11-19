@@ -22,11 +22,11 @@ namespace cameras::obsbot {
     private:
         Devices& devices_;
         CameraManager& manager_;
-        std::atomic<bool> running_{ false };
+        std::atomic<bool> running_{false};
 
         static void onDeviceChanged(std::string devSn, bool connected, void* param);
         void findDevices();
     };
-}
+} // namespace cameras::obsbot
 
 #endif

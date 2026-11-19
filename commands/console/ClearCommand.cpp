@@ -8,4 +8,4 @@ namespace commands::console {
         system("cls");
         ctx.out << "PTZ Commander " << PTZ_VERSION_PRODUCT << " (type 'exit' to quit)\n";
     }
-}
+} // namespace commands::console

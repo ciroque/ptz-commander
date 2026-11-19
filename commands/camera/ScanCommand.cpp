@@ -50,13 +50,18 @@ namespace commands::camera {
             return port.description.empty() ? port.port : port.port + " (" + port.description + ")";
         }
 
-        enum class RowKind { Ip, Serial, Onvif };
+        enum class RowKind { Ip,
+                             Serial,
+                             Onvif };
 
         const char* typeName(RowKind kind) {
             switch (kind) {
-            case RowKind::Serial: return "Serial";
-            case RowKind::Onvif: return "ONVIF";
-            case RowKind::Ip: break;
+            case RowKind::Serial:
+                return "Serial";
+            case RowKind::Onvif:
+                return "ONVIF";
+            case RowKind::Ip:
+                break;
             }
             return "VISCA-IP";
         }
@@ -73,8 +78,8 @@ namespace commands::camera {
 
         // What one kind of scan found, ready to print.
         struct Found {
-            const char* kind = "";            // "VISCA-IP" or "serial"
-            bool ran = false;                 // false if there was nothing to scan or it failed
+            const char* kind = ""; // "VISCA-IP" or "serial"
+            bool ran = false;      // false if there was nothing to scan or it failed
             std::vector<Row> rows;
             std::vector<std::string> remarks; // lines under the table
         };
@@ -168,7 +173,7 @@ namespace commands::camera {
         struct SerialPlan {
             bool anyPorts = false;
             std::vector<visca::SerialPortInfo> toScan;
-            std::vector<std::string> alreadyAdded;  // "COM4 as cam1"
+            std::vector<std::string> alreadyAdded; // "COM4 as cam1"
 
             std::string describe() const {
                 std::vector<std::string> names;
@@ -200,7 +205,7 @@ namespace commands::camera {
                     return std::nullopt;
                 }
                 const auto it = std::find_if(listed.begin(), listed.end(),
-                    [&port](const auto& info) { return info.port == *port; });
+                                             [&port](const auto& info) { return info.port == *port; });
                 ports.push_back(it != listed.end() ? *it : visca::SerialPortInfo{*port, ""});
             }
 
@@ -254,7 +259,8 @@ namespace commands::camera {
                 case Status::Failed:
                     // ERROR_FILE_NOT_FOUND: no such port, e.g. an unplugged adapter.
                     failed.push_back(result.port.port + (result.openError == 2
-                        ? " (not found)" : " (error " + std::to_string(result.openError) + ")"));
+                                                             ? " (not found)"
+                                                             : " (error " + std::to_string(result.openError) + ")"));
                     break;
                 }
             }
@@ -305,7 +311,8 @@ namespace commands::camera {
                 const int TypeColWidth = 8;
                 const int CameraColWidth = 21;
                 const int ReplyColWidth = 24;
-                ctx.out << std::endl << std::left
+                ctx.out << std::endl
+                        << std::left
                         << std::setw(IndexColWidth) << "#" << " | "
                         << std::setw(TypeColWidth) << "Type" << " | "
                         << std::setw(CameraColWidth) << "Camera" << " | "
@@ -341,7 +348,8 @@ namespace commands::camera {
                 if (onvifRows > 0) {
                     parts.push_back(std::to_string(onvifRows) + " ONVIF");
                 }
-                ctx.out << std::endl << "Found " << rows.size();
+                ctx.out << std::endl
+                        << "Found " << rows.size();
                 if (parts.size() > 1) {
                     ctx.out << (rows.size() == 1 ? " camera: " : " cameras: ");
                     for (size_t p = 0; p < parts.size(); ++p) {
@@ -485,7 +493,7 @@ namespace commands::camera {
             }
             report(ctx, {ipFound, foundSerial(serialPlan, serialResults), foundOnvif(ctx, onvif.get())});
         }
-    }
+    } // namespace
 
     void ScanCommand::execute(data::Context& ctx, const std::string& args) {
         auto tokens = commands::splitArgs(args);
@@ -505,4 +513,4 @@ namespace commands::camera {
                     << "       camera scan *" << std::endl;
         }
     }
-}
+} // namespace commands::camera

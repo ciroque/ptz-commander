@@ -9,6 +9,6 @@ namespace commands::scene {
         DiscardCommand() : Command("scene", "discard", "scene discard <name>", "Delete a scene") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
-}
+} // namespace commands::scene
 
 #endif // COMMANDS_SCENE_DISCARDCOMMAND_H

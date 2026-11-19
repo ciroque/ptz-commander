@@ -14,8 +14,7 @@ namespace commands::camera {
             ptz.zoom = std::stoi(tokens[start + 2]);
             if (ptz.zoom < 0) ptz.zoom = 0;
             if (ptz.zoom > 100) ptz.zoom = 100;
-        }
-        catch (const std::exception& e) {
+        } catch (const std::exception& e) {
             throw std::invalid_argument(std::string("Invalid argument: ") + e.what());
         }
         return ptz;
@@ -40,7 +39,7 @@ namespace commands::camera {
         }
 
         try {
-            cameras::Ptz ptz = parsePtz(tokens, 1, 3);  // pan, tilt, zoom (0-100)
+            cameras::Ptz ptz = parsePtz(tokens, 1, 3); // pan, tilt, zoom (0-100)
 
             bool allGood = true;
             for (auto& camera : cameras) {
@@ -53,19 +52,16 @@ namespace commands::camera {
             if (allGood) {
                 if (serialNumber == "*") {
                     ctx.out << "Moved " << cameras.size() << " camera" << (cameras.size() > 1 ? "s" : "")
-                        << " to pan: " << ptz.pan << ", tilt: " << ptz.tilt << ", zoom: " << ptz.zoom << std::endl;
-                }
-                else {
+                            << " to pan: " << ptz.pan << ", tilt: " << ptz.tilt << ", zoom: " << ptz.zoom << std::endl;
+                } else {
                     ctx.out << "Moved " << serialNumber << " to pan: " << ptz.pan << ", tilt: " << ptz.tilt
-                        << ", zoom: " << ptz.zoom << std::endl;
+                            << ", zoom: " << ptz.zoom << std::endl;
                 }
-            }
-            else {
+            } else {
                 ctx.err << "Some cameras failed to move." << std::endl;
             }
-        }
-        catch (const std::invalid_argument& e) {
+        } catch (const std::invalid_argument& e) {
             ctx.err << "Error: " << e.what() << std::endl;
         }
     }
-}
+} // namespace commands::camera
