@@ -202,7 +202,7 @@ Example `.ptzc` file structure (per-camera):
 
 - Tenveo 30x over VISCA-IP. Position inquiries and absolute moves were checked on that camera, and the `tenveo-30x` profile comes from those measurements.
 - OBSBOT cameras over USB. They are added and removed as they are plugged in.
-- The `lumens-vc-a51p` profile is taken from the Lumens VC-A51P manual. It has not been confirmed on a camera.
+- The `lumens-vc-a51p` profile is taken from the Lumens VC-A51P manual and has been confirmed on that camera.
 
 ## Build
 
