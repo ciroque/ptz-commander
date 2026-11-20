@@ -24,12 +24,11 @@ namespace cameras::onvif {
     // AbsoluteMove / GetStatus on the PTZ service advertised by GetCapabilities.
     class OnvifClient {
     public:
-        OnvifClient(std::string host, int port, std::string servicePath,
-                    std::string user, std::string password);
+        OnvifClient(std::string host, int port, std::string servicePath, std::string user, std::string password);
 
         bool prepare(OnvifDeviceInfo& info, std::string& error);
-        bool absoluteMove(double panX, double tiltY, double zoomX,
-                          double panTiltSpeed, double zoomSpeed, std::string& error);
+        bool absoluteMove(double panX, double tiltY, double zoomX, double panTiltSpeed, double zoomSpeed,
+                          std::string& error);
         bool getStatus(OnvifPosition& position, std::string& error);
 
     private:
@@ -41,8 +40,8 @@ namespace cameras::onvif {
         };
 
         bool syncClock(std::string& error);
-        SoapResult post(const std::string& host, int port, const std::string& path,
-                        const std::string& inner, bool authenticate);
+        SoapResult post(const std::string& host, int port, const std::string& path, const std::string& inner,
+                        bool authenticate);
         SoapResult callAuthenticated(const std::string& host, int port, const std::string& path,
                                      const std::string& inner);
         bool loadServices(std::string& error);

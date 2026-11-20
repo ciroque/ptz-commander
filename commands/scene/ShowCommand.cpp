@@ -24,21 +24,15 @@ namespace commands::scene {
             return;
         }
 
-        ctx.out << std::left
-                << std::setw(20) << "Camera" << " | "
-                << std::setw(24) << "Serial" << " | "
+        ctx.out << std::left << std::setw(20) << "Camera" << " | " << std::setw(24) << "Serial" << " | "
                 << "Preset" << std::endl;
-        ctx.out << std::string(20, '-') << "-+-"
-                << std::string(24, '-') << "-+-"
-                << std::string(12, '-') << std::endl;
+        ctx.out << std::string(20, '-') << "-+-" << std::string(24, '-') << "-+-" << std::string(12, '-') << std::endl;
 
         for (const auto& [serial, presetName] : scene->bindings) {
             auto camera = ctx.cameraMgr.findBySerial(serial);
             const std::string label = camera ? camera->getFriendlyName() : "(not connected)";
-            ctx.out << std::left
-                    << std::setw(20) << label << " | "
-                    << std::setw(24) << serial << " | "
-                    << presetName << std::endl;
+            ctx.out << std::left << std::setw(20) << label << " | " << std::setw(24) << serial << " | " << presetName
+                    << std::endl;
         }
     }
 

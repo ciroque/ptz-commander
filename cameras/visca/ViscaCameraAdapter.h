@@ -31,10 +31,8 @@ namespace cameras::visca {
 
         // Calibrates a VISCA camera, IP or serial, switches it to the measured
         // profile and keeps the profile with its endpoint for `setup save`.
-        std::optional<ViscaProfile> calibrateCamera(const std::string& serial,
-                                                    const CalibrationRanges& ranges,
-                                                    const ViscaCalibrator::Progress& progress,
-                                                    std::string& error);
+        std::optional<ViscaProfile> calibrateCamera(const std::string& serial, const CalibrationRanges& ranges,
+                                                    const ViscaCalibrator::Progress& progress, std::string& error);
 
     private:
         bool createIpCamera(const ViscaIpEndpoint& endpoint, bool requireReply, std::string& error);

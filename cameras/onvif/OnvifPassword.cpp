@@ -21,7 +21,8 @@ namespace cameras::onvif {
                 return std::string();
             }
             DWORD chars = 0;
-            if (!CryptBinaryToStringA(data, size, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, nullptr, &chars) || chars == 0) {
+            if (!CryptBinaryToStringA(data, size, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, nullptr, &chars)
+                || chars == 0) {
                 return std::nullopt;
             }
             std::string out(chars, '\0');
@@ -39,11 +40,14 @@ namespace cameras::onvif {
                 return std::vector<BYTE>();
             }
             DWORD size = 0;
-            if (!CryptStringToBinaryA(text.c_str(), static_cast<DWORD>(text.size()), CRYPT_STRING_BASE64, nullptr, &size, nullptr, nullptr)) {
+            if (!CryptStringToBinaryA(text.c_str(), static_cast<DWORD>(text.size()), CRYPT_STRING_BASE64, nullptr,
+                                      &size, nullptr, nullptr)) {
                 return std::nullopt;
             }
             std::vector<BYTE> out(size);
-            if (size > 0 && !CryptStringToBinaryA(text.c_str(), static_cast<DWORD>(text.size()), CRYPT_STRING_BASE64, out.data(), &size, nullptr, nullptr)) {
+            if (size > 0
+                && !CryptStringToBinaryA(text.c_str(), static_cast<DWORD>(text.size()), CRYPT_STRING_BASE64, out.data(),
+                                         &size, nullptr, nullptr)) {
                 return std::nullopt;
             }
             out.resize(size);
@@ -88,7 +92,8 @@ namespace cameras::onvif {
         input.cbData = static_cast<DWORD>(blob->size());
 
         DATA_BLOB output{};
-        const BOOL ok = CryptUnprotectData(&input, nullptr, nullptr, nullptr, nullptr, CRYPTPROTECT_UI_FORBIDDEN, &output);
+        const BOOL ok
+            = CryptUnprotectData(&input, nullptr, nullptr, nullptr, nullptr, CRYPTPROTECT_UI_FORBIDDEN, &output);
         if (!ok) {
             return std::nullopt;
         }

@@ -28,8 +28,8 @@ namespace cameras::visca {
 
     // Strips the header if present; some cameras reply with bare VISCA.
     inline std::vector<uint8_t> viscaIpUnframe(const std::vector<uint8_t>& datagram) {
-        if (datagram.size() >= 8 && datagram[0] == 0x01 &&
-            (datagram[1] == 0x00 || datagram[1] == 0x01 || datagram[1] == 0x11 || datagram[1] == 0x10)) {
+        if (datagram.size() >= 8 && datagram[0] == 0x01
+            && (datagram[1] == 0x00 || datagram[1] == 0x01 || datagram[1] == 0x11 || datagram[1] == 0x10)) {
             return std::vector<uint8_t>(datagram.begin() + 8, datagram.end());
         }
         return datagram;

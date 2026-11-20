@@ -39,8 +39,8 @@ namespace {
         const char raw[] = "not-a-real-dpapi-blob";
         DWORD chars = 0;
         if (!CryptBinaryToStringA(reinterpret_cast<const BYTE*>(raw), sizeof(raw) - 1,
-                                  CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, nullptr, &chars) ||
-            chars == 0) {
+                                  CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, nullptr, &chars)
+            || chars == 0) {
             return {};
         }
         std::string encoded(chars, '\0');

@@ -33,8 +33,8 @@ namespace cameras::visca {
     inline std::optional<std::string> normalizeComPort(std::string text) {
         std::transform(text.begin(), text.end(), text.begin(),
                        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
-        if (text.size() < 4 || text.size() > 6 || text.compare(0, 3, "COM") != 0 || text[3] == '0' ||
-            !std::all_of(text.begin() + 3, text.end(), [](unsigned char c) { return std::isdigit(c); })) {
+        if (text.size() < 4 || text.size() > 6 || text.compare(0, 3, "COM") != 0 || text[3] == '0'
+            || !std::all_of(text.begin() + 3, text.end(), [](unsigned char c) { return std::isdigit(c); })) {
             return std::nullopt;
         }
         const int number = std::stoi(text.substr(3));
@@ -49,8 +49,8 @@ namespace cameras::visca {
     inline std::optional<ViscaSerialEndpoint> parseSerialCameraId(const std::string& id) {
         const std::string prefix = "VISCA:";
         const auto colon = id.rfind(':');
-        if (id.compare(0, prefix.size(), prefix) != 0 || colon == std::string::npos || colon < prefix.size() ||
-            colon + 2 != id.size() || id[colon + 1] < '1' || id[colon + 1] > '7') {
+        if (id.compare(0, prefix.size(), prefix) != 0 || colon == std::string::npos || colon < prefix.size()
+            || colon + 2 != id.size() || id[colon + 1] < '1' || id[colon + 1] > '7') {
             return std::nullopt;
         }
         const std::string port = id.substr(prefix.size(), colon - prefix.size());
@@ -64,13 +64,11 @@ namespace cameras::visca {
     }
 
     inline bool validSerialBaud(int baud) {
-        return baud == 1200 || baud == 2400 || baud == 4800 || baud == 9600 || baud == 19200 ||
-               baud == 38400 || baud == 57600 || baud == 115200;
+        return baud == 1200 || baud == 2400 || baud == 4800 || baud == 9600 || baud == 19200 || baud == 38400
+            || baud == 57600 || baud == 115200;
     }
 
-    inline const char* validSerialBauds() {
-        return "1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200";
-    }
+    inline const char* validSerialBauds() { return "1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200"; }
 
     // The profile a camera added from this endpoint would use: the calibration
     // if present, else the named profile (empty means lumens-vc-a51p). nullopt

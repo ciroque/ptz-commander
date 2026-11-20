@@ -33,12 +33,9 @@ namespace cameras::visca {
         }
     } // namespace
 
-    UdpViscaTransport::UdpViscaTransport(std::string host, int port)
-        : host_(std::move(host)), port_(port) {}
+    UdpViscaTransport::UdpViscaTransport(std::string host, int port) : host_(std::move(host)), port_(port) {}
 
-    UdpViscaTransport::~UdpViscaTransport() {
-        close();
-    }
+    UdpViscaTransport::~UdpViscaTransport() { close(); }
 
     bool UdpViscaTransport::open() {
         close();
@@ -66,9 +63,7 @@ namespace cameras::visca {
         return true;
     }
 
-    bool UdpViscaTransport::isOpen() const {
-        return socket_ != INVALID_SOCKET;
-    }
+    bool UdpViscaTransport::isOpen() const { return socket_ != INVALID_SOCKET; }
 
     void UdpViscaTransport::close() {
         if (socket_ != INVALID_SOCKET) {
@@ -81,8 +76,7 @@ namespace cameras::visca {
         std::ostringstream oss;
         for (size_t i = 0; i < data.size(); ++i) {
             if (i) oss << ' ';
-            oss << std::hex << std::uppercase << std::setw(2) << std::setfill('0')
-                << static_cast<int>(data[i]);
+            oss << std::hex << std::uppercase << std::setw(2) << std::setfill('0') << static_cast<int>(data[i]);
         }
         return oss.str();
     }
@@ -93,8 +87,7 @@ namespace cameras::visca {
         }
         const auto pkt = viscaIpFrame(data, sequence_++);
         core::Logger::debug("VISCA-IP TX " + host_ + ":" + std::to_string(port_) + " " + toHex(pkt));
-        const int sent = sendto(socket_, reinterpret_cast<const char*>(pkt.data()),
-                                static_cast<int>(pkt.size()), 0,
+        const int sent = sendto(socket_, reinterpret_cast<const char*>(pkt.data()), static_cast<int>(pkt.size()), 0,
                                 reinterpret_cast<const sockaddr*>(&dest_), sizeof(dest_));
         return sent == static_cast<int>(pkt.size());
     }

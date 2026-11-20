@@ -11,9 +11,7 @@
 
 namespace cameras::visca {
 
-    ViscaCameraAdapter::ViscaCameraAdapter(CameraManager& manager)
-        : manager_(manager) {
-    }
+    ViscaCameraAdapter::ViscaCameraAdapter(CameraManager& manager) : manager_(manager) {}
 
     namespace {
         std::string ipCameraId(const ViscaIpEndpoint& endpoint) {
@@ -29,8 +27,8 @@ namespace cameras::visca {
         std::optional<ViscaProfile> profileFor(const ViscaIpEndpoint& endpoint) {
             auto profile = resolveProfile(endpoint);
             if (!profile) {
-                core::Logger::error("Unknown VISCA profile '" + endpoint.profile + "' for " +
-                                    ipCameraId(endpoint) + " (known: " + knownProfileNames() + ")");
+                core::Logger::error("Unknown VISCA profile '" + endpoint.profile + "' for " + ipCameraId(endpoint)
+                                    + " (known: " + knownProfileNames() + ")");
             }
             return profile;
         }
@@ -63,12 +61,8 @@ namespace cameras::visca {
         }
 
         auto transport = std::make_unique<UdpViscaTransport>(endpoint.host, endpoint.port);
-        auto camera = std::make_shared<ViscaCamera>(
-            std::move(transport),
-            id,
-            "VISCA IP (" + endpoint.host + ")",
-            static_cast<uint8_t>(1),
-            *profile);
+        auto camera = std::make_shared<ViscaCamera>(std::move(transport), id, "VISCA IP (" + endpoint.host + ")",
+                                                    static_cast<uint8_t>(1), *profile);
         if (requireReply && !camera->isOpen()) {
             error = "could not open UDP to '" + endpoint.host + "'; give an IPv4 address such as 192.168.1.146";
             return false;
@@ -122,8 +116,9 @@ namespace cameras::visca {
                                                                     std::string& error) {
         const auto ip = std::find_if(ipEndpoints_.begin(), ipEndpoints_.end(),
                                      [&serial](const ViscaIpEndpoint& ep) { return ipCameraId(ep) == serial; });
-        const auto onSerial = std::find_if(serialEndpoints_.begin(), serialEndpoints_.end(),
-                                           [&serial](const ViscaSerialEndpoint& ep) { return serialCameraId(ep) == serial; });
+        const auto onSerial
+            = std::find_if(serialEndpoints_.begin(), serialEndpoints_.end(),
+                           [&serial](const ViscaSerialEndpoint& ep) { return serialCameraId(ep) == serial; });
         auto camera = std::dynamic_pointer_cast<ViscaCamera>(manager_.findBySerial(serial));
         if (!camera || (ip == ipEndpoints_.end() && onSerial == serialEndpoints_.end())) {
             error = serial + " is not a VISCA camera";
@@ -147,15 +142,15 @@ namespace cameras::visca {
         std::optional<ViscaProfile> profileFor(const ViscaSerialEndpoint& endpoint) {
             auto profile = resolveProfile(endpoint);
             if (!profile) {
-                core::Logger::error("Unknown VISCA profile '" + endpoint.profile + "' for " +
-                                    serialCameraId(endpoint) + " (known: " + knownProfileNames() + ")");
+                core::Logger::error("Unknown VISCA profile '" + endpoint.profile + "' for " + serialCameraId(endpoint)
+                                    + " (known: " + knownProfileNames() + ")");
             }
             return profile;
         }
 
         std::string describe(const ViscaSerialEndpoint& endpoint) {
-            return serialCameraId(endpoint) + " baud=" + std::to_string(endpoint.baud) + " profile=" + endpoint.profile +
-                   (endpoint.calibration ? " (calibrated)" : "");
+            return serialCameraId(endpoint) + " baud=" + std::to_string(endpoint.baud) + " profile=" + endpoint.profile
+                 + (endpoint.calibration ? " (calibrated)" : "");
         }
     } // namespace
 
@@ -172,8 +167,9 @@ namespace cameras::visca {
             error = "already added";
             return false;
         }
-        const auto onPort = std::find_if(serialEndpoints_.begin(), serialEndpoints_.end(),
-                                         [&endpoint](const ViscaSerialEndpoint& ep) { return ep.port == endpoint.port; });
+        const auto onPort
+            = std::find_if(serialEndpoints_.begin(), serialEndpoints_.end(),
+                           [&endpoint](const ViscaSerialEndpoint& ep) { return ep.port == endpoint.port; });
         if (onPort != serialEndpoints_.end()) {
             error = endpoint.port + " already has camera " + serialCameraId(*onPort) + " (one camera per port)";
             return false;
@@ -185,18 +181,18 @@ namespace cameras::visca {
         }
 
         auto camera = std::make_shared<ViscaCamera>(
-            std::make_unique<WindowsSerialTransport>(endpoint.port, endpoint.baud),
-            id,
+            std::make_unique<WindowsSerialTransport>(endpoint.port, endpoint.baud), id,
             "VISCA Serial (" + endpoint.port + " @" + std::to_string(endpoint.baud) + ")",
-            static_cast<uint8_t>(endpoint.address),
-            *profile);
+            static_cast<uint8_t>(endpoint.address), *profile);
         if (requireReply && !camera->isOpen()) {
-            error = "could not open " + endpoint.port + "; check the adapter is plugged in and no other program is using it";
+            error = "could not open " + endpoint.port
+                  + "; check the adapter is plugged in and no other program is using it";
             return false;
         }
         if (requireReply && !camera->answersInquiry()) {
             core::Logger::warn("VISCA serial camera not added, no reply: " + describe(endpoint));
-            error = "no reply to a VISCA inquiry; check the camera is on and the cable, baud rate and address are right";
+            error
+                = "no reply to a VISCA inquiry; check the camera is on and the cable, baud rate and address are right";
             return false;
         }
         manager_.addCamera(camera);

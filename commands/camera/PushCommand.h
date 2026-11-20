@@ -8,8 +8,8 @@
 namespace commands::camera {
     class PushCommand : public Command {
     public:
-        PushCommand() : Command("camera", "push", "camera push <id|*> <zoom> [speed]",
-                                "Gradually zoom camera(s) to target") {}
+        PushCommand()
+            : Command("camera", "push", "camera push <id|*> <zoom> [speed]", "Gradually zoom camera(s) to target") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 } // namespace commands::camera

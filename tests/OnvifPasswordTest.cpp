@@ -26,9 +26,9 @@ namespace {
         const std::string prefix = kDpapiPasswordPrefix;
         const std::string payload = stored.substr(prefix.size());
         DWORD size = 0;
-        if (!CryptStringToBinaryA(payload.c_str(), static_cast<DWORD>(payload.size()), CRYPT_STRING_BASE64,
-                                  nullptr, &size, nullptr, nullptr) ||
-            size < 2) {
+        if (!CryptStringToBinaryA(payload.c_str(), static_cast<DWORD>(payload.size()), CRYPT_STRING_BASE64, nullptr,
+                                  &size, nullptr, nullptr)
+            || size < 2) {
             return {};
         }
         std::vector<BYTE> bytes(size);
@@ -41,8 +41,8 @@ namespace {
 
         DWORD chars = 0;
         if (!CryptBinaryToStringA(bytes.data(), static_cast<DWORD>(bytes.size()),
-                                  CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, nullptr, &chars) ||
-            chars == 0) {
+                                  CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, nullptr, &chars)
+            || chars == 0) {
             return {};
         }
         std::string encoded(chars, '\0');

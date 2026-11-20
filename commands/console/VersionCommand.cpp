@@ -30,13 +30,11 @@ namespace commands::console {
             int parts[3] = {0, 0, 0};
             size_t index = 0;
             for (int part = 0; part < 3; ++part) {
-                if (index >= text.size() ||
-                    !std::isdigit(static_cast<unsigned char>(text[index]))) {
+                if (index >= text.size() || !std::isdigit(static_cast<unsigned char>(text[index]))) {
                     return false;
                 }
                 int value = 0;
-                while (index < text.size() &&
-                       std::isdigit(static_cast<unsigned char>(text[index]))) {
+                while (index < text.size() && std::isdigit(static_cast<unsigned char>(text[index]))) {
                     value = value * 10 + (text[index] - '0');
                     if (value > 65535) {
                         return false;
@@ -60,8 +58,7 @@ namespace commands::console {
             return true;
         }
 
-        int compareVersions(int majorA, int minorA, int patchA,
-                            int majorB, int minorB, int patchB) {
+        int compareVersions(int majorA, int minorA, int patchA, int majorB, int minorB, int patchB) {
             if (majorA != majorB) {
                 return majorA < majorB ? -1 : 1;
             }
@@ -74,9 +71,7 @@ namespace commands::console {
             return 0;
         }
 
-        void printVersion(data::Context& ctx) {
-            ctx.out << "PTZ Commander " << PTZ_VERSION_PRODUCT << std::endl;
-        }
+        void printVersion(data::Context& ctx) { ctx.out << "PTZ Commander " << PTZ_VERSION_PRODUCT << std::endl; }
 
 #ifdef _WIN32
         struct WinHttpHandle {
@@ -111,8 +106,8 @@ namespace commands::console {
 #else
             const DWORD accessType = WINHTTP_ACCESS_TYPE_DEFAULT_PROXY;
 #endif
-            WinHttpHandle session(WinHttpOpen(L"PTZCommander", accessType,
-                                              WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0));
+            WinHttpHandle session(
+                WinHttpOpen(L"PTZCommander", accessType, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0));
             if (!session.handle) {
                 error = winhttpFailure("could not open an HTTP session");
                 return false;
@@ -120,38 +115,31 @@ namespace commands::console {
 
             WinHttpSetTimeouts(session.handle, 10000, 10000, 10000, 10000);
 
-            WinHttpHandle connection(WinHttpConnect(session.handle, L"api.github.com",
-                                                    INTERNET_DEFAULT_HTTPS_PORT, 0));
+            WinHttpHandle connection(WinHttpConnect(session.handle, L"api.github.com", INTERNET_DEFAULT_HTTPS_PORT, 0));
             if (!connection.handle) {
                 error = winhttpFailure("could not connect to api.github.com");
                 return false;
             }
 
-            WinHttpHandle request(WinHttpOpenRequest(
-                connection.handle, L"GET",
-                L"/repos/ciroque/ptz-commander/releases/latest",
-                nullptr, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES,
-                WINHTTP_FLAG_SECURE));
+            WinHttpHandle request(
+                WinHttpOpenRequest(connection.handle, L"GET", L"/repos/ciroque/ptz-commander/releases/latest", nullptr,
+                                   WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_SECURE));
             if (!request.handle) {
                 error = winhttpFailure("could not create the GitHub request");
                 return false;
             }
 
-            const wchar_t* headers =
-                L"Accept: application/vnd.github+json\r\nUser-Agent: PTZCommander\r\n";
-            if (!WinHttpSendRequest(request.handle, headers, static_cast<DWORD>(-1),
-                                    WINHTTP_NO_REQUEST_DATA, 0, 0, 0) ||
-                !WinHttpReceiveResponse(request.handle, nullptr)) {
+            const wchar_t* headers = L"Accept: application/vnd.github+json\r\nUser-Agent: PTZCommander\r\n";
+            if (!WinHttpSendRequest(request.handle, headers, static_cast<DWORD>(-1), WINHTTP_NO_REQUEST_DATA, 0, 0, 0)
+                || !WinHttpReceiveResponse(request.handle, nullptr)) {
                 error = winhttpFailure("the request to GitHub failed");
                 return false;
             }
 
             DWORD status = 0;
             DWORD statusSize = sizeof(status);
-            if (!WinHttpQueryHeaders(request.handle,
-                                     WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
-                                     WINHTTP_HEADER_NAME_BY_INDEX, &status, &statusSize,
-                                     WINHTTP_NO_HEADER_INDEX)) {
+            if (!WinHttpQueryHeaders(request.handle, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+                                     WINHTTP_HEADER_NAME_BY_INDEX, &status, &statusSize, WINHTTP_NO_HEADER_INDEX)) {
                 error = winhttpFailure("could not read the GitHub response status");
                 return false;
             }
@@ -203,8 +191,7 @@ namespace commands::console {
                 error = "the GitHub response was not a release description";
                 return false;
             }
-            if (!payload.is_object() || !payload.contains("tag_name") ||
-                !payload["tag_name"].is_string()) {
+            if (!payload.is_object() || !payload.contains("tag_name") || !payload["tag_name"].is_string()) {
                 error = "the GitHub response did not include a release tag";
                 return false;
             }
@@ -234,16 +221,16 @@ namespace commands::console {
             int minor = 0;
             int patch = 0;
             if (!parseReleaseTag(tag, major, minor, patch)) {
-                ctx.err << "Could not check for updates: latest release tag '" << tag
-                        << "' is not a version." << std::endl;
+                ctx.err << "Could not check for updates: latest release tag '" << tag << "' is not a version."
+                        << std::endl;
                 return;
             }
 
             ctx.out << "Latest version: " << major << "." << minor << "." << patch << std::endl;
 
 #if PTZ_VERSION_HAS_SEMVER
-            const int cmp = compareVersions(PTZ_VERSION_MAJOR, PTZ_VERSION_MINOR, PTZ_VERSION_PATCH,
-                                            major, minor, patch);
+            const int cmp
+                = compareVersions(PTZ_VERSION_MAJOR, PTZ_VERSION_MINOR, PTZ_VERSION_PATCH, major, minor, patch);
             if (cmp < 0) {
                 ctx.out << "A newer version is available";
                 if (!url.empty()) {

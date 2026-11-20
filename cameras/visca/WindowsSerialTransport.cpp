@@ -13,9 +13,7 @@ namespace cameras::visca {
     WindowsSerialTransport::WindowsSerialTransport(std::string port, int baud, bool quiet)
         : portName_(std::move(port)), baud_(baud), quiet_(quiet) {}
 
-    WindowsSerialTransport::~WindowsSerialTransport() {
-        close();
-    }
+    WindowsSerialTransport::~WindowsSerialTransport() { close(); }
 
     bool WindowsSerialTransport::open() {
         close(); // ensure clean state
@@ -26,18 +24,17 @@ namespace cameras::visca {
         // Windows serial ports are addressed as \\.\COMn to support > COM9
         std::string target = "\\\\.\\" + port;
 
-        handle_ = CreateFileA(target.c_str(),
-                              GENERIC_READ | GENERIC_WRITE,
+        handle_ = CreateFileA(target.c_str(), GENERIC_READ | GENERIC_WRITE,
                               0, // exclusive
-                              nullptr,
-                              OPEN_EXISTING,
+                              nullptr, OPEN_EXISTING,
                               0, // no overlapped for simplicity
                               nullptr);
 
         if (handle_ == INVALID_HANDLE_VALUE) {
             lastError_ = GetLastError();
             if (!quiet_) {
-                core::Logger::error("Failed to open serial port " + port + " (error " + std::to_string(lastError_) + ")");
+                core::Logger::error("Failed to open serial port " + port + " (error " + std::to_string(lastError_)
+                                    + ")");
             }
             return false;
         }
@@ -94,9 +91,7 @@ namespace cameras::visca {
         return true;
     }
 
-    bool WindowsSerialTransport::isOpen() const {
-        return handle_ != INVALID_HANDLE_VALUE;
-    }
+    bool WindowsSerialTransport::isOpen() const { return handle_ != INVALID_HANDLE_VALUE; }
 
     void WindowsSerialTransport::close() {
         if (handle_ != INVALID_HANDLE_VALUE) {
@@ -115,8 +110,8 @@ namespace cameras::visca {
         BOOL ok = WriteFile(handle_, data.data(), static_cast<DWORD>(data.size()), &written, nullptr);
 
         if (!ok || written != data.size()) {
-            core::Logger::error("Serial write incomplete or failed on " + portName_ +
-                                " (wrote " + std::to_string(written) + "/" + std::to_string(data.size()) + ")");
+            core::Logger::error("Serial write incomplete or failed on " + portName_ + " (wrote "
+                                + std::to_string(written) + "/" + std::to_string(data.size()) + ")");
             return false;
         }
 
@@ -172,8 +167,8 @@ namespace cameras::visca {
         SetCommTimeouts(handle_, &oldTimeouts);
 
         if (!packet.empty()) {
-            core::Logger::debug("readPacket timeout or incomplete on " + portName_ +
-                                " (got " + std::to_string(packet.size()) + " bytes)");
+            core::Logger::debug("readPacket timeout or incomplete on " + portName_ + " (got "
+                                + std::to_string(packet.size()) + " bytes)");
         }
         return {}; // timeout or error → empty (caller treats as failure)
     }

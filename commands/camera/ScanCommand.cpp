@@ -19,16 +19,15 @@ namespace commands::camera {
         namespace visca = cameras::visca;
 
         bool isNumber(const std::string& token) {
-            return !token.empty() && token.size() <= 5 &&
-                   std::all_of(token.begin(), token.end(), [](char c) { return c >= '0' && c <= '9'; });
+            return !token.empty() && token.size() <= 5
+                && std::all_of(token.begin(), token.end(), [](char c) { return c >= '0' && c <= '9'; });
         }
 
         std::string describeReply(const std::vector<uint8_t>& reply, const std::optional<visca::PanTiltRaw>& position) {
             std::ostringstream ss;
             ss << std::hex << std::uppercase << std::setfill('0');
             if (position) {
-                ss << "pan 0x" << std::setw(4) << position->pan
-                   << " tilt 0x" << std::setw(4) << position->tilt;
+                ss << "pan 0x" << std::setw(4) << position->pan << " tilt 0x" << std::setw(4) << position->tilt;
             } else if (reply.size() >= 4 && (reply[1] & 0xF0) == 0x60) {
                 ss << "VISCA error 0x" << std::setw(2) << static_cast<int>(reply[2]);
             } else {
@@ -50,18 +49,13 @@ namespace commands::camera {
             return port.description.empty() ? port.port : port.port + " (" + port.description + ")";
         }
 
-        enum class RowKind { Ip,
-                             Serial,
-                             Onvif };
+        enum class RowKind { Ip, Serial, Onvif };
 
         const char* typeName(RowKind kind) {
             switch (kind) {
-            case RowKind::Serial:
-                return "Serial";
-            case RowKind::Onvif:
-                return "ONVIF";
-            case RowKind::Ip:
-                break;
+            case RowKind::Serial: return "Serial";
+            case RowKind::Onvif: return "ONVIF";
+            case RowKind::Ip: break;
             }
             return "VISCA-IP";
         }
@@ -95,8 +89,8 @@ namespace commands::camera {
                     names += (names.empty() ? "" : ", ") + network.toString();
                     addresses += network.hosts().size();
                 }
-                return names + " on port " + std::to_string(port) + " (" + std::to_string(addresses) +
-                       (addresses == 1 ? " address)" : " addresses)");
+                return names + " on port " + std::to_string(port) + " (" + std::to_string(addresses)
+                     + (addresses == 1 ? " address)" : " addresses)");
             }
         };
 
@@ -250,17 +244,13 @@ namespace commands::camera {
                     found.rows.push_back(std::move(row));
                     break;
                 }
-                case Status::Silent:
-                    silent.push_back(withDescription(result.port));
-                    break;
-                case Status::Busy:
-                    busy.push_back(withDescription(result.port));
-                    break;
+                case Status::Silent: silent.push_back(withDescription(result.port)); break;
+                case Status::Busy: busy.push_back(withDescription(result.port)); break;
                 case Status::Failed:
                     // ERROR_FILE_NOT_FOUND: no such port, e.g. an unplugged adapter.
-                    failed.push_back(result.port.port + (result.openError == 2
-                                                             ? " (not found)"
-                                                             : " (error " + std::to_string(result.openError) + ")"));
+                    failed.push_back(result.port.port
+                                     + (result.openError == 2 ? " (not found)"
+                                                              : " (error " + std::to_string(result.openError) + ")"));
                     break;
                 }
             }
@@ -312,28 +302,22 @@ namespace commands::camera {
                 const int CameraColWidth = 21;
                 const int ReplyColWidth = 24;
                 ctx.out << std::endl
-                        << std::left
-                        << std::setw(IndexColWidth) << "#" << " | "
-                        << std::setw(TypeColWidth) << "Type" << " | "
-                        << std::setw(CameraColWidth) << "Camera" << " | "
-                        << std::setw(ReplyColWidth) << "Reply" << " | " << "Notes" << std::endl
-                        << std::string(IndexColWidth, '-') << "-+-"
-                        << std::string(TypeColWidth, '-') << "-+-"
-                        << std::string(CameraColWidth, '-') << "-+-"
-                        << std::string(ReplyColWidth, '-') << "-+-" << std::string(20, '-') << std::endl;
+                        << std::left << std::setw(IndexColWidth) << "#" << " | " << std::setw(TypeColWidth) << "Type"
+                        << " | " << std::setw(CameraColWidth) << "Camera" << " | " << std::setw(ReplyColWidth)
+                        << "Reply" << " | " << "Notes" << std::endl
+                        << std::string(IndexColWidth, '-') << "-+-" << std::string(TypeColWidth, '-') << "-+-"
+                        << std::string(CameraColWidth, '-') << "-+-" << std::string(ReplyColWidth, '-') << "-+-"
+                        << std::string(20, '-') << std::endl;
                 for (size_t i = 0; i < rows.size(); ++i) {
                     const auto& row = *rows[i];
-                    ctx.out << std::left
-                            << std::setw(IndexColWidth) << (i + 1) << " | "
-                            << std::setw(TypeColWidth) << typeName(row.kind) << " | "
-                            << std::setw(CameraColWidth) << row.camera << " | "
-                            << std::setw(ReplyColWidth) << row.reply << " | "
-                            << (row.notes.empty() ? "-" : row.notes) << std::endl;
+                    ctx.out << std::left << std::setw(IndexColWidth) << (i + 1) << " | " << std::setw(TypeColWidth)
+                            << typeName(row.kind) << " | " << std::setw(CameraColWidth) << row.camera << " | "
+                            << std::setw(ReplyColWidth) << row.reply << " | " << (row.notes.empty() ? "-" : row.notes)
+                            << std::endl;
                 }
 
                 const auto countKind = [&](RowKind kind) {
-                    return std::count_if(rows.begin(), rows.end(),
-                                         [kind](const Row* r) { return r->kind == kind; });
+                    return std::count_if(rows.begin(), rows.end(), [kind](const Row* r) { return r->kind == kind; });
                 };
                 const auto ipRows = countKind(RowKind::Ip);
                 const auto serialRows = countKind(RowKind::Serial);
@@ -348,8 +332,7 @@ namespace commands::camera {
                 if (onvifRows > 0) {
                     parts.push_back(std::to_string(onvifRows) + " ONVIF");
                 }
-                ctx.out << std::endl
-                        << "Found " << rows.size();
+                ctx.out << std::endl << "Found " << rows.size();
                 if (parts.size() > 1) {
                     ctx.out << (rows.size() == 1 ? " camera: " : " cameras: ");
                     for (size_t p = 0; p < parts.size(); ++p) {

@@ -39,8 +39,8 @@ TEST(OnvifParse, EscapesXmlText) {
 }
 
 TEST(OnvifParse, ReadsLocalNamesWithoutMatchingPrefixes) {
-    const std::string xml =
-        "<s:Body><tt:GetMedia>no</tt:GetMedia><trt:Media><tt:Name>Main</tt:Name></trt:Media></s:Body>";
+    const std::string xml
+        = "<s:Body><tt:GetMedia>no</tt:GetMedia><trt:Media><tt:Name>Main</tt:Name></trt:Media></s:Body>";
 
     EXPECT_EQ(xmlElementText(xml, "GetMedia"), "no");
     EXPECT_EQ(xmlElementText(xml, "Name"), "Main");

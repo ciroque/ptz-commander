@@ -40,22 +40,16 @@ namespace cameras {
             return list;
         }
 
-        void addPreset(const std::string& name, Preset preset) {
-            presets_.insert_or_assign(name, std::move(preset));
-        }
+        void addPreset(const std::string& name, Preset preset) { presets_.insert_or_assign(name, std::move(preset)); }
 
         const Preset* getPresetByName(const std::string& name) const {
             auto it = presets_.find(name);
             return (it != presets_.end()) ? &it->second : nullptr;
         }
 
-        void removePreset(const std::string& name) {
-            presets_.erase(name);
-        }
+        void removePreset(const std::string& name) { presets_.erase(name); }
 
-        void clearPresets() {
-            presets_.clear();
-        }
+        void clearPresets() { presets_.clear(); }
     };
 } // namespace cameras
 

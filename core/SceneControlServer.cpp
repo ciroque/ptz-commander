@@ -9,42 +9,26 @@
 namespace core {
     namespace {
         std::string replyOk(const std::string& name) {
-            return nlohmann::json{
-                {"ok", true},
-                {"op", "scene.apply"},
-                {"name", name}}
-                .dump();
+            return nlohmann::json{{"ok", true}, {"op", "scene.apply"}, {"name", name}}.dump();
         }
 
         std::string replyError(const std::string& error) {
-            return nlohmann::json{
-                {"ok", false},
-                {"error", error}}
-                .dump();
+            return nlohmann::json{{"ok", false}, {"error", error}}.dump();
         }
 
-        bool hasWhitespace(const std::string& s) {
-            return s.find_first_of(" \t\r\n") != std::string::npos;
-        }
+        bool hasWhitespace(const std::string& s) { return s.find_first_of(" \t\r\n") != std::string::npos; }
     } // namespace
 
-    SceneControlServer::SceneControlServer(cameras::CameraManager& cameraMgr,
-                                           cameras::SceneStore& sceneStore)
-        : cameraMgr_(cameraMgr),
-          sceneStore_(sceneStore),
-          server_(port_, host_) {
+    SceneControlServer::SceneControlServer(cameras::CameraManager& cameraMgr, cameras::SceneStore& sceneStore)
+        : cameraMgr_(cameraMgr), sceneStore_(sceneStore), server_(port_, host_) {
         server_.disablePerMessageDeflate();
         server_.setOnClientMessageCallback(
-            [this](std::shared_ptr<ix::ConnectionState>,
-                   ix::WebSocket& webSocket,
-                   const ix::WebSocketMessagePtr& msg) {
+            [this](std::shared_ptr<ix::ConnectionState>, ix::WebSocket& webSocket, const ix::WebSocketMessagePtr& msg) {
                 onClientMessage(webSocket, msg);
             });
     }
 
-    SceneControlServer::~SceneControlServer() {
-        stop();
-    }
+    SceneControlServer::~SceneControlServer() { stop(); }
 
     void SceneControlServer::setOnSceneApply(std::function<void(const std::string&)> cb) {
         onSceneApply_ = std::move(cb);
@@ -63,7 +47,8 @@ namespace core {
 
         auto res = server_.listen();
         if (!res.first) {
-            Logger::error("SceneControlServer listen failed on " + host_ + ":" + std::to_string(port_) + ": " + res.second);
+            Logger::error("SceneControlServer listen failed on " + host_ + ":" + std::to_string(port_) + ": "
+                          + res.second);
             ix::uninitNetSystem();
             netInitialized_ = false;
             return false;
@@ -103,8 +88,7 @@ namespace core {
         return store.toJsonString(cameraMgr_, sceneStore_);
     }
 
-    void SceneControlServer::onClientMessage(ix::WebSocket& webSocket,
-                                             const ix::WebSocketMessagePtr& msg) {
+    void SceneControlServer::onClientMessage(ix::WebSocket& webSocket, const ix::WebSocketMessagePtr& msg) {
         if (msg->type == ix::WebSocketMessageType::Open) {
             webSocket.sendText(stateJson());
             return;

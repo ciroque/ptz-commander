@@ -29,10 +29,8 @@ namespace data {
         // Calibrates a VISCA camera (IP or serial) and applies the profile;
         // nullopt with error set on failure.
         std::function<std::optional<cameras::visca::ViscaProfile>(
-            const std::string& serial,
-            const cameras::visca::CalibrationRanges&,
-            const cameras::visca::ViscaCalibrator::Progress&,
-            std::string& error)>
+            const std::string& serial, const cameras::visca::CalibrationRanges&,
+            const cameras::visca::ViscaCalibrator::Progress&, std::string& error)>
             calibrateVisca;
         std::vector<cameras::visca::ViscaIpEndpoint> viscaIpEndpoints;
         // The same for VISCA cameras on COM ports.
@@ -45,14 +43,11 @@ namespace data {
         // Rows of the last `camera scan` (no VISCA profile, and no ONVIF
         // user or password yet), for `camera add scanned <n>`. nullopt until
         // a scan has run. A new scan replaces them.
-        using ScannedCamera = std::variant<cameras::visca::ViscaIpEndpoint,
-                                           cameras::visca::ViscaSerialEndpoint,
+        using ScannedCamera = std::variant<cameras::visca::ViscaIpEndpoint, cameras::visca::ViscaSerialEndpoint,
                                            cameras::onvif::OnvifEndpoint>;
         std::optional<std::vector<ScannedCamera>> lastScan;
 
-        Context(cameras::CameraManager& mgr,
-                cameras::SceneStore& scenes,
-                std::ostream& output = std::cout,
+        Context(cameras::CameraManager& mgr, cameras::SceneStore& scenes, std::ostream& output = std::cout,
                 std::ostream& error = std::cerr)
             : cameraMgr(mgr), sceneStore(scenes), out(output), err(error) {}
 

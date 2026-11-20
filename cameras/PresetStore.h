@@ -35,11 +35,7 @@ namespace cameras {
      *
      * This is the central abstraction for preset file persistence.
      */
-    enum class LoadStatus {
-        Ok,
-        NotFound,
-        ParseError
-    };
+    enum class LoadStatus { Ok, NotFound, ParseError };
 
     /**
      * A .ptzc file parsed in full but not yet applied. Holds every camera
@@ -84,8 +80,7 @@ namespace cameras {
          * Replaces in-memory scenes from the reserved top-level "scenes" key.
          * A missing "scenes" key clears the scene store.
          */
-        LoadStatus load(CameraManager& mgr, SceneStore& scenes,
-                        std::string filename = "presets.ptzc");
+        LoadStatus load(CameraManager& mgr, SceneStore& scenes, std::string filename = "presets.ptzc");
 
         /**
          * Parses the whole file (camera entries, scenes, visca_ip, onvif) without
@@ -96,8 +91,7 @@ namespace cameras {
          * An ONVIF password that cannot be decrypted omits that camera
          * (onvifSkipped) instead of failing the file.
          */
-        LoadStatus read(std::string filename, StagedSetup& out,
-                        std::string* error = nullptr) const;
+        LoadStatus read(std::string filename, StagedSetup& out, std::string* error = nullptr) const;
 
         /**
          * Applies a staged setup to the cameras currently present, with the
@@ -119,16 +113,14 @@ namespace cameras {
          * If filename has no '.', ".ptzc" is appended.
          * Returns true on success.
          */
-        bool save(const CameraManager& mgr, const SceneStore& scenes,
-                  std::string filename = "presets.ptzc") const {
+        bool save(const CameraManager& mgr, const SceneStore& scenes, std::string filename = "presets.ptzc") const {
             return save(mgr, scenes, {}, {}, {}, filename);
         }
 
         bool save(const CameraManager& mgr, const SceneStore& scenes,
                   const std::vector<visca::ViscaIpEndpoint>& viscaIp,
                   const std::vector<visca::ViscaSerialEndpoint>& viscaSerial,
-                  const std::vector<onvif::OnvifEndpoint>& onvif,
-                  std::string filename = "presets.ptzc") const;
+                  const std::vector<onvif::OnvifEndpoint>& onvif, std::string filename = "presets.ptzc") const;
 
         /**
          * Normalizes a filename for .ptzc files: appends ".ptzc" if the path has no extension.

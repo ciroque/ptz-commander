@@ -36,8 +36,7 @@ namespace commands::scene {
                 return;
             }
             if (!camera->getPresetByName(presetName)) {
-                ctx.err << "Preset not found: " << presetName
-                        << " for " << camera->getSerialNumber() << std::endl;
+                ctx.err << "Preset not found: " << presetName << " for " << camera->getSerialNumber() << std::endl;
                 return;
             }
 
@@ -57,9 +56,8 @@ namespace commands::scene {
         }
 
         ctx.notifySetupChanged();
-        ctx.out << "Added " << pairs.size() << " binding"
-                << (pairs.size() == 1 ? "" : "s")
-                << " to scene '" << sceneName << "'" << std::endl;
+        ctx.out << "Added " << pairs.size() << " binding" << (pairs.size() == 1 ? "" : "s") << " to scene '"
+                << sceneName << "'" << std::endl;
     }
 
 } // namespace commands::scene

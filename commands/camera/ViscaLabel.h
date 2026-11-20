@@ -20,8 +20,7 @@ namespace commands::camera {
 
     // The alias (or, without one, the serial) of the VISCA-IP camera at
     // host:port, or nullopt if no such camera has been added.
-    inline std::optional<std::string> viscaIpAddedAs(const data::Context& ctx,
-                                                     const std::string& host, int port) {
+    inline std::optional<std::string> viscaIpAddedAs(const data::Context& ctx, const std::string& host, int port) {
         const bool added = std::any_of(ctx.viscaIpEndpoints.begin(), ctx.viscaIpEndpoints.end(),
                                        [&](const auto& ep) { return ep.host == host && ep.port == port; });
         if (!added) {

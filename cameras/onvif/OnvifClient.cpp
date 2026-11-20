@@ -62,7 +62,8 @@ namespace cameras::onvif {
                 return false;
             }
             const bool created = BCryptCreateHash(algorithm, &hash, nullptr, 0, nullptr, 0, 0) == 0;
-            bool ok = created && BCryptHashData(hash, const_cast<unsigned char*>(data), static_cast<ULONG>(len), 0) == 0 && BCryptFinishHash(hash, out, 20, 0) == 0;
+            bool ok = created && BCryptHashData(hash, const_cast<unsigned char*>(data), static_cast<ULONG>(len), 0) == 0
+                   && BCryptFinishHash(hash, out, 20, 0) == 0;
             if (hash) {
                 BCryptDestroyHash(hash);
             }
@@ -76,9 +77,8 @@ namespace cameras::onvif {
             std::tm utc{};
             gmtime_s(&utc, &seconds);
             char buf[32];
-            std::snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02dZ",
-                          utc.tm_year + 1900, utc.tm_mon + 1, utc.tm_mday,
-                          utc.tm_hour, utc.tm_min, utc.tm_sec);
+            std::snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02dZ", utc.tm_year + 1900, utc.tm_mon + 1,
+                          utc.tm_mday, utc.tm_hour, utc.tm_min, utc.tm_sec);
             return buf;
         }
 
@@ -102,9 +102,13 @@ namespace cameras::onvif {
             header << "<wsse:Security s:mustUnderstand=\"1\">"
                    << "<wsse:UsernameToken>"
                    << "<wsse:Username>" << xmlEscape(user) << "</wsse:Username>"
-                   << "<wsse:Password Type=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest\">"
+                   << "<wsse:Password "
+                      "Type=\"http://docs.oasis-open.org/wss/2004/01/"
+                      "oasis-200401-wss-username-token-profile-1.0#PasswordDigest\">"
                    << base64(digest, sizeof(digest)) << "</wsse:Password>"
-                   << "<wsse:Nonce EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary\">"
+                   << "<wsse:Nonce "
+                      "EncodingType=\"http://docs.oasis-open.org/wss/2004/01/"
+                      "oasis-200401-wss-soap-message-security-1.0#Base64Binary\">"
                    << base64(nonce, sizeof(nonce)) << "</wsse:Nonce>"
                    << "<wsu:Created>" << created << "</wsu:Created>"
                    << "</wsse:UsernameToken></wsse:Security>";
@@ -133,8 +137,8 @@ namespace cameras::onvif {
             WinHttpHandle& operator=(const WinHttpHandle&) = delete;
         };
 
-        bool parseServiceUrl(const std::string& xaddr, const std::string& fallbackHost,
-                             std::string& host, int& port, std::string& path, std::string& error) {
+        bool parseServiceUrl(const std::string& xaddr, const std::string& fallbackHost, std::string& host, int& port,
+                             std::string& path, std::string& error) {
             const auto parsed = parseHttpUrl(trimCopy(xaddr));
             if (!parsed) {
                 error = "camera returned an unrecognized service address";
@@ -167,9 +171,10 @@ namespace cameras::onvif {
 
     } // namespace
 
-    OnvifClient::OnvifClient(std::string host, int port, std::string servicePath,
-                             std::string user, std::string password)
-        : host_(std::move(host)), port_(port > 0 ? port : 80), servicePath_(std::move(servicePath)), user_(std::move(user)), password_(std::move(password)) {
+    OnvifClient::OnvifClient(std::string host, int port, std::string servicePath, std::string user,
+                             std::string password)
+        : host_(std::move(host)), port_(port > 0 ? port : 80), servicePath_(std::move(servicePath)),
+          user_(std::move(user)), password_(std::move(password)) {
         if (servicePath_.empty() || servicePath_.front() != '/') {
             servicePath_.insert(servicePath_.begin(), '/');
         }
@@ -180,7 +185,8 @@ namespace cameras::onvif {
     }
 
     bool OnvifClient::isAuthFault(const std::string& body) {
-        return body.find("NotAuthorized") != std::string::npos || body.find("FailedAuthentication") != std::string::npos || body.find("not Authorized") != std::string::npos;
+        return body.find("NotAuthorized") != std::string::npos || body.find("FailedAuthentication") != std::string::npos
+            || body.find("not Authorized") != std::string::npos;
     }
 
     std::string OnvifClient::faultText(const std::string& body) {
@@ -215,34 +221,31 @@ namespace cameras::onvif {
             return result;
         }
 
-        WinHttpHandle session(WinHttpOpen(L"PTZCommander", WINHTTP_ACCESS_TYPE_NO_PROXY,
-                                          WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0));
+        WinHttpHandle session(WinHttpOpen(L"PTZCommander", WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_NO_PROXY_NAME,
+                                          WINHTTP_NO_PROXY_BYPASS, 0));
         if (!session.handle) {
             result.error = "could not open an HTTP session";
             return result;
         }
         WinHttpSetTimeouts(session.handle, 3000, 3000, 5000, 8000);
 
-        WinHttpHandle connection(WinHttpConnect(session.handle, hostWide.c_str(),
-                                                static_cast<INTERNET_PORT>(port), 0));
+        WinHttpHandle connection(WinHttpConnect(session.handle, hostWide.c_str(), static_cast<INTERNET_PORT>(port), 0));
         if (!connection.handle) {
             result.error = "could not connect to " + host;
             return result;
         }
 
-        WinHttpHandle request(WinHttpOpenRequest(connection.handle, L"POST", pathWide.c_str(),
-                                                 nullptr, WINHTTP_NO_REFERER,
-                                                 WINHTTP_DEFAULT_ACCEPT_TYPES, 0));
+        WinHttpHandle request(WinHttpOpenRequest(connection.handle, L"POST", pathWide.c_str(), nullptr,
+                                                 WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, 0));
         if (!request.handle) {
             result.error = "could not create the ONVIF request";
             return result;
         }
 
         const wchar_t* headers = L"Content-Type: application/soap+xml; charset=utf-8\r\n";
-        if (!WinHttpSendRequest(request.handle, headers, static_cast<DWORD>(-1),
-                                const_cast<char*>(body.data()), static_cast<DWORD>(body.size()),
-                                static_cast<DWORD>(body.size()), 0) ||
-            !WinHttpReceiveResponse(request.handle, nullptr)) {
+        if (!WinHttpSendRequest(request.handle, headers, static_cast<DWORD>(-1), const_cast<char*>(body.data()),
+                                static_cast<DWORD>(body.size()), static_cast<DWORD>(body.size()), 0)
+            || !WinHttpReceiveResponse(request.handle, nullptr)) {
             result.error = "the ONVIF request to " + host + " failed";
             return result;
         }
@@ -250,8 +253,7 @@ namespace cameras::onvif {
         DWORD status = 0;
         DWORD statusSize = sizeof(status);
         if (!WinHttpQueryHeaders(request.handle, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
-                                 WINHTTP_HEADER_NAME_BY_INDEX, &status, &statusSize,
-                                 WINHTTP_NO_HEADER_INDEX)) {
+                                 WINHTTP_HEADER_NAME_BY_INDEX, &status, &statusSize, WINHTTP_NO_HEADER_INDEX)) {
             result.error = "could not read the ONVIF response";
             return result;
         }
@@ -297,9 +299,9 @@ namespace cameras::onvif {
     }
 
     bool OnvifClient::syncClock(std::string& error) {
-        const auto response = post(host_, port_, servicePath_,
-                                   "<tds:GetSystemDateAndTime xmlns:tds=\"http://www.onvif.org/ver10/device/wsdl\"/>",
-                                   false);
+        const auto response
+            = post(host_, port_, servicePath_,
+                   "<tds:GetSystemDateAndTime xmlns:tds=\"http://www.onvif.org/ver10/device/wsdl\"/>", false);
         if (!response.ok || response.status != 200 || isFault(response.body)) {
             error = response.error.empty() ? "could not read the camera clock" : response.error;
             return false;
@@ -313,7 +315,8 @@ namespace cameras::onvif {
         const int hour = fieldNumber(block, "Hour");
         const int minute = fieldNumber(block, "Minute");
         const int second = fieldNumber(block, "Second");
-        if (year < 1970 || month < 1 || month > 12 || day < 1 || day > 31 || hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 60) {
+        if (year < 1970 || month < 1 || month > 12 || day < 1 || day > 31 || hour < 0 || hour > 23 || minute < 0
+            || minute > 59 || second < 0 || second > 60) {
             error = "the camera clock was not readable";
             return false;
         }
@@ -336,8 +339,8 @@ namespace cameras::onvif {
         return true;
     }
 
-    OnvifClient::SoapResult OnvifClient::callAuthenticated(const std::string& host, int port,
-                                                           const std::string& path, const std::string& inner) {
+    OnvifClient::SoapResult OnvifClient::callAuthenticated(const std::string& host, int port, const std::string& path,
+                                                           const std::string& inner) {
         SoapResult response;
         for (int attempt = 0; attempt < 2; ++attempt) {
             std::string clockError;
@@ -359,9 +362,10 @@ namespace cameras::onvif {
     }
 
     bool OnvifClient::loadServices(std::string& error) {
-        const auto caps = callAuthenticated(
-            host_, port_, servicePath_,
-            "<tds:GetCapabilities xmlns:tds=\"http://www.onvif.org/ver10/device/wsdl\"><tds:Category>All</tds:Category></tds:GetCapabilities>");
+        const auto caps = callAuthenticated(host_, port_, servicePath_,
+                                            "<tds:GetCapabilities "
+                                            "xmlns:tds=\"http://www.onvif.org/ver10/device/wsdl\"><tds:Category>All</"
+                                            "tds:Category></tds:GetCapabilities>");
         if (!caps.ok || caps.status != 200 || isFault(caps.body)) {
             error = caps.error.empty() ? "could not read the camera services" : caps.error;
             return false;
@@ -375,13 +379,14 @@ namespace cameras::onvif {
         }
         const std::string mediaXaddr = xmlElementText(caps.body, "XAddr", mediaAt);
         const std::string ptzXaddr = xmlElementText(caps.body, "XAddr", ptzAt);
-        if (!parseServiceUrl(mediaXaddr, host_, mediaHost_, mediaPort_, mediaPath_, error) || !parseServiceUrl(ptzXaddr, host_, ptzHost_, ptzPort_, ptzPath_, error)) {
+        if (!parseServiceUrl(mediaXaddr, host_, mediaHost_, mediaPort_, mediaPath_, error)
+            || !parseServiceUrl(ptzXaddr, host_, ptzHost_, ptzPort_, ptzPath_, error)) {
             return false;
         }
 
-        const auto profiles = callAuthenticated(
-            mediaHost_, mediaPort_, mediaPath_,
-            "<trt:GetProfiles xmlns:trt=\"http://www.onvif.org/ver10/media/wsdl\"/>");
+        const auto profiles
+            = callAuthenticated(mediaHost_, mediaPort_, mediaPath_,
+                                "<trt:GetProfiles xmlns:trt=\"http://www.onvif.org/ver10/media/wsdl\"/>");
         if (!profiles.ok || profiles.status != 200 || isFault(profiles.body)) {
             error = profiles.error.empty() ? "could not read the camera profiles" : profiles.error;
             return false;
@@ -407,9 +412,9 @@ namespace cameras::onvif {
     }
 
     bool OnvifClient::prepare(OnvifDeviceInfo& info, std::string& error) {
-        const auto device = callAuthenticated(
-            host_, port_, servicePath_,
-            "<tds:GetDeviceInformation xmlns:tds=\"http://www.onvif.org/ver10/device/wsdl\"/>");
+        const auto device
+            = callAuthenticated(host_, port_, servicePath_,
+                                "<tds:GetDeviceInformation xmlns:tds=\"http://www.onvif.org/ver10/device/wsdl\"/>");
         if (!device.ok || device.status != 200 || isFault(device.body)) {
             error = device.error.empty() ? "the camera did not answer" : device.error;
             return false;
@@ -424,33 +429,31 @@ namespace cameras::onvif {
             return false;
         }
         ready_ = true;
-        core::Logger::info("ONVIF ready " + host_ + ":" + std::to_string(port_) + " " + info.manufacturer + " " + info.model);
+        core::Logger::info("ONVIF ready " + host_ + ":" + std::to_string(port_) + " " + info.manufacturer + " "
+                           + info.model);
         return true;
     }
 
-    bool OnvifClient::absoluteMove(double panX, double tiltY, double zoomX,
-                                   double panTiltSpeed, double zoomSpeed, std::string& error) {
+    bool OnvifClient::absoluteMove(double panX, double tiltY, double zoomX, double panTiltSpeed, double zoomSpeed,
+                                   std::string& error) {
         if (!ready_) {
             error = "the camera is not ready";
             return false;
         }
         const std::string token = xmlEscape(profileToken_);
+        // clang-format off
         const std::string body =
             "<tptz:AbsoluteMove xmlns:tptz=\"http://www.onvif.org/ver20/ptz/wsdl\">"
-            "<tptz:ProfileToken>" +
-            token + "</tptz:ProfileToken>"
-                    "<tptz:Position>"
-                    "<tt:PanTilt xmlns:tt=\"http://www.onvif.org/ver10/schema\" x=\"" +
-            formatFixed(panX) + "\" y=\"" + formatFixed(tiltY) + "\"/>"
-                                                                 "<tt:Zoom xmlns:tt=\"http://www.onvif.org/ver10/schema\" x=\"" +
-            formatFixed(zoomX) + "\"/>"
-                                 "</tptz:Position>"
-                                 "<tptz:Speed>"
-                                 "<tt:PanTilt xmlns:tt=\"http://www.onvif.org/ver10/schema\" x=\"" +
-            formatFixed(panTiltSpeed) + "\" y=\"" + formatFixed(panTiltSpeed) + "\"/>"
-                                                                                "<tt:Zoom xmlns:tt=\"http://www.onvif.org/ver10/schema\" x=\"" +
-            formatFixed(zoomSpeed) + "\"/>"
-                                     "</tptz:Speed></tptz:AbsoluteMove>";
+            "<tptz:ProfileToken>" + token + "</tptz:ProfileToken>"
+            "<tptz:Position>"
+            "<tt:PanTilt xmlns:tt=\"http://www.onvif.org/ver10/schema\" x=\"" + formatFixed(panX) + "\" y=\"" + formatFixed(tiltY) + "\"/>"
+            "<tt:Zoom xmlns:tt=\"http://www.onvif.org/ver10/schema\" x=\"" + formatFixed(zoomX) + "\"/>"
+            "</tptz:Position>"
+            "<tptz:Speed>"
+            "<tt:PanTilt xmlns:tt=\"http://www.onvif.org/ver10/schema\" x=\"" + formatFixed(panTiltSpeed) + "\" y=\"" + formatFixed(panTiltSpeed) + "\"/>"
+            "<tt:Zoom xmlns:tt=\"http://www.onvif.org/ver10/schema\" x=\"" + formatFixed(zoomSpeed) + "\"/>"
+            "</tptz:Speed></tptz:AbsoluteMove>";
+        // clang-format on
 
         const auto response = callAuthenticated(ptzHost_, ptzPort_, ptzPath_, body);
         if (!response.ok || response.status != 200 || isFault(response.body)) {
@@ -465,11 +468,12 @@ namespace cameras::onvif {
             error = "the camera is not ready";
             return false;
         }
+        // clang-format off
         const std::string body =
             "<tptz:GetStatus xmlns:tptz=\"http://www.onvif.org/ver20/ptz/wsdl\">"
-            "<tptz:ProfileToken>" +
-            xmlEscape(profileToken_) + "</tptz:ProfileToken>"
-                                       "</tptz:GetStatus>";
+            "<tptz:ProfileToken>" + xmlEscape(profileToken_) + "</tptz:ProfileToken>"
+            "</tptz:GetStatus>";
+        // clang-format on
         const auto response = callAuthenticated(ptzHost_, ptzPort_, ptzPath_, body);
         if (!response.ok || response.status != 200 || isFault(response.body)) {
             error = response.error.empty() ? "could not read the camera position" : response.error;

@@ -19,14 +19,13 @@ namespace commands::camera {
             if (cameras::visca::profileByName(profile)) {
                 return true;
             }
-            ctx.err << "Unknown profile '" << profile << "'. Known: "
-                    << cameras::visca::knownProfileNames() << std::endl;
+            ctx.err << "Unknown profile '" << profile << "'. Known: " << cameras::visca::knownProfileNames()
+                    << std::endl;
             return false;
         }
 
-        const char* kScannedUsage =
-            "Usage: camera add scanned <n...|*> [profile]\n"
-            "       camera add scanned <n...|*> <user> <password>";
+        const char* kScannedUsage = "Usage: camera add scanned <n...|*> [profile]\n"
+                                    "       camera add scanned <n...|*> <user> <password>";
 
         // camera add scanned: VISCA rows take an optional profile. ONVIF rows
         // take a user and password (one word each) instead.
@@ -45,8 +44,8 @@ namespace commands::camera {
                 const auto& token = tokens[i];
                 if (token == "*") {
                     all = true;
-                } else if (!token.empty() && token.size() <= 4 &&
-                           std::all_of(token.begin(), token.end(), [](char c) { return c >= '0' && c <= '9'; })) {
+                } else if (!token.empty() && token.size() <= 4
+                           && std::all_of(token.begin(), token.end(), [](char c) { return c >= '0' && c <= '9'; })) {
                     indexes.insert(static_cast<size_t>(std::stoul(token)));
                 } else {
                     words.push_back(token);
@@ -122,8 +121,8 @@ namespace commands::camera {
                 if (const auto* row = std::get_if<cameras::visca::ViscaIpEndpoint>(&rows[n - 1])) {
                     auto ep = *row;
                     if (const auto addedAs = viscaIpAddedAs(ctx, ep.host, ep.port)) {
-                        ctx.out << "#" << n << " " << ep.host << ":" << ep.port
-                                << " is already added as " << *addedAs << std::endl;
+                        ctx.out << "#" << n << " " << ep.host << ":" << ep.port << " is already added as " << *addedAs
+                                << std::endl;
                         continue;
                     }
                     ep.profile = profile.empty() ? kDefaultProfile : profile;
@@ -132,8 +131,8 @@ namespace commands::camera {
                                 << (ctx.addViscaIp ? error : "VISCA-IP is not available") << std::endl;
                         continue;
                     }
-                    ctx.out << "Added #" << n << " " << viscaIpSerial(ep.host, ep.port)
-                            << " profile=" << ep.profile << std::endl;
+                    ctx.out << "Added #" << n << " " << viscaIpSerial(ep.host, ep.port) << " profile=" << ep.profile
+                            << std::endl;
                     addedIpWithDefault = addedIpWithDefault || profile.empty();
                 } else if (const auto* row = std::get_if<cameras::visca::ViscaSerialEndpoint>(&rows[n - 1])) {
                     auto ep = *row;
@@ -239,7 +238,8 @@ namespace commands::camera {
         }
 
         bool isDigits(const std::string& token) {
-            return !token.empty() && std::all_of(token.begin(), token.end(), [](char c) { return c >= '0' && c <= '9'; });
+            return !token.empty()
+                && std::all_of(token.begin(), token.end(), [](char c) { return c >= '0' && c <= '9'; });
         }
 
         // camera add serial <COMn> [baud] [address] [profile]
@@ -361,7 +361,6 @@ namespace commands::camera {
         }
 
         ctx.notifySetupChanged();
-        ctx.out << "Added VISCA-IP:" << ep.host << ":" << ep.port
-                << " profile=" << ep.profile << std::endl;
+        ctx.out << "Added VISCA-IP:" << ep.host << ":" << ep.port << " profile=" << ep.profile << std::endl;
     }
 } // namespace commands::camera

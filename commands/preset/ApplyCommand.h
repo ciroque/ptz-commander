@@ -8,8 +8,9 @@
 namespace commands::preset {
     class ApplyCommand : public Command {
     public:
-        ApplyCommand() : Command("preset", "apply", "preset apply <id|*> <name|*> [delay_ms]",
-                                 "Apply a named preset, or cycle all (*)") {}
+        ApplyCommand()
+            : Command("preset", "apply", "preset apply <id|*> <name|*> [delay_ms]",
+                      "Apply a named preset, or cycle all (*)") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 } // namespace commands::preset
