@@ -9,6 +9,9 @@ FetchContent_Declare(
 # The installed Visual Studio runtime is shared. Forcing gtest onto the
 # static CRT mismatches the test executable and fails to link.
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+# cmake --install stages the WiX prefix. The release build only builds
+# ptz_commander, so gtest and gmock are not there, and the MSI does not ship them.
+set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 add_executable(ptz_tests
