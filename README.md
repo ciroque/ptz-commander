@@ -14,6 +14,45 @@ OBSBOT cameras are added and removed as they are plugged in. VISCA and ONVIF cam
 
 A camera id is a serial number, an alias, or a product name. `*` means every camera the command can reach.
 
+## Object model
+
+A setup is the collection saved in a `.ptzc` file. It holds camera entries and scenes side by side. Each camera keeps its own presets, a name plus pan, tilt, and zoom. A scene does not store those positions. Each binding records a camera serial and a preset name. `scene apply` looks those up when you run it. OBSBOT, VISCA, and ONVIF cameras all use this model.
+
+```mermaid
+classDiagram
+    direction TB
+
+    class Setup
+    class Camera {
+        id
+        alias
+    }
+    class Preset {
+        name
+        pan
+        tilt
+        zoom
+    }
+    class Scene {
+        name
+    }
+    class Binding {
+        serial
+        presetName
+    }
+
+    Setup "1" *-- "*" Camera
+    Camera "1" *-- "*" Preset
+    Setup "1" *-- "*" Scene
+    Scene "1" *-- "*" Binding
+    Binding ..> Camera : serial
+    Binding ..> Preset : preset name
+
+    Camera <|-- Obsbot : USB
+    Camera <|-- Visca : COM port or IP
+    Camera <|-- Onvif
+```
+
 ## Commands
 
 ### Version
