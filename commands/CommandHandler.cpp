@@ -82,9 +82,7 @@ namespace commands {
         owned_.push_back(std::move(cmd));
     }
 
-    bool CommandHandler::isFamily(const std::string& name) const {
-        return verbs_.find(name) != verbs_.end();
-    }
+    bool CommandHandler::isFamily(const std::string& name) const { return verbs_.find(name) != verbs_.end(); }
 
     std::vector<std::string> CommandHandler::tokenize(const std::string& input) {
         std::vector<std::string> tokens;
@@ -134,9 +132,7 @@ namespace commands {
         width = std::max(width, size_t{20});
 
         auto line = [&](const std::string& name, const std::string& summary) {
-            ctx.out << "  " << name
-                    << std::string(width - name.size(), ' ')
-                    << "  " << summary << "\n";
+            ctx.out << "  " << name << std::string(width - name.size(), ' ') << "  " << summary << "\n";
         };
 
         ctx.out << "Available root commands:\n";
@@ -161,9 +157,8 @@ namespace commands {
         title[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(title[0])));
         ctx.out << title << " commands:\n";
         for (const auto* cmd : cmds) {
-            ctx.out << "  " << cmd->usage()
-                    << std::string(width - cmd->usage().size() + 2, ' ')
-                    << cmd->summary() << "\n";
+            ctx.out << "  " << cmd->usage() << std::string(width - cmd->usage().size() + 2, ' ') << cmd->summary()
+                    << "\n";
         }
     }
 

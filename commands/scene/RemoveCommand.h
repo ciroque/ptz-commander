@@ -6,8 +6,7 @@
 namespace commands::scene {
     class RemoveCommand : public Command {
     public:
-        RemoveCommand() : Command("scene", "remove", "scene remove <name> <id>",
-                                  "Remove a camera from a scene") {}
+        RemoveCommand() : Command("scene", "remove", "scene remove <name> <id>", "Remove a camera from a scene") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 } // namespace commands::scene

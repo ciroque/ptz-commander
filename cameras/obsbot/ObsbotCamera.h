@@ -28,7 +28,8 @@ namespace cameras {
 
     private:
         std::shared_ptr<Device> device_;
-        std::unique_ptr<cameras::obsbot::strategies::ObsbotControlStrategy> strategy_; // note: strategies:: not full path
+        std::unique_ptr<cameras::obsbot::strategies::ObsbotControlStrategy>
+            strategy_; // note: strategies:: not full path
 
         static constexpr float RollValue = 0.0f;
         static constexpr float MaxMoveSpeed = 75.0f;

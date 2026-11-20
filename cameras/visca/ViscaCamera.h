@@ -19,10 +19,7 @@ namespace cameras::visca {
 
     class ViscaCamera : public ::cameras::Camera {
     public:
-        ViscaCamera(std::unique_ptr<ViscaTransport> transport,
-                    std::string serial,
-                    std::string name,
-                    uint8_t address,
+        ViscaCamera(std::unique_ptr<ViscaTransport> transport, std::string serial, std::string name, uint8_t address,
                     ViscaProfile profile);
 
         ~ViscaCamera() override;
@@ -49,8 +46,7 @@ namespace cameras::visca {
         // Drives the camera through its full range to measure a profile. Does not
         // apply it; see applyProfile.
         std::optional<ViscaProfile> calibrate(const CalibrationRanges& ranges,
-                                              const ViscaCalibrator::Progress& progress,
-                                              std::string& error);
+                                              const ViscaCalibrator::Progress& progress, std::string& error);
 
         // Switches profiles. Presets are stored in degrees, so each one is
         // converted through its raw position to keep pointing at the same spot.

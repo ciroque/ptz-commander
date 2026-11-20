@@ -62,10 +62,12 @@ namespace commands::preset {
                 for (auto it = presets.begin(); it != presets.end(); ++it) {
                     const auto& preset = *it;
                     if (!camera->setPosition(preset.ptz.pan, preset.ptz.tilt, preset.ptz.zoom)) {
-                        ctx.err << "Failed to apply preset '" << preset.name << "' to " << camera->getSerialNumber() << std::endl;
+                        ctx.err << "Failed to apply preset '" << preset.name << "' to " << camera->getSerialNumber()
+                                << std::endl;
                         allGood = false;
                     } else {
-                        ctx.out << "Applied preset '" << preset.name << "' to " << camera->getSerialNumber() << std::endl;
+                        ctx.out << "Applied preset '" << preset.name << "' to " << camera->getSerialNumber()
+                                << std::endl;
                     }
                     if (std::next(it) != presets.end() && delayMs > 0) {
                         std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
@@ -75,22 +77,24 @@ namespace commands::preset {
                 // Apply single preset by name
                 const cameras::Preset* preset = camera->getPresetByName(presetNameOrWildcard);
                 if (!preset) {
-                    ctx.err << "Preset not found: " << presetNameOrWildcard << " for " << camera->getSerialNumber() << std::endl;
+                    ctx.err << "Preset not found: " << presetNameOrWildcard << " for " << camera->getSerialNumber()
+                            << std::endl;
                     allGood = false;
                     continue;
                 }
 
                 if (!camera->setPosition(preset->ptz.pan, preset->ptz.tilt, preset->ptz.zoom)) {
-                    ctx.err << "Failed to apply preset '" << presetNameOrWildcard << "' to " << camera->getSerialNumber() << std::endl;
+                    ctx.err << "Failed to apply preset '" << presetNameOrWildcard << "' to "
+                            << camera->getSerialNumber() << std::endl;
                     allGood = false;
                 } else {
-                    ctx.out << "Applied preset '" << presetNameOrWildcard << "' to " << camera->getSerialNumber() << std::endl;
+                    ctx.out << "Applied preset '" << presetNameOrWildcard << "' to " << camera->getSerialNumber()
+                            << std::endl;
                 }
             }
         }
 
-        const std::string target =
-            serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber;
+        const std::string target = serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber;
         if (allGood) {
             if (presetNameOrWildcard == "*") {
                 ctx.out << "Applied presets to " << target << std::endl;

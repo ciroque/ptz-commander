@@ -20,13 +20,9 @@ namespace cameras {
 
         void clear() { scenes_.clear(); }
 
-        void replaceAll(std::map<std::string, Scene> scenes) {
-            scenes_ = std::move(scenes);
-        }
+        void replaceAll(std::map<std::string, Scene> scenes) { scenes_ = std::move(scenes); }
 
-        void upsertBinding(const std::string& sceneName,
-                           const std::string& serial,
-                           const std::string& presetName) {
+        void upsertBinding(const std::string& sceneName, const std::string& serial, const std::string& presetName) {
             Scene& scene = scenes_[sceneName];
             scene.name = sceneName;
             scene.bindings[serial] = presetName;
@@ -40,9 +36,7 @@ namespace cameras {
             return it->second.bindings.erase(serial) > 0;
         }
 
-        bool discard(const std::string& sceneName) {
-            return scenes_.erase(sceneName) > 0;
-        }
+        bool discard(const std::string& sceneName) { return scenes_.erase(sceneName) > 0; }
 
     private:
         std::map<std::string, Scene> scenes_;

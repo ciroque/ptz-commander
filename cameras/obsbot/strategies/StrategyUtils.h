@@ -9,8 +9,7 @@ namespace cameras::obsbot::strategies {
     /**
      * Shared clamp helper (previously duplicated in each strategy .cpp).
      */
-    template <typename T>
-    inline T clamp(const T& val, const T& minVal, const T& maxVal) {
+    template <typename T> inline T clamp(const T& val, const T& minVal, const T& maxVal) {
         return std::min(std::max(val, minVal), maxVal);
     }
 
@@ -48,9 +47,7 @@ namespace cameras::obsbot::strategies {
      * Converts the value from cameraGetZoomAbsoluteR back to 0-100 range.
      * Used in getCurrentPtz().
      */
-    inline int scaleZoomFromAbsoluteRead(float zoomVal) {
-        return static_cast<int>((zoomVal - 1.0f) * 100.0f);
-    }
+    inline int scaleZoomFromAbsoluteRead(float zoomVal) { return static_cast<int>((zoomVal - 1.0f) * 100.0f); }
 
     /**
      * Common PTZ reading logic using gimbalGetAttitudeInfoR + cameraGetZoomAbsoluteR.

@@ -9,8 +9,7 @@
 namespace commands::camera {
     class ShowCommand : public Command {
     public:
-        ShowCommand() : Command("camera", "show", "camera show <id|*>",
-                                "Show details for one or all cameras") {}
+        ShowCommand() : Command("camera", "show", "camera show <id|*>", "Show details for one or all cameras") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 } // namespace commands::camera

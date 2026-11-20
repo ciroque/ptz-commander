@@ -55,10 +55,9 @@ namespace cameras::onvif {
             bytes[6] = static_cast<unsigned char>((bytes[6] & 0x0F) | 0x40);
             bytes[8] = static_cast<unsigned char>((bytes[8] & 0x3F) | 0x80);
             char buf[48];
-            std::snprintf(buf, sizeof(buf),
-                          "uuid:%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-                          bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
-                          bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]);
+            std::snprintf(buf, sizeof(buf), "uuid:%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+                          bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7], bytes[8],
+                          bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]);
             return buf;
         }
 
@@ -73,7 +72,8 @@ namespace cameras::onvif {
                 << "<e:Header>"
                 << "<w:MessageID>" << messageId() << "</w:MessageID>"
                 << "<w:To e:mustUnderstand=\"true\">urn:schemas-xmlsoap-org:ws:2005:04:discovery</w:To>"
-                << "<w:Action e:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe</w:Action>"
+                << "<w:Action "
+                   "e:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe</w:Action>"
                 << "</e:Header><e:Body><d:Probe><d:Types>" << types << "</d:Types></d:Probe></e:Body></e:Envelope>";
             return xml.str();
         }
@@ -191,9 +191,7 @@ namespace cameras::onvif {
                     continue;
                 }
                 const size_t next = xml.find("ProbeMatch", pos + 10);
-                const std::string block = next == std::string::npos
-                                              ? xml.substr(pos)
-                                              : xml.substr(pos, next - pos);
+                const std::string block = next == std::string::npos ? xml.substr(pos) : xml.substr(pos, next - pos);
                 considerMatch(block, byAddress);
                 if (next == std::string::npos) {
                     break;
@@ -270,7 +268,8 @@ namespace cameras::onvif {
         int ttl = 2;
         setsockopt(guard.socket, IPPROTO_IP, IP_MULTICAST_TTL, reinterpret_cast<const char*>(&ttl), sizeof(ttl));
         DWORD receiveTimeout = 300;
-        setsockopt(guard.socket, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&receiveTimeout), sizeof(receiveTimeout));
+        setsockopt(guard.socket, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&receiveTimeout),
+                   sizeof(receiveTimeout));
 
         sockaddr_in dest{};
         dest.sin_family = AF_INET;
@@ -292,8 +291,8 @@ namespace cameras::onvif {
 
         auto sendAll = [&]() {
             for (const auto& iface : interfaces) {
-                setsockopt(guard.socket, IPPROTO_IP, IP_MULTICAST_IF,
-                           reinterpret_cast<const char*>(&iface), sizeof(iface));
+                setsockopt(guard.socket, IPPROTO_IP, IP_MULTICAST_IF, reinterpret_cast<const char*>(&iface),
+                           sizeof(iface));
                 sendProbe(guard.socket, dest, nvt);
                 sendProbe(guard.socket, dest, device);
             }

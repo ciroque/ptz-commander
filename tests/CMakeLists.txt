@@ -20,17 +20,27 @@ add_executable(ptz_tests
     ViscaIpFramingTest.cpp
     OnvifParseTest.cpp
     OnvifPasswordTest.cpp
+    OnvifSetupLoadTest.cpp
+    "${CMAKE_SOURCE_DIR}/cameras/CameraManager.cpp"
+    "${CMAKE_SOURCE_DIR}/cameras/PresetStore.cpp"
+    "${CMAKE_SOURCE_DIR}/cameras/visca/ViscaCamera.cpp"
     "${CMAKE_SOURCE_DIR}/cameras/visca/ViscaCommands.cpp"
+    "${CMAKE_SOURCE_DIR}/cameras/visca/ViscaCalibration.cpp"
     "${CMAKE_SOURCE_DIR}/cameras/onvif/OnvifPassword.cpp"
 )
 
 target_include_directories(ptz_tests PRIVATE
     "${CMAKE_SOURCE_DIR}/commands"
+    "${CMAKE_SOURCE_DIR}/cameras"
     "${CMAKE_SOURCE_DIR}/cameras/visca"
     "${CMAKE_SOURCE_DIR}/cameras/onvif"
 )
 
-target_link_libraries(ptz_tests PRIVATE GTest::gtest_main)
+target_link_libraries(ptz_tests PRIVATE
+    GTest::gtest_main
+    nlohmann_json::nlohmann_json
+    spdlog::spdlog_header_only
+)
 target_compile_features(ptz_tests PRIVATE cxx_std_20)
 if(WIN32)
     target_link_libraries(ptz_tests PRIVATE crypt32)

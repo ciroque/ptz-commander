@@ -6,7 +6,8 @@
 namespace cameras::onvif {
 
     OnvifCamera::OnvifCamera(OnvifEndpoint endpoint)
-        : endpoint_(std::move(endpoint)), serial_(endpoint_.serial()), name_("ONVIF (" + endpoint_.address() + ")"), client_(endpoint_.host, endpoint_.port, endpoint_.servicePath, endpoint_.user, endpoint_.password) {
+        : endpoint_(std::move(endpoint)), serial_(endpoint_.serial()), name_("ONVIF (" + endpoint_.address() + ")"),
+          client_(endpoint_.host, endpoint_.port, endpoint_.servicePath, endpoint_.user, endpoint_.password) {
         if (endpoint_.port <= 0) {
             endpoint_.port = 80;
             serial_ = endpoint_.serial();
@@ -30,20 +31,13 @@ namespace cameras::onvif {
         return true;
     }
 
-    std::string OnvifCamera::getSerialNumber() const {
-        return serial_;
-    }
+    std::string OnvifCamera::getSerialNumber() const { return serial_; }
 
-    std::string OnvifCamera::getName() const {
-        return name_;
-    }
+    std::string OnvifCamera::getName() const { return name_; }
 
-    bool OnvifCamera::isConnected() const {
-        return connected_;
-    }
+    bool OnvifCamera::isConnected() const { return connected_; }
 
-    bool OnvifCamera::moveRaw(double panX, double tiltY, double zoomX,
-                              double panTiltSpeed, double zoomSpeed) const {
+    bool OnvifCamera::moveRaw(double panX, double tiltY, double zoomX, double panTiltSpeed, double zoomSpeed) const {
         std::string error;
         if (!client_.absoluteMove(panX, tiltY, zoomX, panTiltSpeed, zoomSpeed, error)) {
             core::Logger::error("ONVIF move failed on " + serial_ + ": " + error);
@@ -70,7 +64,8 @@ namespace cameras::onvif {
         if (!moveRaw(panX, tiltY, zoomX, 0.8, 0.8)) {
             return false;
         }
-        core::Logger::info("ONVIF absolute move " + serial_ + " pan=" + std::to_string(lastPtz_.pan) + " tilt=" + std::to_string(lastPtz_.tilt) + " zoom=" + std::to_string(lastPtz_.zoom));
+        core::Logger::info("ONVIF absolute move " + serial_ + " pan=" + std::to_string(lastPtz_.pan)
+                           + " tilt=" + std::to_string(lastPtz_.tilt) + " zoom=" + std::to_string(lastPtz_.zoom));
         return true;
     }
 

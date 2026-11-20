@@ -15,20 +15,12 @@ namespace cameras::onvif {
         // Display name from WS-Discovery. Not required to connect, and not saved.
         std::string label;
 
-        std::string address() const {
-            return host + ":" + std::to_string(port > 0 ? port : 80);
-        }
+        std::string address() const { return host + ":" + std::to_string(port > 0 ? port : 80); }
 
-        std::string serial() const {
-            return "ONVIF:" + address();
-        }
+        std::string serial() const { return "ONVIF:" + address(); }
     };
 
-    enum class OnvifAddStatus {
-        Added,
-        AlreadyPresent,
-        Failed
-    };
+    enum class OnvifAddStatus { Added, AlreadyPresent, Failed };
 
     struct OnvifAddResult {
         OnvifAddStatus status = OnvifAddStatus::Failed;

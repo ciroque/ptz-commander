@@ -6,8 +6,7 @@
 namespace commands::setup {
     class ListCommand : public Command {
     public:
-        ListCommand() : Command("setup", "list", "setup list",
-                                "List .ptzc files in the user data directory") {}
+        ListCommand() : Command("setup", "list", "setup list", "List .ptzc files in the user data directory") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 } // namespace commands::setup

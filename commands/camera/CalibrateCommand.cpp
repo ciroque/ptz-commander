@@ -28,16 +28,15 @@ namespace commands::camera {
         // other commands' tables rely on.
         std::string hex(uint16_t value) {
             std::ostringstream ss;
-            ss << "0x" << std::hex << std::uppercase << std::right
-               << std::setfill('0') << std::setw(4) << value;
+            ss << "0x" << std::hex << std::uppercase << std::right << std::setfill('0') << std::setw(4) << value;
             return ss.str();
         }
 
         std::string describeAxis(const cameras::visca::ViscaAxis& axis) {
             std::ostringstream ss;
-            ss << std::fixed << std::setprecision(1) << axis.minDeg << " to " << axis.maxDeg
-               << " deg, raw " << hex(axis.minRaw) << " / " << hex(axis.homeRaw)
-               << " / " << hex(axis.maxRaw) << (axis.signedRaw ? " (signed)" : "");
+            ss << std::fixed << std::setprecision(1) << axis.minDeg << " to " << axis.maxDeg << " deg, raw "
+               << hex(axis.minRaw) << " / " << hex(axis.homeRaw) << " / " << hex(axis.maxRaw)
+               << (axis.signedRaw ? " (signed)" : "");
             return ss.str();
         }
     } // namespace
@@ -91,13 +90,17 @@ namespace commands::camera {
         // (not VISCA) does not announce that it is about to move.
         bool started = false;
         std::string error;
-        const auto profile = ctx.calibrateVisca(serial, ranges, [&ctx, &serial, &started](const std::string& step) {
+        const auto profile = ctx.calibrateVisca(
+            serial, ranges,
+            [&ctx, &serial, &started](const std::string& step) {
                 if (!started) {
-                    ctx.out << "Calibrating " << serial
-                            << ". The camera will move through its full range." << std::endl;
+                    ctx.out << "Calibrating " << serial << ". The camera will move through its full range."
+                            << std::endl;
                     started = true;
                 }
-                ctx.out << "  " << step << std::endl; }, error);
+                ctx.out << "  " << step << std::endl;
+            },
+            error);
         if (!profile) {
             ctx.err << "Calibration failed: " << error << std::endl;
             return;

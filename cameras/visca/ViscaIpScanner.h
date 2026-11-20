@@ -47,8 +47,7 @@ namespace cameras::visca {
     // networks on the given port and collects replies. Any VISCA reply counts,
     // error replies included: it proves a VISCA device is listening. The
     // inquiry does not move anything. Hits are sorted by address.
-    std::vector<ViscaIpScanHit> scanViscaIp(const std::vector<Ipv4Network>& networks, int port,
-                                            std::string& error);
+    std::vector<ViscaIpScanHit> scanViscaIp(const std::vector<Ipv4Network>& networks, int port, std::string& error);
 
 } // namespace cameras::visca
 

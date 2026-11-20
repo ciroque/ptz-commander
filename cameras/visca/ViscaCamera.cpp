@@ -6,12 +6,10 @@
 
 namespace cameras::visca {
 
-    ViscaCamera::ViscaCamera(std::unique_ptr<ViscaTransport> transport,
-                             std::string serial,
-                             std::string name,
-                             uint8_t address,
-                             ViscaProfile profile)
-        : transport_(std::move(transport)), serial_(std::move(serial)), name_(std::move(name)), address_(address), profile_(profile) {
+    ViscaCamera::ViscaCamera(std::unique_ptr<ViscaTransport> transport, std::string serial, std::string name,
+                             uint8_t address, ViscaProfile profile)
+        : transport_(std::move(transport)), serial_(std::move(serial)), name_(std::move(name)), address_(address),
+          profile_(profile) {
         connected_ = ensureOpen();
         if (connected_) {
             core::Logger::info("ViscaCamera ready on " + serial_);
@@ -26,13 +24,9 @@ namespace cameras::visca {
         }
     }
 
-    std::string ViscaCamera::getSerialNumber() const {
-        return serial_;
-    }
+    std::string ViscaCamera::getSerialNumber() const { return serial_; }
 
-    std::string ViscaCamera::getName() const {
-        return name_;
-    }
+    std::string ViscaCamera::getName() const { return name_; }
 
     bool ViscaCamera::isConnected() const {
         // Short waits: `camera list` asks every camera in turn, and a camera that
@@ -40,9 +34,7 @@ namespace cameras::visca {
         return answersInquiry(300);
     }
 
-    bool ViscaCamera::isOpen() const {
-        return ensureOpen();
-    }
+    bool ViscaCamera::isOpen() const { return ensureOpen(); }
 
     bool ViscaCamera::answersInquiry(int timeoutMs) const {
         if (!ensureOpen() || !transport_) {
@@ -81,12 +73,11 @@ namespace cameras::visca {
         }
 
         // Compute the actual values that will be sent (ViscaCommands clamps to camera limits)
-        float clampedPan = ViscaCommands::viscaToPanDegrees(
-            ViscaCommands::panDegreesToVisca(pan, profile_), profile_);
-        float clampedTilt = ViscaCommands::viscaToTiltDegrees(
-            ViscaCommands::tiltDegreesToVisca(tilt, profile_), profile_);
-        int clampedZoom = ViscaCommands::viscaToZoomPercent(
-            ViscaCommands::zoomPercentToVisca(zoom, profile_), profile_);
+        float clampedPan = ViscaCommands::viscaToPanDegrees(ViscaCommands::panDegreesToVisca(pan, profile_), profile_);
+        float clampedTilt
+            = ViscaCommands::viscaToTiltDegrees(ViscaCommands::tiltDegreesToVisca(tilt, profile_), profile_);
+        int clampedZoom
+            = ViscaCommands::viscaToZoomPercent(ViscaCommands::zoomPercentToVisca(zoom, profile_), profile_);
 
         auto ptCmd = ViscaCommands::panTiltAbsolute(pan, tilt, profile_, 0x10, 0x10, address_);
         auto zmCmd = ViscaCommands::zoomAbsolute(zoom, profile_, address_);
@@ -97,10 +88,8 @@ namespace cameras::visca {
             lastPtz_.pan = clampedPan;
             lastPtz_.tilt = clampedTilt;
             lastPtz_.zoom = clampedZoom;
-            core::Logger::info("VISCA sent absolute PTZ to " + getSerialNumber() +
-                               " pan=" + std::to_string(clampedPan) +
-                               " tilt=" + std::to_string(clampedTilt) +
-                               " zoom=" + std::to_string(clampedZoom));
+            core::Logger::info("VISCA sent absolute PTZ to " + getSerialNumber() + " pan=" + std::to_string(clampedPan)
+                               + " tilt=" + std::to_string(clampedTilt) + " zoom=" + std::to_string(clampedZoom));
         } else {
             core::Logger::error("VISCA failed to send absolute PTZ on " + serial_);
         }
@@ -116,13 +105,14 @@ namespace cameras::visca {
             return false;
         }
 
-        int clampedZoom = ViscaCommands::viscaToZoomPercent(
-            ViscaCommands::zoomPercentToVisca(zoom, profile_), profile_);
+        int clampedZoom
+            = ViscaCommands::viscaToZoomPercent(ViscaCommands::zoomPercentToVisca(zoom, profile_), profile_);
         auto cmd = ViscaCommands::zoomAbsolute(zoom, profile_, address_);
         bool ok = transport_->write(cmd);
 
         if (ok) {
-            lastPtz_.zoom = clampedZoom; // use clamped value because ViscaCommands clamps caller-provided zoom to [0,100]
+            lastPtz_.zoom
+                = clampedZoom; // use clamped value because ViscaCommands clamps caller-provided zoom to [0,100]
             core::Logger::info("VISCA sent absolute zoom " + std::to_string(clampedZoom) + " to " + getSerialNumber());
         } else {
             core::Logger::error("VISCA zoom command failed on " + serial_);
@@ -132,8 +122,7 @@ namespace cameras::visca {
     }
 
     std::optional<ViscaProfile> ViscaCamera::calibrate(const CalibrationRanges& ranges,
-                                                       const ViscaCalibrator::Progress& progress,
-                                                       std::string& error) {
+                                                       const ViscaCalibrator::Progress& progress, std::string& error) {
         if (!ensureOpen() || !transport_) {
             error = "transport not open on " + serial_;
             return std::nullopt;
@@ -143,10 +132,9 @@ namespace cameras::visca {
     }
 
     Ptz remapPtz(const Ptz& ptz, const ViscaProfile& from, const ViscaProfile& to) {
-        return Ptz{
-            ViscaCommands::viscaToPanDegrees(ViscaCommands::panDegreesToVisca(ptz.pan, from), to),
-            ViscaCommands::viscaToTiltDegrees(ViscaCommands::tiltDegreesToVisca(ptz.tilt, from), to),
-            ViscaCommands::viscaToZoomPercent(ViscaCommands::zoomPercentToVisca(ptz.zoom, from), to)};
+        return Ptz{ViscaCommands::viscaToPanDegrees(ViscaCommands::panDegreesToVisca(ptz.pan, from), to),
+                   ViscaCommands::viscaToTiltDegrees(ViscaCommands::tiltDegreesToVisca(ptz.tilt, from), to),
+                   ViscaCommands::viscaToZoomPercent(ViscaCommands::zoomPercentToVisca(ptz.zoom, from), to)};
     }
 
     void ViscaCamera::applyProfile(const ViscaProfile& profile) {
@@ -182,8 +170,8 @@ namespace cameras::visca {
             tiltVisca = pt->tilt;
             ptOk = true;
         } else if (!ptResp.empty()) {
-            core::Logger::debug("VISCA pan/tilt inquiry bad response on " + serial_ +
-                                " (len=" + std::to_string(ptResp.size()) + ")");
+            core::Logger::debug("VISCA pan/tilt inquiry bad response on " + serial_
+                                + " (len=" + std::to_string(ptResp.size()) + ")");
         }
 
         // --- Zoom Position Inquiry ---
@@ -207,8 +195,8 @@ namespace cameras::visca {
             zoomVisca = *zm;
             zmOk = true;
         } else if (!zmResp.empty()) {
-            core::Logger::debug("VISCA zoom inquiry bad response on " + serial_ +
-                                " (len=" + std::to_string(zmResp.size()) + ")");
+            core::Logger::debug("VISCA zoom inquiry bad response on " + serial_
+                                + " (len=" + std::to_string(zmResp.size()) + ")");
         }
 
         // Update cache with whatever we successfully read
@@ -223,10 +211,8 @@ namespace cameras::visca {
         if (!ptOk && !zmOk) {
             core::Logger::warn("VISCA getCurrentPtz inquiries failed on " + serial_ + ", returning last cached");
         } else {
-            core::Logger::debug("VISCA read live PTZ on " + getSerialNumber() +
-                                " pan=" + std::to_string(lastPtz_.pan) +
-                                " tilt=" + std::to_string(lastPtz_.tilt) +
-                                " zoom=" + std::to_string(lastPtz_.zoom));
+            core::Logger::debug("VISCA read live PTZ on " + getSerialNumber() + " pan=" + std::to_string(lastPtz_.pan)
+                                + " tilt=" + std::to_string(lastPtz_.tilt) + " zoom=" + std::to_string(lastPtz_.zoom));
         }
 
         return lastPtz_;

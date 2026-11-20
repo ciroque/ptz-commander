@@ -13,16 +13,13 @@ namespace cameras {
             switch (type) {
             case ObsbotProdTailAir:
             case ObsbotProdTail2:
-            case ObsbotProdTail2S:
-                return std::make_unique<cameras::obsbot::strategies::TailAirStrategy>();
-            default:
-                return std::make_unique<cameras::obsbot::strategies::TinyFamilyStrategy>();
+            case ObsbotProdTail2S: return std::make_unique<cameras::obsbot::strategies::TailAirStrategy>();
+            default: return std::make_unique<cameras::obsbot::strategies::TinyFamilyStrategy>();
             }
         }
     } // namespace
 
-    ObsbotCamera::ObsbotCamera(std::shared_ptr<Device> dev)
-        : device_(std::move(dev)) {
+    ObsbotCamera::ObsbotCamera(std::shared_ptr<Device> dev) : device_(std::move(dev)) {
         if (!device_) return;
 
         strategy_ = createStrategy(device_->productType());
@@ -39,17 +36,11 @@ namespace cameras {
 
     ObsbotCamera::~ObsbotCamera() = default; // crucial
 
-    std::string ObsbotCamera::getSerialNumber() const {
-        return device_ ? device_->devSn() : "Unknown";
-    }
+    std::string ObsbotCamera::getSerialNumber() const { return device_ ? device_->devSn() : "Unknown"; }
 
-    std::string ObsbotCamera::getName() const {
-        return device_ ? device_->devName() : "Unknown";
-    }
+    std::string ObsbotCamera::getName() const { return device_ ? device_->devName() : "Unknown"; }
 
-    bool ObsbotCamera::isConnected() const {
-        return device_ != nullptr;
-    }
+    bool ObsbotCamera::isConnected() const { return device_ != nullptr; }
 
     bool ObsbotCamera::setPosition(float pan, float tilt, int zoom) {
         return strategy_ ? strategy_->moveTo(pan, tilt, zoom, device_.get()) : false;

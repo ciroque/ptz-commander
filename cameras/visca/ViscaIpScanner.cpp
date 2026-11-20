@@ -91,13 +91,11 @@ namespace cameras::visca {
     }
 
     std::string ipv4ToString(uint32_t address) {
-        return std::to_string(address >> 24) + "." + std::to_string((address >> 16) & 0xFF) + "." +
-               std::to_string((address >> 8) & 0xFF) + "." + std::to_string(address & 0xFF);
+        return std::to_string(address >> 24) + "." + std::to_string((address >> 16) & 0xFF) + "."
+             + std::to_string((address >> 8) & 0xFF) + "." + std::to_string(address & 0xFF);
     }
 
-    std::string Ipv4Network::toString() const {
-        return ipv4ToString(base) + "/" + std::to_string(prefix);
-    }
+    std::string Ipv4Network::toString() const { return ipv4ToString(base) + "/" + std::to_string(prefix); }
 
     std::optional<Ipv4Network> parseIpv4Network(const std::string& text, std::string& error) {
         const auto slash = text.find('/');
@@ -105,8 +103,8 @@ namespace cameras::visca {
         int prefix = 32;
         if (slash != std::string::npos) {
             const std::string prefixText = text.substr(slash + 1);
-            if (prefixText.empty() || prefixText.size() > 2 ||
-                !std::all_of(prefixText.begin(), prefixText.end(), [](char c) { return c >= '0' && c <= '9'; })) {
+            if (prefixText.empty() || prefixText.size() > 2
+                || !std::all_of(prefixText.begin(), prefixText.end(), [](char c) { return c >= '0' && c <= '9'; })) {
                 error = "invalid prefix length in '" + text + "'";
                 return std::nullopt;
             }
@@ -123,8 +121,8 @@ namespace cameras::visca {
             return std::nullopt;
         }
         if (prefix < kMinScanPrefix) {
-            error = "/" + std::to_string(prefix) + " is too large to scan; use /" +
-                    std::to_string(kMinScanPrefix) + " or smaller";
+            error = "/" + std::to_string(prefix) + " is too large to scan; use /" + std::to_string(kMinScanPrefix)
+                  + " or smaller";
             return std::nullopt;
         }
         return Ipv4Network{ntohl(addr.s_addr) & maskFor(prefix), prefix};
@@ -163,8 +161,8 @@ namespace cameras::visca {
                 // Windows reports 255 when the prefix isn't known; anything outside
                 // 1..32 is invalid for IPv4, so fall back to the /24.
                 const int onLink = ua->OnLinkPrefixLength;
-                const int prefix = (onLink >= 1 && onLink <= 32) ? std::max(onLink, kLocalScanPrefix)
-                                                                 : kLocalScanPrefix;
+                const int prefix
+                    = (onLink >= 1 && onLink <= 32) ? std::max(onLink, kLocalScanPrefix) : kLocalScanPrefix;
                 const Ipv4Network network{address & maskFor(prefix), prefix};
                 const bool seen = std::any_of(networks.begin(), networks.end(), [&](const Ipv4Network& n) {
                     return n.base == network.base && n.prefix == network.prefix;
@@ -177,8 +175,7 @@ namespace cameras::visca {
         return networks;
     }
 
-    std::vector<ViscaIpScanHit> scanViscaIp(const std::vector<Ipv4Network>& networks, int port,
-                                            std::string& error) {
+    std::vector<ViscaIpScanHit> scanViscaIp(const std::vector<Ipv4Network>& networks, int port, std::string& error) {
         WinsockSession winsock;
         if (!winsock.ok()) {
             error = "could not start Winsock";
@@ -195,7 +192,8 @@ namespace cameras::visca {
         BOOL reportReset = FALSE;
         DWORD returned = 0;
         if (WSAIoctl(sock, SIO_UDP_CONNRESET, &reportReset, sizeof(reportReset), nullptr, 0, &returned, nullptr,
-                     nullptr) != 0) {
+                     nullptr)
+            != 0) {
             error = "could not turn off ICMP reset reporting (WSA error " + std::to_string(WSAGetLastError()) + ")";
             closesocket(sock);
             return {};
@@ -303,8 +301,8 @@ namespace cameras::visca {
         for (auto& [host, hit] : hits) {
             out.push_back(std::move(hit));
         }
-        core::Logger::info("VISCA-IP scan: probed " + std::to_string(targets.size()) + " hosts on port " +
-                           std::to_string(port) + ", " + std::to_string(out.size()) + " replied");
+        core::Logger::info("VISCA-IP scan: probed " + std::to_string(targets.size()) + " hosts on port "
+                           + std::to_string(port) + ", " + std::to_string(out.size()) + " replied");
         return out;
     }
 

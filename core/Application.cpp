@@ -15,9 +15,7 @@ namespace core {
         : obsbotAdapter_(std::make_unique<cameras::obsbot::ObsbotCameraAdapter>(cameraMgr_)),
           viscaAdapter_(std::make_unique<cameras::visca::ViscaCameraAdapter>(cameraMgr_)),
           onvifAdapter_(std::make_unique<cameras::onvif::OnvifCameraAdapter>(cameraMgr_)),
-          context_(cameraMgr_, sceneStore_),
-          commandHandler_(),
-          sceneControlServer_(cameraMgr_, sceneStore_),
+          context_(cameraMgr_, sceneStore_), commandHandler_(), sceneControlServer_(cameraMgr_, sceneStore_),
           running_(false) {
         context_.onSetupChanged = [this] { sceneControlServer_.broadcast(); };
         context_.addViscaIp = [this](const cameras::visca::ViscaIpEndpoint& endpoint, std::string& error) {
@@ -30,15 +28,14 @@ namespace core {
             context_.viscaIpEndpoints = viscaAdapter_->ipEndpoints();
             return ok;
         };
-        context_.calibrateVisca = [this](const std::string& serial,
-                                         const cameras::visca::CalibrationRanges& ranges,
-                                         const cameras::visca::ViscaCalibrator::Progress& progress,
-                                         std::string& error) {
-            auto profile = viscaAdapter_->calibrateCamera(serial, ranges, progress, error);
-            context_.viscaIpEndpoints = viscaAdapter_->ipEndpoints();
-            context_.viscaSerialEndpoints = viscaAdapter_->serialEndpoints();
-            return profile;
-        };
+        context_.calibrateVisca
+            = [this](const std::string& serial, const cameras::visca::CalibrationRanges& ranges,
+                     const cameras::visca::ViscaCalibrator::Progress& progress, std::string& error) {
+                  auto profile = viscaAdapter_->calibrateCamera(serial, ranges, progress, error);
+                  context_.viscaIpEndpoints = viscaAdapter_->ipEndpoints();
+                  context_.viscaSerialEndpoints = viscaAdapter_->serialEndpoints();
+                  return profile;
+              };
         context_.addViscaSerial = [this](const cameras::visca::ViscaSerialEndpoint& endpoint, std::string& error) {
             const bool ok = viscaAdapter_->addSerialCamera(endpoint, error);
             context_.viscaSerialEndpoints = viscaAdapter_->serialEndpoints();
@@ -80,15 +77,13 @@ namespace core {
     void Application::start() {
         sceneControlServer_.start();
         running_ = true;
-        context_.out << "PTZ Commander " << PTZ_VERSION_PRODUCT
-                     << " (type 'exit' to quit)\n> ";
+        context_.out << "PTZ Commander " << PTZ_VERSION_PRODUCT << " (type 'exit' to quit)\n> ";
         std::string input;
         while (running_) {
             if (!std::getline(std::cin, input)) {
 #ifdef _WIN32
                 DWORD consoleMode = 0;
-                const bool stdinIsConsole =
-                    GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &consoleMode) != 0;
+                const bool stdinIsConsole = GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &consoleMode) != 0;
                 if (stdinIsConsole) {
                     std::cin.clear();
                     continue;

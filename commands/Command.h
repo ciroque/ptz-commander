@@ -18,9 +18,7 @@ namespace commands {
 
     protected:
         Command(std::string family, std::string verb, std::string usage, std::string summary)
-            : family_(std::move(family)),
-              verb_(std::move(verb)),
-              usage_(std::move(usage)),
+            : family_(std::move(family)), verb_(std::move(verb)), usage_(std::move(usage)),
               summary_(std::move(summary)) {}
 
     private:

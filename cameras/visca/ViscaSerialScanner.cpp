@@ -33,11 +33,8 @@ namespace cameras::visca {
             std::vector<std::string> ports;
             HKEY hKey = nullptr;
 
-            if (RegOpenKeyExA(HKEY_LOCAL_MACHINE,
-                              "HARDWARE\\DEVICEMAP\\SERIALCOMM",
-                              0,
-                              KEY_READ,
-                              &hKey) != ERROR_SUCCESS) {
+            if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "HARDWARE\\DEVICEMAP\\SERIALCOMM", 0, KEY_READ, &hKey)
+                != ERROR_SUCCESS) {
                 return ports;
             }
 
@@ -49,8 +46,7 @@ namespace cameras::visca {
                 valueNameSize = sizeof(valueName);
                 portNameSize = sizeof(portName);
 
-                LONG res = RegEnumValueA(hKey, i, valueName, &valueNameSize,
-                                         nullptr, &type,
+                LONG res = RegEnumValueA(hKey, i, valueName, &valueNameSize, nullptr, &type,
                                          reinterpret_cast<LPBYTE>(portName), &portNameSize);
 
                 if (res == ERROR_NO_MORE_ITEMS) break;
@@ -140,8 +136,8 @@ namespace cameras::visca {
                         result.address = address;
                         result.reply = reply;
                         result.position = ViscaCommands::parsePanTiltPosition(reply);
-                        core::Logger::info("VISCA serial scan: camera on " + info.port + " @" + std::to_string(baud) +
-                                           " address " + std::to_string(address));
+                        core::Logger::info("VISCA serial scan: camera on " + info.port + " @" + std::to_string(baud)
+                                           + " address " + std::to_string(address));
                         return result;
                     }
                 }
@@ -165,9 +161,8 @@ namespace cameras::visca {
             ports = enumerateComPortsViaQueryDosDevice();
         }
 
-        std::sort(ports.begin(), ports.end(), [](const std::string& a, const std::string& b) {
-            return comNumber(a) < comNumber(b);
-        });
+        std::sort(ports.begin(), ports.end(),
+                  [](const std::string& a, const std::string& b) { return comNumber(a) < comNumber(b); });
         ports.erase(std::unique(ports.begin(), ports.end()), ports.end());
 
         std::vector<SerialPortInfo> infos;

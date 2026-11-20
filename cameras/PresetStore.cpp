@@ -33,9 +33,7 @@ namespace cameras {
         return ".";
     }
 
-    std::string PresetStore::homeDirectory() {
-        return getDefaultPresetDir();
-    }
+    std::string PresetStore::homeDirectory() { return getDefaultPresetDir(); }
 
     std::vector<std::string> PresetStore::listHomeFiles() {
         std::vector<std::string> names;
@@ -144,21 +142,15 @@ namespace cameras {
         }
 
         nlohmann::json axisToJson(const visca::ViscaAxis& axis) {
-            return {
-                {"min_deg", axis.minDeg},
-                {"max_deg", axis.maxDeg},
-                {"min_raw", axis.minRaw},
-                {"home_raw", axis.homeRaw},
-                {"max_raw", axis.maxRaw},
-                {"through_home", axis.throughHome},
-                {"signed", axis.signedRaw}};
+            return {{"min_deg", axis.minDeg},   {"max_deg", axis.maxDeg}, {"min_raw", axis.minRaw},
+                    {"home_raw", axis.homeRaw}, {"max_raw", axis.maxRaw}, {"through_home", axis.throughHome},
+                    {"signed", axis.signedRaw}};
         }
 
         nlohmann::json calibrationToJson(const visca::ViscaProfile& profile) {
-            return {
-                {"pan", axisToJson(profile.pan)},
-                {"tilt", axisToJson(profile.tilt)},
-                {"zoom", {{"min_raw", profile.zoomMinRaw}, {"max_raw", profile.zoomMaxRaw}}}};
+            return {{"pan", axisToJson(profile.pan)},
+                    {"tilt", axisToJson(profile.tilt)},
+                    {"zoom", {{"min_raw", profile.zoomMinRaw}, {"max_raw", profile.zoomMaxRaw}}}};
         }
 
         // Throws on missing or out-of-range fields; callers turn that into ParseError.
@@ -223,7 +215,8 @@ namespace cameras {
             return true;
         }
 
-        bool parseOnvif(const nlohmann::json& j, std::vector<onvif::OnvifEndpoint>& out) {
+        bool parseOnvif(const nlohmann::json& j, std::vector<onvif::OnvifEndpoint>& out,
+                        std::vector<std::string>& skipped) {
             if (!j.contains("onvif")) {
                 return true;
             }
@@ -231,7 +224,8 @@ namespace cameras {
                 return false;
             }
             for (const auto& item : j["onvif"]) {
-                if (!item.is_object() || !item.contains("host") || !item["host"].is_string() || !item.contains("user") || !item["user"].is_string() || !item.contains("password") || !item["password"].is_string()) {
+                if (!item.is_object() || !item.contains("host") || !item["host"].is_string() || !item.contains("user")
+                    || !item["user"].is_string() || !item.contains("password") || !item["password"].is_string()) {
                     return false;
                 }
                 onvif::OnvifEndpoint ep;
@@ -240,8 +234,8 @@ namespace cameras {
                 ep.user = item["user"].get<std::string>();
                 const auto password = onvif::unprotectPassword(item["password"].get<std::string>());
                 if (!password) {
-                    throw std::runtime_error("ONVIF password for " + ep.host +
-                                             " could not be decrypted on this Windows account");
+                    skipped.push_back(ep.host);
+                    continue;
                 }
                 ep.password = *password;
                 ep.servicePath = item.value("path", std::string("/onvif/device_service"));
@@ -334,8 +328,8 @@ namespace cameras {
                         serial->baud = block.value("baud", visca::kSerialDefaultBaud);
                         serial->profile = block.value("profile", std::string(visca::kSerialDefaultProfile));
                         if (!visca::validSerialBaud(serial->baud)) {
-                            return parseError("camera entry '" + sn + "' has baud " + std::to_string(serial->baud) +
-                                              "; use one of " + visca::validSerialBauds());
+                            return parseError("camera entry '" + sn + "' has baud " + std::to_string(serial->baud)
+                                              + "; use one of " + visca::validSerialBauds());
                         }
                         if (block.contains("calibration")) {
                             try {
@@ -345,16 +339,18 @@ namespace cameras {
                             }
                         }
                     }
-                    const auto samePort = std::find_if(staged.viscaSerial.begin(), staged.viscaSerial.end(),
-                                                       [&serial](const visca::ViscaSerialEndpoint& ep) { return ep.port == serial->port; });
+                    const auto samePort = std::find_if(
+                        staged.viscaSerial.begin(), staged.viscaSerial.end(),
+                        [&serial](const visca::ViscaSerialEndpoint& ep) { return ep.port == serial->port; });
                     if (samePort != staged.viscaSerial.end()) {
-                        return parseError("cameras '" + visca::serialCameraId(*samePort) + "' and '" + sn +
-                                          "' are on the same port; only one camera per port is supported");
+                        return parseError("cameras '" + visca::serialCameraId(*samePort) + "' and '" + sn
+                                          + "' are on the same port; only one camera per port is supported");
                     }
                     staged.viscaSerial.push_back(std::move(*serial));
                 } else if (camJson.contains(kViscaSerialKey)) {
-                    return parseError("camera entry '" + sn + "' has \"visca_serial\" but its key isn't a serial "
-                                                              "camera such as VISCA:COM3:1");
+                    return parseError("camera entry '" + sn
+                                      + "' has \"visca_serial\" but its key isn't a serial "
+                                        "camera such as VISCA:COM3:1");
                 }
 
                 staged.cameras.emplace(sn, std::move(entry));
@@ -382,7 +378,7 @@ namespace cameras {
             if (!parseViscaIp(j, staged.viscaIp)) {
                 return parseError("\"visca_ip\" must be a list of entries that each have a host");
             }
-            if (!parseOnvif(j, staged.onvif)) {
+            if (!parseOnvif(j, staged.onvif, staged.onvifSkipped)) {
                 return parseError("\"onvif\" must be a list of entries that each have a host, user, and password");
             }
 
@@ -405,7 +401,8 @@ namespace cameras {
             if (it->second.alias) {
                 auto takenBy = mgr.assignAlias(camera, *it->second.alias);
                 if (takenBy) {
-                    core::Logger::warn("Skipped alias '" + *it->second.alias + "' for " + camera->getSerialNumber() + (takenBy->empty() ? ": invalid alias" : (": already used by " + *takenBy)));
+                    core::Logger::warn("Skipped alias '" + *it->second.alias + "' for " + camera->getSerialNumber()
+                                       + (takenBy->empty() ? ": invalid alias" : (": already used by " + *takenBy)));
                 }
             }
             // Presets saved with the legacy Lumens mapping keep pointing at
@@ -413,15 +410,16 @@ namespace cameras {
             const auto* lumens = it->second.legacyLumensMapping ? onLumensProfile(*camera) : nullptr;
             for (const auto& preset : it->second.presets) {
                 if (lumens) {
-                    camera->addPreset(preset.name, Preset(preset.name,
-                                                          visca::remapPtz(preset.ptz, visca::lumensVcA51pLegacy(), lumens->profile())));
+                    camera->addPreset(preset.name,
+                                      Preset(preset.name, visca::remapPtz(preset.ptz, visca::lumensVcA51pLegacy(),
+                                                                          lumens->profile())));
                 } else {
                     camera->addPreset(preset.name, preset);
                 }
             }
             if (lumens && !it->second.presets.empty()) {
-                core::Logger::info("Converted " + std::to_string(it->second.presets.size()) + " presets for " +
-                                   camera->getSerialNumber() + " from the legacy Lumens mapping");
+                core::Logger::info("Converted " + std::to_string(it->second.presets.size()) + " presets for "
+                                   + camera->getSerialNumber() + " from the legacy Lumens mapping");
             }
         }
 
@@ -431,8 +429,7 @@ namespace cameras {
     bool PresetStore::save(const CameraManager& mgr, const SceneStore& scenes,
                            const std::vector<visca::ViscaIpEndpoint>& viscaIp,
                            const std::vector<visca::ViscaSerialEndpoint>& viscaSerial,
-                           const std::vector<onvif::OnvifEndpoint>& onvif,
-                           std::string filename) const {
+                           const std::vector<onvif::OnvifEndpoint>& onvif, std::string filename) const {
         filename = resolvePresetPath(std::move(filename));
 
         std::ofstream file(filename);
@@ -444,10 +441,7 @@ namespace cameras {
         if (!viscaIp.empty()) {
             nlohmann::json arr = nlohmann::json::array();
             for (const auto& ep : viscaIp) {
-                nlohmann::json entry = {
-                    {"host", ep.host},
-                    {"port", ep.port},
-                    {"profile", ep.profile}};
+                nlohmann::json entry = {{"host", ep.host}, {"port", ep.port}, {"profile", ep.profile}};
                 if (ep.calibration) {
                     entry["calibration"] = calibrationToJson(*ep.calibration);
                 }
@@ -472,9 +466,7 @@ namespace cameras {
             j["onvif"] = std::move(arr);
         }
         for (const auto& ep : viscaSerial) {
-            nlohmann::json block = {
-                {"baud", ep.baud},
-                {"profile", ep.profile}};
+            nlohmann::json block = {{"baud", ep.baud}, {"profile", ep.profile}};
             if (ep.calibration) {
                 block["calibration"] = calibrationToJson(*ep.calibration);
             }

@@ -45,8 +45,6 @@ namespace cameras::obsbot::strategies {
         return dev->cameraSetZoomWithSpeedAbsoluteR(zoomRatio, zoomSpeed) == RM_RET_OK;
     }
 
-    cameras::Ptz TinyFamilyStrategy::getCurrentPtz(Device* dev) {
-        return readCommonPtzFromDevice(dev);
-    }
+    cameras::Ptz TinyFamilyStrategy::getCurrentPtz(Device* dev) { return readCommonPtzFromDevice(dev); }
 
 } // namespace cameras::obsbot::strategies

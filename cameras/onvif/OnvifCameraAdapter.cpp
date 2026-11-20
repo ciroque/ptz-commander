@@ -24,8 +24,7 @@ namespace cameras::onvif {
 
     } // namespace
 
-    OnvifCameraAdapter::OnvifCameraAdapter(CameraManager& manager)
-        : manager_(manager) {}
+    OnvifCameraAdapter::OnvifCameraAdapter(CameraManager& manager) : manager_(manager) {}
 
     OnvifAddResult OnvifCameraAdapter::add(const OnvifEndpoint& requested) {
         OnvifAddResult result;
@@ -43,9 +42,7 @@ namespace cameras::onvif {
         auto camera = std::make_shared<OnvifCamera>(endpoint);
         std::string error;
         if (!camera->probe(error)) {
-            result.detail = error.empty()
-                                ? ("could not add ONVIF camera " + endpoint.address())
-                                : error;
+            result.detail = error.empty() ? ("could not add ONVIF camera " + endpoint.address()) : error;
             core::Logger::warn("ONVIF add failed for " + endpoint.address() + ": " + result.detail);
             return result;
         }

@@ -12,8 +12,7 @@ namespace commands::scene {
         ctx.out << "Scenes:" << std::endl;
         for (const auto& [name, scene] : scenes) {
             const auto count = scene.bindings.size();
-            ctx.out << "  " << name << "  (" << count << " binding"
-                    << (count == 1 ? "" : "s") << ")" << std::endl;
+            ctx.out << "  " << name << "  (" << count << " binding" << (count == 1 ? "" : "s") << ")" << std::endl;
         }
     }
 

@@ -1,5 +1,4 @@
-# First-party C++ only. Vendored trees (include/spdlog, include/nlohmann, include/obsbot)
-# are not formatted.
+# First-party C++ only. Vendored OBSBOT headers under include/ are not formatted.
 BasedOnStyle: LLVM
 Standard: c++20
 IndentWidth: 4
@@ -7,7 +6,9 @@ TabWidth: 4
 UseTab: Never
 NamespaceIndentation: All
 AccessModifierOffset: -4
-ColumnLimit: 0
+ColumnLimit: 120
+BreakBeforeBinaryOperators: All
+AlignOperands: AlignAfterOperator
 BreakBeforeBraces: Attach
 PointerAlignment: Left
 ReferenceAlignment: Left
@@ -18,4 +19,6 @@ ReflowComments: false
 AllowShortFunctionsOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: AllIfsAndElse
 AllowShortLoopsOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
 SpaceBeforeParens: ControlStatements

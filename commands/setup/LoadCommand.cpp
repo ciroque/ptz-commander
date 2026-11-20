@@ -21,15 +21,11 @@ namespace commands::setup {
         cameras::StagedSetup staged;
         std::string parseError;
         switch (store.read(filename, staged, &parseError)) {
-        case cameras::LoadStatus::NotFound:
-            ctx.err << "Failed to open " << filename << std::endl;
-            return;
+        case cameras::LoadStatus::NotFound: ctx.err << "Failed to open " << filename << std::endl; return;
         case cameras::LoadStatus::ParseError:
-            ctx.err << "Failed to parse " << filename
-                    << (parseError.empty() ? "" : ": " + parseError) << std::endl;
+            ctx.err << "Failed to parse " << filename << (parseError.empty() ? "" : ": " + parseError) << std::endl;
             return;
-        case cameras::LoadStatus::Ok:
-            break;
+        case cameras::LoadStatus::Ok: break;
         }
 
         // Every VISCA-IP entry must be usable before any is applied; otherwise
@@ -42,8 +38,8 @@ namespace commands::setup {
             }
             if (!cameras::visca::resolveProfile(ep)) {
                 ctx.err << "Failed to load " << filename << ": unknown profile '" << ep.profile
-                        << "' for VISCA-IP camera " << ep.host << ". Known: "
-                        << cameras::visca::knownProfileNames() << std::endl;
+                        << "' for VISCA-IP camera " << ep.host << ". Known: " << cameras::visca::knownProfileNames()
+                        << std::endl;
                 return;
             }
         }
@@ -54,8 +50,8 @@ namespace commands::setup {
         for (const auto& ep : staged.viscaSerial) {
             if (!cameras::visca::resolveProfile(ep)) {
                 ctx.err << "Failed to load " << filename << ": unknown profile '" << ep.profile
-                        << "' for serial camera " << cameras::visca::serialCameraId(ep) << ". Known: "
-                        << cameras::visca::knownProfileNames() << std::endl;
+                        << "' for serial camera " << cameras::visca::serialCameraId(ep)
+                        << ". Known: " << cameras::visca::knownProfileNames() << std::endl;
                 return;
             }
             // One camera per port, and a camera already added on this port
@@ -75,8 +71,8 @@ namespace commands::setup {
         }
         for (const auto& ep : staged.onvif) {
             if (ep.host.empty() || ep.user.empty() || ep.password.empty()) {
-                ctx.err << "Failed to load " << filename
-                        << ": an onvif entry needs a host, user, and password" << std::endl;
+                ctx.err << "Failed to load " << filename << ": an onvif entry needs a host, user, and password"
+                        << std::endl;
                 return;
             }
         }
@@ -102,6 +98,13 @@ namespace commands::setup {
                 return;
             }
         }
+        // A password saved on another Windows account cannot be decrypted.
+        // Leave that camera out and keep going, the same as one that is off.
+        for (const auto& host : staged.onvifSkipped) {
+            ctx.err << "ONVIF password for " << host
+                    << " could not be decrypted on this Windows account; that camera was not added" << std::endl;
+        }
+
         // A camera that does not answer is left out. Presets for the cameras
         // that are present are still applied below.
         bool onvifMissing = false;

@@ -119,7 +119,7 @@ A setup is the on-disk collection: per-camera aliases and presets plus scenes. F
 
 ### ONVIF passwords
 
-`setup save` writes each ONVIF password with Windows DPAPI (`CryptProtectData`). The file stores `dpapi:` plus the base64 of that blob, not the password. The blob decrypts only for the Windows user who saved it, which matches `.ptzc` files living in `%LOCALAPPDATA%\PTZCommander`. Copying a file to another Windows account does not reveal the password, and `setup load` there reports that the password could not be decrypted. A password saved before this change is still plaintext and still loads. The next `setup save` rewrites it. The WebSocket setup snapshot does not include passwords.
+`setup save` writes each ONVIF password with Windows DPAPI (`CryptProtectData`). The file stores `dpapi:` plus the base64 of that blob, not the password. The blob decrypts only for the Windows user who saved it, which matches `.ptzc` files living in `%LOCALAPPDATA%\PTZCommander`. Copying a file to another Windows account does not reveal the password. `setup load` there reports that the password could not be decrypted, leaves that camera out, and still loads the rest of the setup. A password saved before this change is still plaintext and still loads. The next `setup save` rewrites it. The WebSocket setup snapshot does not include passwords.
 
 ## WebSocket
 

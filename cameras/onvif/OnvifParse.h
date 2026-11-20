@@ -23,24 +23,12 @@ namespace cameras::onvif {
         out.reserve(text.size());
         for (const unsigned char c : text) {
             switch (c) {
-            case '&':
-                out += "&amp;";
-                break;
-            case '<':
-                out += "&lt;";
-                break;
-            case '>':
-                out += "&gt;";
-                break;
-            case '"':
-                out += "&quot;";
-                break;
-            case '\'':
-                out += "&apos;";
-                break;
-            default:
-                out.push_back(static_cast<char>(c));
-                break;
+            case '&': out += "&amp;"; break;
+            case '<': out += "&lt;"; break;
+            case '>': out += "&gt;"; break;
+            case '"': out += "&quot;"; break;
+            case '\'': out += "&apos;"; break;
+            default: out.push_back(static_cast<char>(c)); break;
             }
         }
         return out;
@@ -182,7 +170,8 @@ namespace cameras::onvif {
         std::string out;
         out.reserve(text.size());
         for (size_t i = 0; i < text.size(); ++i) {
-            if (text[i] == '%' && i + 2 < text.size() && std::isxdigit(static_cast<unsigned char>(text[i + 1])) && std::isxdigit(static_cast<unsigned char>(text[i + 2]))) {
+            if (text[i] == '%' && i + 2 < text.size() && std::isxdigit(static_cast<unsigned char>(text[i + 1]))
+                && std::isxdigit(static_cast<unsigned char>(text[i + 2]))) {
                 auto hex = [](char c) {
                     if (c >= '0' && c <= '9') return c - '0';
                     if (c >= 'a' && c <= 'f') return c - 'a' + 10;

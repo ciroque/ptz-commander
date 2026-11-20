@@ -44,8 +44,7 @@ namespace cameras::obsbot {
             std::array<char, 1024> buffer{};
             vsnprintf(buffer.data(), buffer.size(), msg, args);
 
-            logFile << "[" << timeStr << "] [" << levelStr << "] "
-                    << buffer.data() << std::endl;
+            logFile << "[" << timeStr << "] [" << levelStr << "] " << buffer.data() << std::endl;
             logFile.flush();
         }
     } // namespace
@@ -95,7 +94,8 @@ namespace cameras::obsbot {
             if (scanResult == RM_RET_OK) {
                 core::Logger::info("Network scan started successfully");
             } else {
-                core::Logger::warn("Network scan failed to start (code: " + std::to_string(scanResult) + ") - scanning may already be in progress");
+                core::Logger::warn("Network scan failed to start (code: " + std::to_string(scanResult)
+                                   + ") - scanning may already be in progress");
             }
 
             findDevices();
@@ -123,8 +123,7 @@ namespace cameras::obsbot {
         if (connected) {
             auto dev = adapter->devices_.getDevBySn(devSn);
             if (dev) {
-                if (dev->devMode() == Device::DevModeUvc ||
-                    dev->devMode() == Device::DevModeNet) {
+                if (dev->devMode() == Device::DevModeUvc || dev->devMode() == Device::DevModeNet) {
 
                     std::string mode = (dev->devMode() == Device::DevModeNet) ? "NETWORK" : "USB";
                     core::Logger::info("Adding " + mode + " device: " + dev->devName() + " (" + devSn + ")");
@@ -140,8 +139,7 @@ namespace cameras::obsbot {
     void ObsbotCameraAdapter::findDevices() {
         auto devList = devices_.getDevList();
         for (const auto& dev : devList) {
-            if (dev && (dev->devMode() == Device::DevModeUvc ||
-                        dev->devMode() == Device::DevModeNet)) {
+            if (dev && (dev->devMode() == Device::DevModeUvc || dev->devMode() == Device::DevModeNet)) {
                 core::Logger::info("Pre-existing device found: " + dev->devName());
                 manager_.addCamera(std::make_shared<ObsbotCamera>(dev));
             }

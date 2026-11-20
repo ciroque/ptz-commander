@@ -12,8 +12,7 @@ namespace commands {
      * Resolves <id|*> to a camera list.
      * Prints "No cameras found." or "Camera not found: <id>" and returns empty on failure.
      */
-    inline std::list<std::shared_ptr<cameras::Camera>> resolveCameras(
-        data::Context& ctx, const std::string& id) {
+    inline std::list<std::shared_ptr<cameras::Camera>> resolveCameras(data::Context& ctx, const std::string& id) {
         if (id == "*") {
             auto cameras = ctx.cameraMgr.getCameras();
             if (cameras.empty()) {

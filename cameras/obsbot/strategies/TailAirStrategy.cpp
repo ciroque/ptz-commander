@@ -11,10 +11,7 @@ namespace cameras::obsbot::strategies {
         int32_t r3 = dev->aiSetAiTrackModeEnabledR(Device::AiTrackGroup, false);
         int32_t gestureResult = dev->aiSetGestureParaR(Device::DevGestureParaTypeGesture, false);
 
-        return (r1 == RM_RET_OK &&
-                r2 == RM_RET_OK &&
-                r3 == RM_RET_OK &&
-                gestureResult == RM_RET_OK);
+        return (r1 == RM_RET_OK && r2 == RM_RET_OK && r3 == RM_RET_OK && gestureResult == RM_RET_OK);
     }
 
     bool TailAirStrategy::moveTo(float pan, float tilt, int zoom, Device* dev) {
@@ -39,8 +36,6 @@ namespace cameras::obsbot::strategies {
         return dev->cameraSetZoomWithSpeedAbsoluteR(zoomRatio, zoomSpeed) == RM_RET_OK;
     }
 
-    cameras::Ptz TailAirStrategy::getCurrentPtz(Device* dev) {
-        return readCommonPtzFromDevice(dev);
-    }
+    cameras::Ptz TailAirStrategy::getCurrentPtz(Device* dev) { return readCommonPtzFromDevice(dev); }
 
 } // namespace cameras::obsbot::strategies

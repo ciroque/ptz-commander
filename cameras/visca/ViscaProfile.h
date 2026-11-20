@@ -85,9 +85,7 @@ namespace cameras::visca {
         return std::nullopt;
     }
 
-    inline const char* knownProfileNames() {
-        return "tenveo-30x, lumens-vc-a51p";
-    }
+    inline const char* knownProfileNames() { return "tenveo-30x, lumens-vc-a51p"; }
 
 } // namespace cameras::visca
 

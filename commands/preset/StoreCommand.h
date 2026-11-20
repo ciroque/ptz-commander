@@ -8,8 +8,8 @@
 namespace commands::preset {
     class StoreCommand : public Command {
     public:
-        StoreCommand() : Command("preset", "store", "preset store <id|*> <name>",
-                                 "Store current position as a named preset") {}
+        StoreCommand()
+            : Command("preset", "store", "preset store <id|*> <name>", "Store current position as a named preset") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 } // namespace commands::preset

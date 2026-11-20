@@ -39,18 +39,13 @@ namespace cameras::visca {
             return std::min(d, 0x10000 - d);
         }
 
-        bool withinTolerance(uint16_t a, uint16_t b) {
-            return rawDistance(a, b) <= kSettleTolerance;
-        }
+        bool withinTolerance(uint16_t a, uint16_t b) { return rawDistance(a, b) <= kSettleTolerance; }
 
         bool settled(const RawPosition& a, const RawPosition& b) {
-            return withinTolerance(a.pan, b.pan) && withinTolerance(a.tilt, b.tilt) &&
-                   withinTolerance(a.zoom, b.zoom);
+            return withinTolerance(a.pan, b.pan) && withinTolerance(a.tilt, b.tilt) && withinTolerance(a.zoom, b.zoom);
         }
 
-        bool between(int lo, int mid, int hi) {
-            return (lo <= mid && mid <= hi) || (hi <= mid && mid <= lo);
-        }
+        bool between(int lo, int mid, int hi) { return (lo <= mid && mid <= hi) || (hi <= mid && mid <= lo); }
 
         std::string hex(uint16_t v) {
             static const char* digits = "0123456789ABCDEF";
@@ -77,29 +72,21 @@ namespace cameras::visca {
         // VISCA error replies are 9x 6y EE FF.
         std::string errorName(uint8_t code) {
             switch (code) {
-            case 0x01:
-                return "message length error";
-            case 0x02:
-                return "syntax error";
-            case 0x03:
-                return "command buffer full";
-            case 0x04:
-                return "command cancelled";
-            case 0x05:
-                return "no socket";
-            case 0x41:
-                return "command not executable";
-            default:
-                return "error 0x" + hex(code).substr(4);
+            case 0x01: return "message length error";
+            case 0x02: return "syntax error";
+            case 0x03: return "command buffer full";
+            case 0x04: return "command cancelled";
+            case 0x05: return "no socket";
+            case 0x41: return "command not executable";
+            default: return "error 0x" + hex(code).substr(4);
             }
         }
     } // namespace
 
-    std::optional<ViscaAxis> axisFromStops(uint16_t minRaw, uint16_t homeRaw, uint16_t maxRaw,
-                                           float minDeg, float maxDeg, std::string& error) {
+    std::optional<ViscaAxis> axisFromStops(uint16_t minRaw, uint16_t homeRaw, uint16_t maxRaw, float minDeg,
+                                           float maxDeg, std::string& error) {
         const auto s = [](uint16_t v) { return static_cast<int>(static_cast<int16_t>(v)); };
-        const bool signedRaw = !between(minRaw, homeRaw, maxRaw) &&
-                               between(s(minRaw), s(homeRaw), s(maxRaw));
+        const bool signedRaw = !between(minRaw, homeRaw, maxRaw) && between(s(minRaw), s(homeRaw), s(maxRaw));
         const ViscaAxis axis{minDeg, maxDeg, minRaw, homeRaw, maxRaw, true, signedRaw};
         if (!validAxis(axis, error)) {
             return std::nullopt;
@@ -134,18 +121,16 @@ namespace cameras::visca {
             return false;
         }
         if (!between(lin(axis.minRaw), lin(axis.homeRaw), lin(axis.maxRaw))) {
-            error = "home " + hex(axis.homeRaw) + " is not between the stops " +
-                    hex(axis.minRaw) + " and " + hex(axis.maxRaw);
+            error = "home " + hex(axis.homeRaw) + " is not between the stops " + hex(axis.minRaw) + " and "
+                  + hex(axis.maxRaw);
             return false;
         }
         if (std::abs(lin(axis.homeRaw) - lin(axis.minRaw)) < kMinTravel) {
-            error = "has no travel between the left/down stop " + hex(axis.minRaw) +
-                    " and home " + hex(axis.homeRaw);
+            error = "has no travel between the left/down stop " + hex(axis.minRaw) + " and home " + hex(axis.homeRaw);
             return false;
         }
         if (std::abs(lin(axis.maxRaw) - lin(axis.homeRaw)) < kMinTravel) {
-            error = "has no travel between home " + hex(axis.homeRaw) +
-                    " and the right/up stop " + hex(axis.maxRaw);
+            error = "has no travel between home " + hex(axis.homeRaw) + " and the right/up stop " + hex(axis.maxRaw);
             return false;
         }
         return true;
@@ -162,8 +147,8 @@ namespace cameras::visca {
             return false;
         }
         if (std::abs(static_cast<int>(profile.zoomMaxRaw) - static_cast<int>(profile.zoomMinRaw)) < kMinTravel) {
-            error = "zoom has no travel between wide " + hex(profile.zoomMinRaw) +
-                    " and tele " + hex(profile.zoomMaxRaw);
+            error
+                = "zoom has no travel between wide " + hex(profile.zoomMinRaw) + " and tele " + hex(profile.zoomMaxRaw);
             return false;
         }
         return true;
@@ -182,16 +167,15 @@ namespace cameras::visca {
     std::optional<RawPosition> ViscaCalibrator::readPosition() {
         // Replies to drive commands (ACK/completion) can still be queued, so read
         // until the inquiry's own reply arrives instead of taking the next packet.
-        const auto inquire = [this](const std::vector<uint8_t>& cmd, auto parse)
-            -> decltype(parse(std::vector<uint8_t>{})) {
+        const auto inquire
+            = [this](const std::vector<uint8_t>& cmd, auto parse) -> decltype(parse(std::vector<uint8_t>{})) {
             transport_.purgeInput();
             if (!transport_.write(cmd)) {
                 return std::nullopt;
             }
             const auto deadline = Clock::now() + kReplyTimeout;
             while (Clock::now() < deadline) {
-                const auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    deadline - Clock::now());
+                const auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(deadline - Clock::now());
                 const auto reply = transport_.readPacket(static_cast<int>(remaining.count()));
                 if (reply.empty()) {
                     break;
@@ -203,13 +187,11 @@ namespace cameras::visca {
             return std::nullopt;
         };
 
-        const auto pt = inquire(ViscaCommands::panTiltPositionInquiry(address_),
-                                ViscaCommands::parsePanTiltPosition);
+        const auto pt = inquire(ViscaCommands::panTiltPositionInquiry(address_), ViscaCommands::parsePanTiltPosition);
         if (!pt) {
             return std::nullopt;
         }
-        const auto zoom = inquire(ViscaCommands::zoomPositionInquiry(address_),
-                                  ViscaCommands::parseZoomPosition);
+        const auto zoom = inquire(ViscaCommands::zoomPositionInquiry(address_), ViscaCommands::parseZoomPosition);
         if (!zoom) {
             return std::nullopt;
         }
@@ -227,8 +209,7 @@ namespace cameras::visca {
             bool bufferFull = false;
             const auto deadline = Clock::now() + kAcceptWindow;
             while (!bufferFull && Clock::now() < deadline) {
-                const auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    deadline - Clock::now());
+                const auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(deadline - Clock::now());
                 const auto reply = transport_.readPacket(static_cast<int>(remaining.count()));
                 if (reply.empty()) {
                     break;
@@ -258,8 +239,8 @@ namespace cameras::visca {
                 // hides the ACK, so this is not a failure on its own.
                 return true;
             }
-            core::Logger::debug(std::string("VISCA calibration: buffer full on ") + what +
-                                ", retry " + std::to_string(attempt));
+            core::Logger::debug(std::string("VISCA calibration: buffer full on ") + what + ", retry "
+                                + std::to_string(attempt));
             std::this_thread::sleep_for(kBufferFullRetry);
         }
         error = std::string("camera stayed busy and did not accept ") + what;
@@ -270,8 +251,8 @@ namespace cameras::visca {
         // Send both even if the first is refused: a refused pan/tilt stop must
         // not leave the zoom drive running.
         std::string zoomError;
-        const bool panTilt = sendCommand(ViscaCommands::panTiltDrive(0, 0, 0x18, 0x14, address_),
-                                         "pan/tilt stop", error);
+        const bool panTilt
+            = sendCommand(ViscaCommands::panTiltDrive(0, 0, 0x18, 0x14, address_), "pan/tilt stop", error);
         const bool zoom = sendCommand(ViscaCommands::zoomDrive(0, address_), "zoom stop", zoomError);
         if (panTilt && !zoom) {
             error = zoomError;
@@ -279,8 +260,7 @@ namespace cameras::visca {
         return panTilt && zoom;
     }
 
-    std::optional<RawPosition> ViscaCalibrator::waitForStop(const char* what,
-                                                            const std::optional<RawPosition>& from,
+    std::optional<RawPosition> ViscaCalibrator::waitForStop(const char* what, const std::optional<RawPosition>& from,
                                                             unsigned mustMove, std::string& error) {
         const auto start = Clock::now();
         std::optional<RawPosition> last;
@@ -318,13 +298,12 @@ namespace cameras::visca {
             last = pos;
         }
 
-        error = std::string(what) + " did not settle within " +
-                std::to_string(kSettleTimeout.count()) + "s";
+        error = std::string(what) + " did not settle within " + std::to_string(kSettleTimeout.count()) + "s";
         return std::nullopt;
     }
 
-    bool ViscaCalibrator::returnHome(const std::optional<RawPosition>& home,
-                                     std::optional<uint16_t> wideZoom, std::string& error) {
+    bool ViscaCalibrator::returnHome(const std::optional<RawPosition>& home, std::optional<uint16_t> wideZoom,
+                                     std::string& error) {
         report("returning home, zooming wide");
         // Home only moves pan/tilt, so zoom is driven wide; the drive stops by
         // itself at the wide limit. Zoom-wide is sent even if Home is refused,
@@ -361,14 +340,12 @@ namespace cameras::visca {
             // changing; stopping it earlier would cut the zoom-out short. As in
             // waitForStop, stillness during spin-up does not count.
             const bool spunUp = Clock::now() - start >= kSpinUp;
-            zoomStillReads = (spunUp && lastZoom && withinTolerance(*lastZoom, pos->zoom))
-                                 ? zoomStillReads + 1
-                                 : 0;
+            zoomStillReads = (spunUp && lastZoom && withinTolerance(*lastZoom, pos->zoom)) ? zoomStillReads + 1 : 0;
             lastZoom = pos->zoom;
-            const bool zoomWide = wideZoom ? rawDistance(pos->zoom, *wideZoom) <= kArriveTolerance
-                                           : zoomStillReads >= kSettleReads;
-            const bool atHome = rawDistance(pos->pan, home->pan) <= kArriveTolerance &&
-                                rawDistance(pos->tilt, home->tilt) <= kArriveTolerance && zoomWide;
+            const bool zoomWide
+                = wideZoom ? rawDistance(pos->zoom, *wideZoom) <= kArriveTolerance : zoomStillReads >= kSettleReads;
+            const bool atHome = rawDistance(pos->pan, home->pan) <= kArriveTolerance
+                             && rawDistance(pos->tilt, home->tilt) <= kArriveTolerance && zoomWide;
             if (atHome) {
                 std::string stopError;
                 if (!sendCommand(ViscaCommands::zoomDrive(0, address_), "zoom stop", stopError)) {
@@ -398,8 +375,7 @@ namespace cameras::visca {
                 core::Logger::warn("VISCA calibration: " + stopError);
             }
             std::string returnError;
-            const std::optional<uint16_t> wideZoom =
-                low ? std::optional<uint16_t>(low->zoom) : std::nullopt;
+            const std::optional<uint16_t> wideZoom = low ? std::optional<uint16_t>(low->zoom) : std::nullopt;
             if (!returnHome(home, wideZoom, returnError)) {
                 error += "; " + returnError + ", so the camera may have been left mid-move";
             }
@@ -417,8 +393,8 @@ namespace cameras::visca {
         }
 
         report("driving to the left and down stops, zooming wide");
-        if (!sendCommand(ViscaCommands::panTiltDrive(-1, -1, 0x18, 0x14, address_), "pan/tilt drive", error) ||
-            !sendCommand(ViscaCommands::zoomDrive(-1, address_), "zoom wide", error)) {
+        if (!sendCommand(ViscaCommands::panTiltDrive(-1, -1, 0x18, 0x14, address_), "pan/tilt drive", error)
+            || !sendCommand(ViscaCommands::zoomDrive(-1, address_), "zoom wide", error)) {
             return fail(error);
         }
         // Zoom may already be wide. Pan and tilt start at home, which a valid
@@ -432,8 +408,8 @@ namespace cameras::visca {
         }
 
         report("driving to the right and up stops, zooming tele");
-        if (!sendCommand(ViscaCommands::panTiltDrive(1, 1, 0x18, 0x14, address_), "pan/tilt drive", error) ||
-            !sendCommand(ViscaCommands::zoomDrive(1, address_), "zoom tele", error)) {
+        if (!sendCommand(ViscaCommands::panTiltDrive(1, 1, 0x18, 0x14, address_), "pan/tilt drive", error)
+            || !sendCommand(ViscaCommands::zoomDrive(1, address_), "zoom tele", error)) {
             return fail(error);
         }
         const auto high = waitForStop("right/up/tele", low, kPan | kTilt | kZoom, error);
@@ -456,8 +432,8 @@ namespace cameras::visca {
         if (!pan) {
             return fail("pan " + error);
         }
-        const auto tilt = axisFromStops(low->tilt, home->tilt, high->tilt,
-                                        -ranges.tiltDownDeg, ranges.tiltUpDeg, error);
+        const auto tilt
+            = axisFromStops(low->tilt, home->tilt, high->tilt, -ranges.tiltDownDeg, ranges.tiltUpDeg, error);
         if (!tilt) {
             return fail("tilt " + error);
         }

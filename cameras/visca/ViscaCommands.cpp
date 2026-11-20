@@ -34,8 +34,7 @@ namespace cameras::visca {
         // Position on a straight line: signed axes read 0xF670 as -2448 so a range
         // that crosses 0x0000 stays monotonic.
         float linear(uint16_t raw, const ViscaAxis& axis) {
-            return axis.signedRaw ? static_cast<float>(static_cast<int16_t>(raw))
-                                  : static_cast<float>(raw);
+            return axis.signedRaw ? static_cast<float>(static_cast<int16_t>(raw)) : static_cast<float>(raw);
         }
 
         uint16_t axisDegreesToVisca(float degrees, const ViscaAxis& axis) {
@@ -91,22 +90,16 @@ namespace cameras::visca {
         cmd.push_back(static_cast<uint8_t>(pos & 0x0F));
     }
 
-    std::vector<uint8_t> ViscaCommands::home(uint8_t address) {
-        return {addressByte(address), 0x01, 0x06, 0x04, 0xFF};
+    std::vector<uint8_t> ViscaCommands::home(uint8_t address) { return {addressByte(address), 0x01, 0x06, 0x04, 0xFF}; }
+
+    std::vector<uint8_t> ViscaCommands::panTiltAbsolute(float panDeg, float tiltDeg, const ViscaProfile& profile,
+                                                        uint8_t panSpeed, uint8_t tiltSpeed, uint8_t address) {
+        return panTiltAbsoluteRaw(panDegreesToVisca(panDeg, profile), tiltDegreesToVisca(tiltDeg, profile), panSpeed,
+                                  tiltSpeed, address);
     }
 
-    std::vector<uint8_t> ViscaCommands::panTiltAbsolute(float panDeg, float tiltDeg,
-                                                        const ViscaProfile& profile,
-                                                        uint8_t panSpeed, uint8_t tiltSpeed,
-                                                        uint8_t address) {
-        return panTiltAbsoluteRaw(panDegreesToVisca(panDeg, profile),
-                                  tiltDegreesToVisca(tiltDeg, profile),
-                                  panSpeed, tiltSpeed, address);
-    }
-
-    std::vector<uint8_t> ViscaCommands::panTiltAbsoluteRaw(uint16_t panPos, uint16_t tiltPos,
-                                                           uint8_t panSpeed, uint8_t tiltSpeed,
-                                                           uint8_t address) {
+    std::vector<uint8_t> ViscaCommands::panTiltAbsoluteRaw(uint16_t panPos, uint16_t tiltPos, uint8_t panSpeed,
+                                                           uint8_t tiltSpeed, uint8_t address) {
         if (panSpeed < 0x01) panSpeed = 0x01;
         if (panSpeed > 0x18) panSpeed = 0x18;
         if (tiltSpeed < 0x01) tiltSpeed = 0x01;
@@ -125,9 +118,7 @@ namespace cameras::visca {
         return cmd;
     }
 
-    std::vector<uint8_t> ViscaCommands::zoomAbsolute(int zoomPercent,
-                                                     const ViscaProfile& profile,
-                                                     uint8_t address) {
+    std::vector<uint8_t> ViscaCommands::zoomAbsolute(int zoomPercent, const ViscaProfile& profile, uint8_t address) {
         return zoomAbsoluteRaw(zoomPercentToVisca(zoomPercent, profile), address);
     }
 
@@ -142,8 +133,7 @@ namespace cameras::visca {
         return cmd;
     }
 
-    std::vector<uint8_t> ViscaCommands::panTiltDrive(int panDir, int tiltDir,
-                                                     uint8_t panSpeed, uint8_t tiltSpeed,
+    std::vector<uint8_t> ViscaCommands::panTiltDrive(int panDir, int tiltDir, uint8_t panSpeed, uint8_t tiltSpeed,
                                                      uint8_t address) {
         panSpeed = std::clamp<uint8_t>(panSpeed, 0x01, 0x18);
         tiltSpeed = std::clamp<uint8_t>(tiltSpeed, 0x01, 0x17);
@@ -168,8 +158,8 @@ namespace cameras::visca {
 
     namespace {
         uint16_t nibbles(const std::vector<uint8_t>& reply, size_t at) {
-            return static_cast<uint16_t>((reply[at] << 12) | (reply[at + 1] << 8) |
-                                         (reply[at + 2] << 4) | reply[at + 3]);
+            return static_cast<uint16_t>((reply[at] << 12) | (reply[at + 1] << 8) | (reply[at + 2] << 4)
+                                         | reply[at + 3]);
         }
     } // namespace
 
@@ -197,8 +187,7 @@ namespace cameras::visca {
 
     uint16_t ViscaCommands::zoomPercentToVisca(int percent, const ViscaProfile& profile) {
         percent = std::clamp(percent, 0, 100);
-        return mapRange(static_cast<float>(percent), 0.0f, 100.0f,
-                        profile.zoomMinRaw, profile.zoomMaxRaw);
+        return mapRange(static_cast<float>(percent), 0.0f, 100.0f, profile.zoomMinRaw, profile.zoomMaxRaw);
     }
 
     float ViscaCommands::viscaToPanDegrees(uint16_t visca, const ViscaProfile& profile) {
@@ -210,9 +199,7 @@ namespace cameras::visca {
     }
 
     int ViscaCommands::viscaToZoomPercent(uint16_t visca, const ViscaProfile& profile) {
-        return static_cast<int>(unmapRange(visca, profile.zoomMinRaw, profile.zoomMaxRaw,
-                                           0.0f, 100.0f) +
-                                0.5f);
+        return static_cast<int>(unmapRange(visca, profile.zoomMinRaw, profile.zoomMaxRaw, 0.0f, 100.0f) + 0.5f);
     }
 
 } // namespace cameras::visca

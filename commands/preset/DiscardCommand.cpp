@@ -41,8 +41,7 @@ namespace commands::preset {
 
         if (allFound) {
             ctx.out << "Discarded preset '" << presetName << "' from "
-                    << (serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber)
-                    << std::endl;
+                    << (serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber) << std::endl;
         } else {
             ctx.err << "Discarded preset '" << presetName << "' from some cameras." << std::endl;
         }

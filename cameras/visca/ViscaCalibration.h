@@ -41,10 +41,7 @@ namespace cameras::visca {
         std::optional<ViscaProfile> run(const CalibrationRanges& ranges, std::string& error);
 
         // Axes a phase must see move before a settle counts as a stop.
-        enum Axis : unsigned { kNone = 0,
-                               kPan = 1,
-                               kTilt = 2,
-                               kZoom = 4 };
+        enum Axis : unsigned { kNone = 0, kPan = 1, kTilt = 2, kZoom = 4 };
 
     private:
         std::optional<RawPosition> readPosition();
@@ -60,8 +57,7 @@ namespace cameras::visca {
                                                unsigned mustMove, std::string& error);
         // Sends Home and zoom wide, and waits until the camera is at home
         // (and at wideZoom, when known).
-        bool returnHome(const std::optional<RawPosition>& home, std::optional<uint16_t> wideZoom,
-                        std::string& error);
+        bool returnHome(const std::optional<RawPosition>& home, std::optional<uint16_t> wideZoom, std::string& error);
         void report(const std::string& message) const;
 
         ViscaTransport& transport_;
@@ -71,8 +67,8 @@ namespace cameras::visca {
 
     // Builds one axis from measured stops, choosing unsigned or signed raw
     // positions so that home lies between the stops. Exposed for testing.
-    std::optional<ViscaAxis> axisFromStops(uint16_t minRaw, uint16_t homeRaw, uint16_t maxRaw,
-                                           float minDeg, float maxDeg, std::string& error);
+    std::optional<ViscaAxis> axisFromStops(uint16_t minRaw, uint16_t homeRaw, uint16_t maxRaw, float minDeg,
+                                           float maxDeg, std::string& error);
 
     // A through-home axis needs degree width and raw travel on both sides of
     // home; otherwise one side collapses and its angles map to the wrong place.
