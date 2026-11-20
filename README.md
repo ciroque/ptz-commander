@@ -1,44 +1,18 @@
-﻿# PTZ Commander
+# PTZ Commander
 
-PTZ Commander is a Windows command-line tool that drives PTZ cameras from one REPL. The same commands move an OBSBOT, a VISCA camera (Lumens VC-A51P or another camera on a COM port or over IP), or an ONVIF camera. Presets, scenes, and `.ptzc` setup files are shared across all three.
+PTZ Commander is a Windows command-line tool that drives PTZ cameras from one REPL. The same commands move an OBSBOT camera over USB, a VISCA camera on a COM port or over IP, or an ONVIF camera. Presets, scenes, and `.ptzc` setup files are shared across all of them.
 
-## How it is put together
+## Install and start
 
-```text
-commands
-  → CameraManager
-      → ObsbotCameraAdapter → OBSBOT SDK (libdev.dll)
-      → ViscaCameraAdapter  → serial port, or VISCA-IP over UDP
-      → OnvifCameraAdapter  → ONVIF over HTTP
-```
+The MSI installs the tool under Program Files, appends that directory to the system PATH, and adds a Start Menu entry. A checkbox on the Options page also creates a public desktop shortcut (default: checked). `msiexec /i PTZCommander.msi DESKTOPSHORTCUT=0` turns the shortcut off. The installer includes `obs-panel\` (the OBS browser dock and a Getting Started guide) and can open that guide when setup finishes.
 
-A command names a camera by alias, serial, or product name. `CameraManager` finds that camera. The adapter for its protocol turns pan, tilt, and zoom into what that camera expects, and the transport sends the bytes.
+Installers built before the version stamp all reported `1.0.0.0`, which Windows treats as newer than `0.x`. Uninstall one of those copies once before a newer MSI will replace it.
 
-## What is interesting here
+`ptz_commander.exe` starts the REPL, prints the build version, and waits at `> `. `exit` quits.
 
-VISCA cameras report raw positions, not degrees. Built-in profiles cover the Lumens VC-A51P and the Tenveo 30x, and `camera calibrate` measures the stops when a profile is wrong. VISCA-over-IP wraps every message in an 8-byte header. ONVIF finds cameras with WS-Discovery and aims them with an absolute move. The ranges are not one pair of numbers: a Lumens profile is pan ±170° and tilt −30° to +90°, a Tenveo profile starts at pan ±175° and tilt ±90°, and the ONVIF speed-dome mapping is pan (−180, 180] and tilt −15° to +90°.
+OBSBOT cameras are added and removed as they are plugged in. VISCA and ONVIF cameras are not discovered at startup. Use `camera scan` and `camera add`.
 
-ONVIF passwords in a `.ptzc` file are DPAPI blobs for the Windows user who saved the file. Scenes store camera-to-preset names, not baked positions, and an OBS browser dock applies a scene over a localhost WebSocket.
-
-The unit tests cover the degree mapping, the VISCA-IP header, ONVIF URL and XML parsing, argument splitting, and the password round trip. GitHub Actions builds the app and runs those tests on every pull request.
-
-## Build and run
-
-The build needs C++20, CMake 3.28, and a Visual Studio x64 toolchain. `libdev.dll` and `libdev.lib` are already in `lib/obsbot/` (see that directory's README for the license gap). Configure fetches spdlog 1.13.0, nlohmann/json 3.11.3, IXWebSocket, and GoogleTest. The build copies `libdev.dll` next to the executable.
-
-```text
-cmake -S . -B out/build/x64-Release -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
-cmake --build out/build/x64-Release
-ctest --test-dir out/build/x64-Release --output-on-failure
-```
-
-`out\build\x64-Release\ptz_commander.exe` starts the REPL, prints the build version, and waits at `> `. `exit` quits.
-
-After a RelWithDebInfo build into `out/build/x64-Release`, run `installer\build-installer.bat` from the `installer` directory. That stages files with `cmake --install` and produces `PTZCommander.msi` with WiX. The installer adds the tool to Program Files, appends that directory to the system PATH, and creates a Start Menu entry. A checkbox on the Options page also creates a public desktop shortcut (default: checked). `msiexec /i PTZCommander.msi DESKTOPSHORTCUT=0` turns the shortcut off. The MSI installs `obs-panel\` (the OBS browser dock plus a Getting Started guide) and can open that guide when setup finishes. Pushing a version tag such as `v1.2.3` runs a GitHub Action that builds the MSI and attaches it to a GitHub Release. The MSI product version is that tag as four numbers (`v0.3.1` becomes `0.3.1.0`). Installers built before this stamp all reported `1.0.0.0`, which Windows treats as newer than `0.x`, so those copies must be uninstalled once before a tag-stamped MSI will replace them. Operators should use the installed Getting Started document, not this README.
-
-The OBSBOT adapter watches USB connect and disconnect on its own thread, and adds or removes those cameras as they appear. VISCA and ONVIF cameras are not discovered at startup. Use `camera scan` and `camera add`.
-
-A camera id is a serial number (`RMOWTHF7211JGR`), an alias (`LeftCam`), or a product name (`OWB-2105-CE`). `*` means every camera the command can reach.
+A camera id is a serial number, an alias, or a product name. `*` means every camera the command can reach.
 
 ## Commands
 
@@ -53,9 +27,9 @@ If the check cannot reach the published version, it says so and still prints the
 
 ### Camera
 
-The `id` argument can be the camera's alias, serial number, or name. These values can be found with the `camera list` command.
+The `id` argument can be the camera's alias, serial number, or name. These values can be found with `camera list`.
 
-`pan` and `tilt` are degrees. Which values a camera accepts depends on the protocol and, for VISCA, on its profile. The sections below give those ranges. There is no single tilt interval for every camera.
+`pan` and `tilt` are degrees. VISCA cameras use the profile they were added with, or the ranges measured by `camera calibrate`. ONVIF pan is continuous from -180 to 180, and tilt is -15 to 90. There is no single tilt interval for every camera.
 
 `zoom` is an integer from 0 to 100 on every camera. 0 is wide and 100 is telephoto.
 
@@ -63,17 +37,17 @@ The `id` argument can be the camera's alias, serial number, or name. These value
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
 | `camera alias`                 | `<id> <alias>`                          | Sets a unique friendly alias for a camera — e.g., ```camera alias RMOWTHF7211JGR "LeftCam"```. Rejected if the alias is `*` or is already used as another camera's alias, serial, or name. |
 | `camera list`                  | None                                    | Lists all available cameras. A VISCA camera shows as connected only if it answers a position inquiry right then; each one that doesn't adds up to 0.6 s. |
-| `camera add visca-ip`          | `<host> [port] [profile]`               | Adds a VISCA-over-IP camera (default port 52381, profile tenveo-30x or lumens-vc-a51p) if it answers a position inquiry. Survives `setup save` / `setup load`. |
-| `camera add serial`            | `<COMn> [baud] [address] [profile]`     | Adds a VISCA camera on a COM port (default 9600 baud, address 1, profile lumens-vc-a51p) if it answers a position inquiry. One camera per port. Survives `setup save` / `setup load`. |
+| `camera add visca-ip`          | `<host> [port] [profile]`               | Adds a VISCA-over-IP camera if it answers a position inquiry. Default port 52381. The profile is `tenveo-30x` (the default) or `lumens-vc-a51p`. Survives `setup save` / `setup load`. |
+| `camera add serial`            | `<COMn> [baud] [address] [profile]`     | Adds a VISCA camera on a COM port if it answers a position inquiry. Defaults are 9600 baud, address 1, and profile `lumens-vc-a51p`. One camera per port. Survives `setup save` / `setup load`. |
 | `camera scan visca-ip`         | `[subnet] [port]`                       | Lists the VISCA-over-IP cameras that answer on the local networks (each narrowed to a /24), or on a subnet such as `192.168.1.0/24` (down to /16). Default port 52381. Only sends position inquiries: nothing is added or moved. Rows are numbered for `camera add scanned`. |
 | `camera scan serial`           | `[COMn...]`                             | Lists the COM ports (all, or the ones named) where a VISCA camera answers, trying 9600 and 38400 baud and addresses 1-7. Only sends position inquiries: nothing is added or moved. Rows are numbered for `camera add scanned`. |
-| `camera scan onvif`            | None                                    | Lists ONVIF cameras that answer WS-Discovery. Nothing is added or moved. Rows are numbered for `camera add scanned`. A fixed camera that answers discovery is listed too; adding it fails when it has no PTZ profile. |
+| `camera scan onvif`            | None                                    | Lists ONVIF cameras that answer discovery. Nothing is added or moved. Rows are numbered for `camera add scanned`. A fixed camera that answers discovery is listed too; adding it fails when it has no PTZ profile. |
 | `camera add onvif`             | `<host> <user> <password> [port]`       | Adds an ONVIF camera (default port 80) if it answers and has a PTZ profile. The password is one word. Survives `setup save` / `setup load`. |
 | `camera scan *`                | None                                    | Runs `camera scan visca-ip`, `camera scan serial`, and `camera scan onvif` at the same time with their defaults, and lists what all three found in one numbered table. If one scan can't run or fails, it says why under the table and the others' results still show. |
-| `camera add scanned`           | `<n...\|*> [profile]`                  | Adds cameras by their row number in the last `camera scan` of any kind (e.g. `camera add scanned 1 3`, or `*` for every row). Rows already added are skipped. Default profile tenveo-30x for VISCA-IP rows, lumens-vc-a51p for serial rows. An ONVIF row takes a user and password instead of a profile: `camera add scanned <n> <user> <password>`. `camera add scanned *` adds the VISCA rows and leaves the ONVIF rows for that form. |
+| `camera add scanned`           | `<n...\|*> [profile]`                  | Adds cameras by their row number in the last `camera scan` of any kind (e.g. `camera add scanned 1 3`, or `*` for every row). Rows already added are skipped. A VISCA-IP row defaults to profile `tenveo-30x`, a serial row to `lumens-vc-a51p`. An ONVIF row takes a user and password instead of a profile: `camera add scanned <n> <user> <password>`. `camera add scanned *` adds the VISCA rows and leaves the ONVIF rows for that form. |
 | `camera calibrate`             | `<id> [panSpan] [tiltDown] [tiltUp]`    | Measures a VISCA camera's (IP or serial) pan, tilt and zoom stops and switches it to the measured profile. **Moves the camera through its full range** (about 25 seconds), then leaves it at home with zoom fully wide. The degree arguments come from the spec sheet (defaults `340 90 90`). Existing presets keep their positions. |
 | `camera move`                  | ```<id\|*> <pan> <tilt> <zoom>```            | Moves camera(s) to an absolute pan, tilt, and zoom. Asterisk moves all cameras.          |
-| `camera push`                  | ```<id\|*> <zoom> [speed]```                 | Zooms gradually to a target zoom (speed 0–100, default 50). Does nothing if the camera is already there or closer. |
+| `camera push`                  | ```<id\|*> <zoom> [speed]```                 | Zooms gradually to a target zoom (speed 0–100, default 50). Does nothing if the camera is already there or closer. There is no separate pull command. |
 | `camera show`                  | ```<id\|*>```                                | Shows camera details.           |
 
 
@@ -81,7 +55,7 @@ The `id` argument can be the camera's alias, serial number, or name. These value
 
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
-| `preset apply`                 | ```<id\|*> <name\|*> [delay_ms]```           | Applies a named preset, or every preset when the name is `*`. `delay_ms` is the pause between presets in that cycle. |
+| `preset apply`                 | ```<id\|*> <name\|*> [delay_ms]```           | Applies a named preset, or every preset when the name is `*`. `delay_ms` is the pause between presets in that cycle. Preset lookup walks the presets stored on that camera. |
 | `preset discard`               | ```<id\|*> <name>```                         | Removes a named preset from memory.                                        |
 | `preset list`                  | None                                    | Lists all presets for all cameras.  |
 | `preset store`                 | ```<id\|*> <name>```                         | Stores current PTZ as a named preset in memory—e.g., ```"intro"```.            |
@@ -121,6 +95,83 @@ A setup is the on-disk collection: per-camera aliases and presets plus scenes. F
 
 `setup save` writes each ONVIF password with Windows DPAPI (`CryptProtectData`). The file stores `dpapi:` plus the base64 of that blob, not the password. The blob decrypts only for the Windows user who saved it, which matches `.ptzc` files living in `%LOCALAPPDATA%\PTZCommander`. Copying a file to another Windows account does not reveal the password. `setup load` there reports that the password could not be decrypted, leaves that camera out, and still loads the rest of the setup. A password saved before this change is still plaintext and still loads. The next `setup save` rewrites it. The WebSocket setup snapshot does not include passwords.
 
+## Finding cameras
+
+`camera scan` looks for cameras without adding or moving them. `camera scan *` runs the network, COM port, and ONVIF scans together (about 3 seconds), so you don't need to know which kind of camera is there:
+
+```
+camera scan *
+camera add scanned *
+setup save
+```
+
+`camera add scanned *` gives VISCA-IP rows the `tenveo-30x` profile and serial rows `lumens-vc-a51p`. Name a profile to use the other one, or calibrate the camera afterwards. ONVIF rows are listed and then left out of that add, because they need a user and password: `camera add scanned <n> <user> <password>`.
+
+## Serial cameras
+
+Serial cameras aren't looked for at startup. Find the camera, add it by its row in the scan, then save the setup so `setup load` brings it back:
+
+```
+camera scan serial
+camera add scanned 1
+setup save
+```
+
+`camera scan serial` sends a position inquiry on every COM port, or only the ones named (`camera scan serial COM3`). It tries 9600 and 38400 baud and camera addresses 1-7, and lists the ports where a camera answered. Any USB serial adapter works. Ports are scanned at the same time, and a silent one takes about 2.5 seconds. Below the table it lists the ports that stayed silent, are in use by another program, weren't found, or already have a camera. Nothing moves.
+
+`camera add serial <COMn> [baud] [address] [profile]` adds a camera whose port you already know, e.g. `camera add serial COM3 9600 1 lumens-vc-a51p`. Defaults are 9600 baud, address 1, and the `lumens-vc-a51p` profile. The camera is added only if it answers, which takes about 2 seconds to give up on a silent one.
+
+- The camera connects through any USB serial adapter. The adapter appears as a COM port, e.g. COM3. The line settings are 8N1.
+- **One camera per COM port.** Each camera opens its port exclusively, so cameras daisy-chained on one port aren't supported.
+- Serial cameras have ids of the form `VISCA:COM3:1` (port and camera address), usable for `camera move`, `preset store` / `preset apply`, aliases, and the other camera commands. If Windows gives the adapter a different COM number, for example when it's plugged into another USB port, it's a different id: add the camera again, or change the key in the `.ptzc` file.
+- `setup save` stores the baud rate and profile in the camera's entry in the `.ptzc` file (`"visca_serial"`). `setup load` adds the camera even if its adapter is unplugged at the time, as it does for a VISCA-IP camera that's switched off. Files saved by earlier versions, which searched for one USB serial adapter at startup, load their `VISCA:COMn:a` cameras at 9600 baud on the `lumens-vc-a51p` profile.
+- `camera calibrate VISCA:COM3:1 340 30 90` measures a serial camera's stops the same way as a VISCA-IP camera's (see below), and `setup save` keeps the result in its `"visca_serial"` block. The numbers are the spec-sheet pan span and the tilt down and tilt up angles.
+- Moves use absolute pan, tilt, and zoom. Velocity commands are only used by `camera calibrate`.
+- Serial cameras, VISCA-IP cameras, ONVIF cameras, and OBSBOT cameras can be used together.
+
+Once added:
+
+```
+camera move VISCA:COM3:1 12.5 -3.0 40
+preset store VISCA:COM3:1 intro
+preset apply VISCA:COM3:1 intro
+```
+
+## VISCA over IP
+
+Find the camera, add it by its row in the scan, then let `camera calibrate` measure its ranges instead of relying on a built-in profile:
+
+```
+camera scan visca-ip
+camera add scanned 1
+camera calibrate VISCA-IP:192.168.1.146:52381 350 90 90
+setup save
+```
+
+Calibration moves the camera to every mechanical stop and through its full zoom (about 25 seconds), then leaves it at home with zoom fully wide. The numbers are the spec-sheet pan span and the tilt down and tilt up angles. The camera reports raw positions, not degrees. The measured profile is saved with the setup.
+
+`camera scan visca-ip` sends a position inquiry to every address in the scanned networks and lists each device that replies, with the position it reported. A /24 takes under 2 seconds, most of it the 1.5 s spent listening for replies. Any VISCA reply counts, including an error, because some cameras reject the usual version inquiry. Cameras on another subnet can be found by naming it, e.g. `camera scan visca-ip 10.1.20.0/24`. A discovery broadcast is not used: some cameras do not answer it, and broadcasts do not cross routers.
+
+The row numbers belong to the last scan in the current session: a new scan replaces them, and they aren't saved. `camera add visca-ip <host>` still works for a camera you already know the address of. A scan can't tell models apart, so a VISCA-IP camera added from it gets the `tenveo-30x` profile unless one is given. Calibrate a camera that does not match that profile.
+
+Both forms of `camera add` send the same position inquiry first and add the camera only if a VISCA reply comes back (an error reply counts), so a wrong address or port fails when you add it instead of leaving a camera that never moves. Waiting for a camera that isn't there takes about 2 seconds. `setup load` doesn't check: a saved camera still loads while it's switched off.
+
+## ONVIF
+
+Find the camera, then add that row with its ONVIF user and password. The password is one word, with no spaces:
+
+```
+camera scan onvif
+camera add scanned 1 user password
+setup save
+```
+
+`camera add onvif <host> <user> <password> [port]` adds a camera whose address you already know. The default port is 80. The camera is added only if it answers and exposes a PTZ profile, so a wrong address or a fixed camera fails here instead of showing up as a camera that never moves. `setup load` tries again; a camera that is switched off is left out, and the rest of the setup still loads.
+
+Pan is continuous, in degrees from -180 to 180. -180 and 180 are the same heading, and the head is not driven to a stop to find one. Tilt is -15 to 90 (the camera auto-flips past 90). Zoom is 0 to 100, wide to tele. Presets stay in the app and are replayed as an absolute move. Presets stored on the camera are not imported.
+
+`setup save` writes the host, port, user, service path, and password in an `onvif` list in the local `.ptzc` file. The password is a DPAPI blob, described under [ONVIF passwords](#onvif-passwords). It is not logged and is not part of the WebSocket snapshot. Ids look like `ONVIF:192.168.1.211:80`. `camera scan *` includes this discovery along with the VISCA scans.
+
 ## WebSocket
 
 On start the REPL listens on `ws://127.0.0.1:7420`. A client receives the current setup JSON on connect (and again whenever setup changes). Clients may apply a scene — the same cue as `scene apply <name>`:
@@ -134,6 +185,7 @@ Plain text `scene apply sermon` is also accepted. Scene names cannot contain spa
 The OBS dock is `obs-panel/index.html` (shipped in the MSI). `web/index.html` is a local test page, not the panel.
 
 Example `.ptzc` file structure (per-camera):
+
 ```json
 {
   "RMOWTHF7211JGR": {
@@ -146,84 +198,22 @@ Example `.ptzc` file structure (per-camera):
 }
 ```
 
-## Notes
+## Tested on these cameras
 
-Preset lookup walks the presets stored on that camera.
+- Tenveo 30x over VISCA-IP. Position inquiries and absolute moves were checked on that camera, and the `tenveo-30x` profile comes from those measurements.
+- OBSBOT cameras over USB. They are added and removed as they are plugged in.
+- The `lumens-vc-a51p` profile is taken from the Lumens VC-A51P manual. It has not been confirmed on a camera.
 
-spdlog 1.13.0 and nlohmann/json 3.11.3 are fetched by CMake. The OBSBOT SDK is the dependency that stays in the tree. `lib/obsbot/README.md` explains why, and that the SDK drop has no license file.
+## Build
 
-`camera push` is the gradual zoom. There is no separate pull command.
+The build needs C++20, CMake 3.28, and a Visual Studio x64 toolchain. `libdev.dll` and `libdev.lib` are already in `lib/obsbot/`.
 
-## Finding VISCA cameras at a new venue
-`camera scan *` looks on the local networks, every COM port, and for ONVIF cameras at once (about 3 seconds), so you don't need to know which kind of camera is there:
-
-```
-camera scan *
-camera add scanned *
-setup save
-```
-
-`camera add scanned *` gives VISCA-IP rows the tenveo-30x profile and serial rows lumens-vc-a51p; name a profile to use another, or calibrate the camera afterwards. ONVIF rows are listed and then left out of that add, because they need a user and password: `camera add scanned <n> <user> <password>`. The sections below cover each kind.
-
-## VISCA Serial Camera Support (Windows)
-Serial cameras aren't looked for at startup. Find the camera, add it by its row in the scan, then save the setup so `setup load` brings it back:
-
-```
-camera scan serial
-camera add scanned 1
-setup save
+```text
+cmake -S . -B out/build/x64-Release -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build out/build/x64-Release
+ctest --test-dir out/build/x64-Release --output-on-failure
 ```
 
-`camera scan serial` sends a position inquiry on every COM port, or only the ones named (`camera scan serial COM3`). It tries 9600 and 38400 baud and camera addresses 1-7, and lists the ports where a camera answered. Any USB serial adapter works. Ports are scanned at the same time, and a silent one takes about 2.5 seconds. Below the table it lists the ports that stayed silent, are in use by another program, weren't found, or already have a camera. Nothing moves.
+The executable is `out\build\x64-Release\ptz_commander.exe`.
 
-`camera add serial <COMn> [baud] [address] [profile]` adds a camera whose port you already know, e.g. `camera add serial COM3 9600 1 lumens-vc-a51p`. Defaults are 9600 baud, address 1 and the lumens-vc-a51p profile. Like `camera add visca-ip`, it adds the camera only if it answers, which takes about 2 seconds to give up on a silent one.
-
-- Hardware: a Lumens VC-A51P, or another VISCA camera, on any USB serial adapter. The adapter appears as a COM port, e.g. COM3. The line settings are 8N1.
-- **One camera per COM port.** Each camera opens its port exclusively, so cameras daisy-chained on one port aren't supported.
-- Serial cameras have ids of the form `VISCA:COM3:1` (port and camera address), usable for `camera move`, `preset store/apply`, aliases, etc. If Windows gives the adapter a different COM number, for example when it's plugged into another USB port, it's a different id: add the camera again, or change the key in the `.ptzc` file.
-- `setup save` stores the baud rate and profile in the camera's entry in the `.ptzc` file (`"visca_serial"`). `setup load` adds the camera even if its adapter is unplugged at the time, as it does for a VISCA-IP camera that's switched off. Files saved by earlier versions, which looked for Keyspan USA-19H adapters at startup, load their `VISCA:COMn:a` cameras at 9600 baud on the lumens-vc-a51p profile, as those versions did.
-- `camera calibrate VISCA:COM3:1 340 30 90` measures a serial camera's stops the same way as a VISCA-IP camera's (see below), and `setup save` keeps the result in its `"visca_serial"` block. The numbers shown are the Lumens VC-A51P's spec-sheet pan span and tilt down/up.
-- Moves use **absolute** Pan/Tilt/Zoom positioning commands. This matches the `camera move` / preset model used by the rest of the tool. (Velocity "drive + stop" commands are only used by `camera calibrate`.)
-- Multiple VISCA cameras and/or OBSBOT cameras can coexist.
-
-Once added:
-```
-camera move VISCA:COM3:1 12.5 -3.0 40
-preset store VISCA:COM3:1 intro
-preset apply VISCA:COM3:1 intro
-```
-
-## VISCA-over-IP Camera Support
-
-Find the camera, add it by its row in the scan, then let `camera calibrate` measure its ranges instead of relying on a built-in profile:
-
-```
-camera scan visca-ip
-camera add scanned 1
-camera calibrate VISCA-IP:192.168.1.146:52381 350 90 90
-setup save
-```
-
-Calibration moves the camera to every mechanical stop and through its full zoom (about 25 seconds), then leaves it at home with zoom fully wide. The numbers are the spec-sheet pan span and tilt down/up angles; the camera can only report raw positions, not degrees. The measured profile is saved with the setup. See `docs/VISCA-PTZ-Ranges-and-Coordinate-System.md` for details.
-
-`camera scan visca-ip` sends a VISCA-over-IP position inquiry to every address in the scanned networks and lists each device that replies, with the position it reported. A /24 takes under 2 seconds, most of it the 1.5 s spent listening for replies. Any VISCA reply counts, including an error, because some cameras (the Tenveo among them) reject the usual version inquiry. Cameras on another subnet can be found by naming it, e.g. `camera scan visca-ip 10.1.20.0/24`. Sony's discovery broadcast isn't used: the Tenveo doesn't answer it, and broadcasts don't cross routers.
-
-The row numbers belong to the last scan in the current session: a new scan replaces them, and they aren't saved. `camera add visca-ip <host>` still works for a camera you already know the address of. A scan can't tell models apart, so cameras added from it get the tenveo-30x profile unless one is given; calibrate any other camera.
-
-Both forms of `camera add` send the same position inquiry first and add the camera only if a VISCA reply comes back (an error reply counts), so a wrong address or port fails when you add it instead of leaving a camera that never moves. Waiting for a camera that isn't there takes about 2 seconds. `setup load` doesn't check: a saved camera still loads while it's switched off.
-
-## ONVIF Camera Support
-
-Find the camera, then add that row with its ONVIF user and password. The password is one word, with no spaces:
-
-```
-camera scan onvif
-camera add scanned 1 user password
-setup save
-```
-
-`camera add onvif <host> <user> <password> [port]` adds a camera whose address you already know. The default port is 80. The camera is added only if it answers and exposes a PTZ profile, so a wrong address or a fixed camera fails here instead of showing up as a camera that never moves. `setup load` asks again; a camera that is switched off is left out, and the rest of the setup still loads.
-
-Pan is continuous, in degrees from -180 to 180. -180 and 180 are the same heading, and the head is not driven to a stop to find one. Tilt for this speed-dome class is -15 to 90 (the camera auto-flips past 90). Zoom is 0 to 100, wide to tele. Presets stay in the app and are replayed as an absolute move. Presets stored on the camera are not imported.
-
-`setup save` writes the host, port, user, service path, and password in an `onvif` list in the local `.ptzc` file. The password is a DPAPI blob, described under [ONVIF passwords](#onvif-passwords). It is not logged and is not part of the WebSocket snapshot. Ids look like `ONVIF:192.168.1.211:80`. `camera scan *` includes this discovery along with the VISCA scans.
+After a RelWithDebInfo build into `out/build/x64-Release`, run `installer\build-installer.bat` from the `installer` directory. That produces `PTZCommander.msi`. Pushing a version tag such as `v1.2.3` builds the MSI and attaches it to a GitHub Release. The MSI product version is that tag as four numbers (`v0.3.1` becomes `0.3.1.0`).
