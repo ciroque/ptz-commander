@@ -1,6 +1,10 @@
 # PTZ Commander
 
+[![CI](https://github.com/ciroque/ptz-commander/actions/workflows/ci.yml/badge.svg)](https://github.com/ciroque/ptz-commander/actions/workflows/ci.yml)
+
 PTZ Commander is a Windows command-line tool that drives PTZ cameras from one REPL. The same commands move an OBSBOT camera over USB, a VISCA camera on a COM port or over IP, or an ONVIF camera. Presets, scenes, and `.ptzc` setup files are shared across all of them.
+
+How it is built (the layers, the VISCA degree mapping and calibration, discovery, ONVIF security, and the test and release pipeline) is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Install and start
 
