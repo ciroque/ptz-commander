@@ -4,7 +4,7 @@ PTZ Commander is a Windows command-line tool that drives PTZ cameras from one RE
 
 ## Install and start
 
-The MSI installs the tool under Program Files, appends that directory to the system PATH, and adds a Start Menu entry. A checkbox on the Options page also creates a public desktop shortcut (default: checked). `msiexec /i PTZCommander.msi DESKTOPSHORTCUT=0` turns the shortcut off. The installer includes `obs-panel\` (the OBS browser dock and a Getting Started guide) and can open that guide when setup finishes.
+The MSI installs the tool under Program Files, appends that directory to the system PATH, and adds a Start Menu entry. A checkbox on the Options page also creates a public desktop shortcut (default: checked). `msiexec /i PTZCommander.msi DESKTOPSHORTCUT=0` turns the shortcut off. The installer includes `obs-panel\` (the OBS browser dock and a Getting Started guide). The last page of setup has two checkboxes, both checked by default: show the Getting Started guide, and run PTZ Commander. `msiexec /i PTZCommander.msi RUNPTZCOMMANDER=0` leaves the program unstarted. A quiet install does not show the page, so it does not start the program either.
 
 Installers built before the version stamp all reported `1.0.0.0`, which Windows treats as newer than `0.x`. Uninstall one of those copies once before a newer MSI will replace it.
 
