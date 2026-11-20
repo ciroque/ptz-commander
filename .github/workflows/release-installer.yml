@@ -28,7 +28,7 @@ jobs:
           dotnet-version: "8.0.x"
 
       - name: Configure
-        run: cmake -S . -B out/build/x64-Release -G "Visual Studio 17 2022" -A x64
+        run: cmake -S . -B out/build/x64-Release -G "Visual Studio 17 2022" -A x64 -DPTZ_BUILD_TESTS=OFF
 
       - name: Build
         run: cmake --build out/build/x64-Release --config RelWithDebInfo --target ptz_commander
