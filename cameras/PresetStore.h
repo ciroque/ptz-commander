@@ -63,6 +63,9 @@ namespace cameras {
         // Connection records. save() writes the password with DPAPI.
         // toJsonString() (the WebSocket snapshot) never includes it.
         std::vector<onvif::OnvifEndpoint> onvif;
+        // Hosts left out because the stored password could not be decrypted.
+        // The rest of the file still loads.
+        std::vector<std::string> onvifSkipped;
     };
 
     class PresetStore {
@@ -90,6 +93,8 @@ namespace cameras {
          * that must change cameras in between (adding VISCA-IP cameras) use
          * the two halves directly.
          * On ParseError, error (if given) says what was wrong.
+         * An ONVIF password that cannot be decrypted omits that camera
+         * (onvifSkipped) instead of failing the file.
          */
         LoadStatus read(std::string filename, StagedSetup& out,
                         std::string* error = nullptr) const;

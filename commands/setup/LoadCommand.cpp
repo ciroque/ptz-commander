@@ -102,6 +102,14 @@ namespace commands::setup {
                 return;
             }
         }
+        // A password saved on another Windows account cannot be decrypted.
+        // Leave that camera out and keep going, the same as one that is off.
+        for (const auto& host : staged.onvifSkipped) {
+            ctx.err << "ONVIF password for " << host
+                    << " could not be decrypted on this Windows account; that camera was not added"
+                    << std::endl;
+        }
+
         // A camera that does not answer is left out. Presets for the cameras
         // that are present are still applied below.
         bool onvifMissing = false;

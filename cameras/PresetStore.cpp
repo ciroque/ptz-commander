@@ -223,7 +223,8 @@ namespace cameras {
             return true;
         }
 
-        bool parseOnvif(const nlohmann::json& j, std::vector<onvif::OnvifEndpoint>& out) {
+        bool parseOnvif(const nlohmann::json& j, std::vector<onvif::OnvifEndpoint>& out,
+                        std::vector<std::string>& skipped) {
             if (!j.contains("onvif")) {
                 return true;
             }
@@ -231,7 +232,9 @@ namespace cameras {
                 return false;
             }
             for (const auto& item : j["onvif"]) {
-                if (!item.is_object() || !item.contains("host") || !item["host"].is_string() || !item.contains("user") || !item["user"].is_string() || !item.contains("password") || !item["password"].is_string()) {
+                if (!item.is_object() || !item.contains("host") || !item["host"].is_string() ||
+                    !item.contains("user") || !item["user"].is_string() || !item.contains("password") ||
+                    !item["password"].is_string()) {
                     return false;
                 }
                 onvif::OnvifEndpoint ep;
@@ -240,8 +243,8 @@ namespace cameras {
                 ep.user = item["user"].get<std::string>();
                 const auto password = onvif::unprotectPassword(item["password"].get<std::string>());
                 if (!password) {
-                    throw std::runtime_error("ONVIF password for " + ep.host +
-                                             " could not be decrypted on this Windows account");
+                    skipped.push_back(ep.host);
+                    continue;
                 }
                 ep.password = *password;
                 ep.servicePath = item.value("path", std::string("/onvif/device_service"));
@@ -382,7 +385,7 @@ namespace cameras {
             if (!parseViscaIp(j, staged.viscaIp)) {
                 return parseError("\"visca_ip\" must be a list of entries that each have a host");
             }
-            if (!parseOnvif(j, staged.onvif)) {
+            if (!parseOnvif(j, staged.onvif, staged.onvifSkipped)) {
                 return parseError("\"onvif\" must be a list of entries that each have a host, user, and password");
             }
 
