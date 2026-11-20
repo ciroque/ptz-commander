@@ -16,14 +16,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Full history so a branch dispatch can stamp `git describe`.
           # Tag builds read GITHUB_REF_NAME and do not depend on fetched tags.
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: "8.0.x"
 
@@ -39,14 +39,14 @@ jobs:
         run: build-installer.bat
 
       - name: Upload MSI artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: PTZCommander-msi
           path: installer/build/PTZCommander.msi
 
       - name: Attach MSI to GitHub Release
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: installer/build/PTZCommander.msi
           generate_release_notes: true
