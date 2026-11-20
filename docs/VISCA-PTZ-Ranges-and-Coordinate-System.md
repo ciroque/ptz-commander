@@ -69,7 +69,7 @@ Built-in profiles (`camera add visca-ip <host> [port] <profile>`):
 
 | Profile | Pan | Tilt | Zoom raw | Notes |
 |---|---|---|---|---|
-| `lumens-vc-a51p` | ±170°, home `0x0000`, stops `0x95C0`/`0x6A40` (signed) | −30..+90°, home `0x0000`, stops `0xED40`/`0x3840` (signed) | `0x0000..0x4000` | From the Lumens command set (RS158 v1.3), 160 raw per degree; not yet checked on a camera |
+| `lumens-vc-a51p` | ±170°, home `0x0000`, stops `0x95C0`/`0x6A40` (signed) | −30..+90°, home `0x0000`, stops `0xED40`/`0x3840` (signed) | `0x0000..0x4000` | From the Lumens command set (RS158 v1.3), 160 raw per degree; confirmed on a Lumens VC-A51P |
 | `tenveo-30x` | ±175°, home `0x4A6C`, stops `0x0000`/`0x8E3E` | ±90° over `0x0000..0x3C8A` | `0x0000..0x05E3` | Measured by hand |
 
 An unknown profile name is an error. It used to fall back to `lumens-vc-a51p`.
