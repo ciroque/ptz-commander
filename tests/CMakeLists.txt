@@ -22,7 +22,9 @@ add_executable(ptz_tests
     OnvifPasswordTest.cpp
     OnvifSetupLoadTest.cpp
     OnvifPortableSetupTest.cpp
+    OnvifPresetStoreTest.cpp
     OnvifSignInTest.cpp
+    "${CMAKE_SOURCE_DIR}/commands/preset/StoreCommand.cpp"
     "${CMAKE_SOURCE_DIR}/commands/camera/LoginCommand.cpp"
     "${CMAKE_SOURCE_DIR}/commands/setup/LoadCommand.cpp"
     "${CMAKE_SOURCE_DIR}/cameras/onvif/OnvifCamera.cpp"

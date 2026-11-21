@@ -120,8 +120,9 @@ namespace cameras {
         }
 
         // includePasswords false writes the same file with no password key
-        // on onvif entries (setup export). An empty password is omitted
-        // either way, because there is nothing to encrypt.
+        // on onvif entries (setup export). An empty password is omitted.
+        // A dpapi: blob this user cannot decrypt is written back unchanged
+        // when passwords are included and there is no new password.
         bool save(const CameraManager& mgr, const SceneStore& scenes,
                   const std::vector<visca::ViscaIpEndpoint>& viscaIp,
                   const std::vector<visca::ViscaSerialEndpoint>& viscaSerial,

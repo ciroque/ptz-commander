@@ -240,9 +240,13 @@ namespace cameras {
                     out.push_back(std::move(ep));
                     continue;
                 }
-                const auto password = onvif::unprotectPassword(item["password"].get<std::string>());
+                const std::string storedPassword = item["password"].get<std::string>();
+                const auto password = onvif::unprotectPassword(storedPassword);
                 if (!password || password->empty()) {
                     ep.needsPassword = true;
+                    if (storedPassword.rfind(onvif::kDpapiPasswordPrefix, 0) == 0) {
+                        ep.preservedPassword = storedPassword;
+                    }
                     out.push_back(std::move(ep));
                     continue;
                 }
@@ -469,6 +473,8 @@ namespace cameras {
                         return false;
                     }
                     entry["password"] = *password;
+                } else if (includePasswords && !ep.preservedPassword.empty()) {
+                    entry["password"] = ep.preservedPassword;
                 }
                 entry["path"] = ep.servicePath;
                 arr.push_back(std::move(entry));

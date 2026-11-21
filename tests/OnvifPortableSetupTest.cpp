@@ -413,3 +413,39 @@ TEST(SetupLoad, ACameraThatDoesNotAnswerIsLeftOut) {
     EXPECT_EQ(harness.mgr.getCameras().size(), 0u);
     EXPECT_NE(harness.err.str().find("did not answer"), std::string::npos);
 }
+
+TEST(SetupLoad, SkipThenSaveWritesTheUndecryptableBlob) {
+    const std::string bad = undecryptablePassword();
+    ASSERT_FALSE(bad.empty());
+    const std::string serial = "ONVIF:192.168.1.21:80";
+
+    nlohmann::json file = nlohmann::json::object();
+    file[serial] = {
+        {"alias", "Pulpit"},
+        {"presets", {{"wide", {{"name", "wide"}, {"pan", 1.5}, {"tilt", -2.0}, {"zoom", 10}}}}},
+    };
+    file["onvif"] = nlohmann::json::array({onvifEntry("192.168.1.21", "admin", bad)});
+    const TempPtzc loaded = writePtzc(std::filesystem::temp_directory_path() / "ptz-blob-skip-load.ptzc", file);
+
+    LoadHarness harness;
+    commands::setup::LoadCommand command([](const OnvifEndpoint&) { return std::optional<std::string>{}; });
+    command.execute(harness.ctx, loaded.path.string());
+
+    ASSERT_EQ(harness.inactive.size(), 1u);
+    EXPECT_TRUE(harness.inactive[0].password.empty());
+    EXPECT_EQ(harness.inactive[0].preservedPassword, bad);
+    ASSERT_EQ(harness.ctx.onvifEndpoints.size(), 1u);
+    EXPECT_EQ(harness.ctx.onvifEndpoints[0].preservedPassword, bad);
+
+    const TempPtzc saved(std::filesystem::temp_directory_path() / "ptz-blob-skip-save.ptzc");
+    PresetStore store;
+    ASSERT_TRUE(store.save(harness.mgr, harness.scenes, {}, {}, harness.ctx.onvifEndpoints, saved.path.string()));
+
+    std::ifstream savedIn(saved.path);
+    ASSERT_TRUE(savedIn.is_open());
+    nlohmann::json savedJson;
+    savedIn >> savedJson;
+    ASSERT_EQ(savedJson["onvif"].size(), 1u);
+    EXPECT_EQ(savedJson["onvif"][0]["password"].get<std::string>(), bad);
+    EXPECT_EQ(savedJson[serial]["alias"], "Pulpit");
+}

@@ -1,4 +1,5 @@
 #include "StoreCommand.h"
+#include "../ConnectionLabel.h"
 #include "../ResolveCameras.h"
 #include <iostream>
 
@@ -23,15 +24,30 @@ namespace commands::preset {
             return;
         }
 
+        int stored = 0;
         for (auto& camera : cameras) {
+            // An inactive camera reports pan 0, tilt 0, zoom 0. Storing that
+            // would replace a real preset.
+            if (commands::refuseInactiveOnvif(ctx, *camera)) {
+                continue;
+            }
             cameras::Preset preset;
             preset.name = presetName;
             preset.ptz = camera->getCurrentPtz();
             camera->addPreset(presetName, preset);
+            ++stored;
+        }
+        if (stored == 0) {
+            return;
         }
 
         ctx.notifySetupChanged();
-        ctx.out << "Stored preset '" << presetName << "' for "
-                << (serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber) << std::endl;
+        ctx.out << "Stored preset '" << presetName << "' for ";
+        if (serialNumber == "*") {
+            ctx.out << stored << " camera" << (stored == 1 ? "" : "s");
+        } else {
+            ctx.out << serialNumber;
+        }
+        ctx.out << std::endl;
     }
 } // namespace commands::preset
