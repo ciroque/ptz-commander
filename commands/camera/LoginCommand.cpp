@@ -28,7 +28,7 @@ namespace commands::camera {
             return;
         }
         ctx.err << "Could not log in " << camera.getSerialNumber() << ": " << result.detail << std::endl;
-        if (result.authRejected) {
+        if (result.authRejected && !camera.isConnected()) {
             ctx.err << camera.getSerialNumber() << " is still inactive" << std::endl;
         }
     }
