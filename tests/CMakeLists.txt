@@ -23,8 +23,13 @@ add_executable(ptz_tests
     OnvifSetupLoadTest.cpp
     OnvifPortableSetupTest.cpp
     OnvifPresetStoreTest.cpp
+    OnvifSignInTest.cpp
     "${CMAKE_SOURCE_DIR}/commands/preset/StoreCommand.cpp"
+    "${CMAKE_SOURCE_DIR}/commands/camera/LoginCommand.cpp"
     "${CMAKE_SOURCE_DIR}/commands/setup/LoadCommand.cpp"
+    "${CMAKE_SOURCE_DIR}/cameras/onvif/OnvifCamera.cpp"
+    "${CMAKE_SOURCE_DIR}/cameras/onvif/OnvifCameraAdapter.cpp"
+    "${CMAKE_SOURCE_DIR}/cameras/onvif/OnvifClient.cpp"
     "${CMAKE_SOURCE_DIR}/commands/setup/ExportCommand.cpp"
     "${CMAKE_SOURCE_DIR}/cameras/CameraManager.cpp"
     "${CMAKE_SOURCE_DIR}/cameras/PresetStore.cpp"
@@ -48,7 +53,7 @@ target_link_libraries(ptz_tests PRIVATE
 )
 target_compile_features(ptz_tests PRIVATE cxx_std_20)
 if(WIN32)
-    target_link_libraries(ptz_tests PRIVATE crypt32)
+    target_link_libraries(ptz_tests PRIVATE crypt32 winhttp bcrypt)
 endif()
 ptz_pin_msvc_x64_libs(ptz_tests)
 
