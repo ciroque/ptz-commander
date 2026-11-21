@@ -15,10 +15,10 @@ namespace cameras::onvif {
 
         // GetDeviceInformation, services, and a PTZ profile. Failure leaves the
         // camera unconnected so the caller can refuse to add it.
-        bool probe(std::string& error);
+        virtual bool probe(std::string& error);
 
         // Replaces the password and probes. On failure the previous password
-        // is restored and the camera stays unconnected.
+        // and the previous connection are restored.
         bool signIn(const std::string& password, std::string& error);
 
         const OnvifEndpoint& endpoint() const { return endpoint_; }
@@ -31,6 +31,14 @@ namespace cameras::onvif {
         bool setZoom(int zoom, int speed) override;
         Ptz getCurrentPtz() const override;
 
+    protected:
+        // A test subclass sets these and overrides probe so signIn can be
+        // checked without a camera on the network.
+        mutable Ptz lastPtz_{0.0f, 0.0f, 0};
+        mutable OnvifPosition lastRaw_{};
+        mutable bool haveRaw_ = false;
+        mutable bool connected_ = false;
+
     private:
         bool moveRaw(double panX, double tiltY, double zoomX, double panTiltSpeed, double zoomSpeed) const;
 
@@ -38,10 +46,6 @@ namespace cameras::onvif {
         std::string serial_;
         std::string name_;
         mutable OnvifClient client_;
-        mutable Ptz lastPtz_{0.0f, 0.0f, 0};
-        mutable OnvifPosition lastRaw_{};
-        mutable bool haveRaw_ = false;
-        mutable bool connected_ = false;
     };
 
 } // namespace cameras::onvif

@@ -33,14 +33,20 @@ namespace cameras::onvif {
 
     bool OnvifCamera::signIn(const std::string& password, std::string& error) {
         const std::string previous = endpoint_.password;
+        const bool wasConnected = connected_;
+        const bool hadRaw = haveRaw_;
+        const OnvifPosition raw = lastRaw_;
+        const Ptz ptz = lastPtz_;
         endpoint_.password = password;
         client_ = OnvifClient(endpoint_.host, endpoint_.port, endpoint_.servicePath, endpoint_.user, password);
         haveRaw_ = false;
         if (!probe(error)) {
             endpoint_.password = previous;
             client_ = OnvifClient(endpoint_.host, endpoint_.port, endpoint_.servicePath, endpoint_.user, previous);
-            connected_ = false;
-            haveRaw_ = false;
+            connected_ = wasConnected;
+            haveRaw_ = hadRaw;
+            lastRaw_ = raw;
+            lastPtz_ = ptz;
             return false;
         }
         return true;
