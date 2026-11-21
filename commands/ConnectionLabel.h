@@ -23,7 +23,7 @@ namespace commands {
             return false;
         }
         ctx.err << camera.getSerialNumber() << " is inactive. Use: camera login " << camera.getSerialNumber()
-                << " <password>" << std::endl;
+                << std::endl;
         return true;
     }
 

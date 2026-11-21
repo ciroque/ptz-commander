@@ -370,7 +370,7 @@ namespace commands::camera {
                 ctx.out << ")" << std::endl;
             }
             if (newOnvif) {
-                ctx.out << "Add an ONVIF row with: camera add scanned <n> <user> <password>" << std::endl;
+                ctx.out << "Add an ONVIF row with: camera add scanned <n> <user> [password]" << std::endl;
             }
         }
 
@@ -404,7 +404,7 @@ namespace commands::camera {
         }
 
         // WS-Discovery hits. Nothing is added. Credentials come later, with
-        // `camera add scanned <n> <user> <password>`.
+        // `camera add scanned <n> <user> [password]`.
         Found foundOnvif(const data::Context& ctx, const cameras::onvif::OnvifScanResult& outcome) {
             Found found;
             found.kind = "ONVIF";

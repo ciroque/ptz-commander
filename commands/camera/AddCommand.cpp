@@ -25,11 +25,13 @@ namespace commands::camera {
         }
 
         const char* kScannedUsage = "Usage: camera add scanned <n...|*> [profile]\n"
-                                    "       camera add scanned <n...|*> <user> <password>";
+                                    "       camera add scanned <n...|*> <user> [password]";
 
         // camera add scanned: VISCA rows take an optional profile. ONVIF rows
-        // take a user and password (one word each) instead.
-        void addScanned(data::Context& ctx, const std::vector<std::string>& tokens) {
+        // take a user and an optional password (one word each) instead.
+        // Omitting the password asks for it. A blank answer adds nothing.
+        void addScanned(data::Context& ctx, const std::vector<std::string>& tokens,
+                        const commands::setup::OnvifPasswordPrompt& prompt) {
             if (!ctx.lastScan) {
                 ctx.err << "Run `camera scan visca-ip`, `camera scan serial`, or `camera scan onvif` first."
                         << std::endl;
@@ -83,7 +85,13 @@ namespace commands::camera {
             std::string user;
             std::string password;
             if (words.size() == 1) {
-                profile = words[0];
+                // One extra word on an ONVIF-only selection is the user.
+                // The password is asked for, and a blank answer adds nothing.
+                if (anyOnvif && !anyVisca) {
+                    user = words[0];
+                } else {
+                    profile = words[0];
+                }
             } else if (words.size() == 2) {
                 user = words[0];
                 password = words[1];
@@ -93,13 +101,13 @@ namespace commands::camera {
             // `camera add scanned *` still adds the VISCA cameras.
             if (!profile.empty() && anyOnvif && !anyVisca) {
                 ctx.err << "ONVIF rows don't take a profile. Add them with "
-                           "camera add scanned <n> <user> <password>"
+                           "camera add scanned <n> <user> [password]"
                         << std::endl;
                 return;
             }
             if (anyOnvif && user.empty() && !anyVisca) {
-                ctx.err << "ONVIF rows need a user and password: "
-                           "camera add scanned <n> <user> <password>"
+                ctx.err << "ONVIF rows need a user: "
+                           "camera add scanned <n> <user> [password]"
                         << std::endl;
                 return;
             }
@@ -110,6 +118,23 @@ namespace commands::camera {
             // Without one, each VISCA row gets its kind's default profile.
             if (!profile.empty() && !knownProfile(ctx, profile)) {
                 return;
+            }
+            if (!user.empty() && password.empty() && anyOnvif) {
+                cameras::onvif::OnvifEndpoint ask;
+                ask.user = user;
+                for (const size_t n : indexes) {
+                    if (const auto* row = std::get_if<cameras::onvif::OnvifEndpoint>(&rows[n - 1])) {
+                        ask.host = row->host;
+                        ask.port = row->port;
+                        break;
+                    }
+                }
+                const auto entered = prompt ? prompt(ask) : std::nullopt;
+                if (!entered || entered->empty()) {
+                    ctx.err << "No password entered." << std::endl;
+                    return;
+                }
+                password = *entered;
             }
 
             const bool skipOnvif = anyOnvif && user.empty();
@@ -189,14 +214,15 @@ namespace commands::camera {
             }
             if (skippedOnvif) {
                 ctx.out << "ONVIF rows were not added. Add one with "
-                           "camera add scanned <n> <user> <password>"
+                           "camera add scanned <n> <user> [password]"
                         << std::endl;
             }
         }
 
-        void addOnvif(data::Context& ctx, const std::vector<std::string>& tokens) {
-            const char* usage = "Usage: camera add onvif <host> <user> <password> [port]";
-            if (tokens.size() < 4 || tokens.size() > 5) {
+        void addOnvif(data::Context& ctx, const std::vector<std::string>& tokens,
+                      const commands::setup::OnvifPasswordPrompt& prompt) {
+            const char* usage = "Usage: camera add onvif <host> <user> [password] [port]";
+            if (tokens.size() < 3 || tokens.size() > 5) {
                 ctx.err << usage << std::endl;
                 return;
             }
@@ -207,7 +233,18 @@ namespace commands::camera {
             cameras::onvif::OnvifEndpoint ep;
             ep.host = tokens[1];
             ep.user = tokens[2];
-            ep.password = tokens[3];
+            if (tokens.size() == 3) {
+                const auto entered = prompt ? prompt(ep) : std::nullopt;
+                if (!entered || entered->empty()) {
+                    ctx.err << "No password entered." << std::endl;
+                    return;
+                }
+                ep.password = *entered;
+            } else {
+                // The third word is the password even when it is all digits.
+                // A non-default port still follows that password.
+                ep.password = tokens[3];
+            }
             if (tokens.size() == 5) {
                 try {
                     ep.port = std::stoi(tokens[4]);
@@ -310,11 +347,11 @@ namespace commands::camera {
             return;
         }
         if (!tokens.empty() && tokens[0] == "scanned") {
-            addScanned(ctx, tokens);
+            addScanned(ctx, tokens, prompt_);
             return;
         }
         if (!tokens.empty() && tokens[0] == "onvif") {
-            addOnvif(ctx, tokens);
+            addOnvif(ctx, tokens, prompt_);
             return;
         }
         if (!ctx.addViscaIp && !tokens.empty() && tokens[0] == "visca-ip") {
@@ -324,9 +361,9 @@ namespace commands::camera {
         if (tokens.size() < 2 || tokens[0] != "visca-ip") {
             ctx.err << "Usage: camera add visca-ip <host> [port] [profile]" << std::endl
                     << "       camera add serial <COMn> [baud] [address] [profile]" << std::endl
-                    << "       camera add onvif <host> <user> <password> [port]" << std::endl
+                    << "       camera add onvif <host> <user> [password] [port]" << std::endl
                     << "       camera add scanned <n...|*> [profile]" << std::endl
-                    << "       camera add scanned <n...|*> <user> <password>" << std::endl;
+                    << "       camera add scanned <n...|*> <user> [password]" << std::endl;
             return;
         }
 
