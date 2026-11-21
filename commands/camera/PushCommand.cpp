@@ -1,4 +1,5 @@
 #include "PushCommand.h"
+#include "../ConnectionLabel.h"
 #include "../ResolveCameras.h"
 #include <iostream>
 
@@ -35,6 +36,10 @@ namespace commands::camera {
 
         bool allGood = true;
         for (auto& camera : cameras) {
+            if (commands::refuseInactiveOnvif(ctx, *camera)) {
+                allGood = false;
+                continue;
+            }
             auto currentPtz = camera->getCurrentPtz();
             if (currentPtz.zoom >= targetZoom) {
                 ctx.out << "Camera " << camera->getSerialNumber() << " already at or past target zoom." << std::endl;

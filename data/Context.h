@@ -38,7 +38,14 @@ namespace data {
         std::function<bool(const cameras::visca::ViscaSerialEndpoint&)> loadViscaSerial;
         std::vector<cameras::visca::ViscaSerialEndpoint> viscaSerialEndpoints;
         // ONVIF absolute move. Failed leaves detail set; AlreadyPresent adds nothing.
+        // authRejected is set when the camera refused the username or password.
         std::function<cameras::onvif::OnvifAddResult(const cameras::onvif::OnvifEndpoint&)> addOnvif;
+        // Adds an ONVIF camera that stays in the setup without a password and
+        // without a connection. Presets and scene bindings can still attach.
+        std::function<cameras::onvif::OnvifAddResult(const cameras::onvif::OnvifEndpoint&)> addInactiveOnvif;
+        // Sets the password on an ONVIF camera already in the manager and connects.
+        std::function<cameras::onvif::OnvifAddResult(const std::string& serial, const std::string& password)>
+            loginOnvif;
         std::vector<cameras::onvif::OnvifEndpoint> onvifEndpoints;
         // Rows of the last `camera scan` (no VISCA profile, and no ONVIF
         // user or password yet), for `camera add scanned <n>`. nullopt until

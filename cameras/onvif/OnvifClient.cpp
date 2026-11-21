@@ -289,7 +289,7 @@ namespace cameras::onvif {
         result.body = std::move(payload);
         result.ok = true;
         if (result.status == 401 || isAuthFault(result.body)) {
-            result.error = "the camera rejected the username or password";
+            result.error = kAuthRejected;
         } else if (result.status != 200) {
             result.error = "the camera returned HTTP " + std::to_string(result.status);
         } else if (isFault(result.body)) {

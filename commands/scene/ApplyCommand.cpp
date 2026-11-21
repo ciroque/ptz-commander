@@ -1,5 +1,6 @@
 #include "ApplyCommand.h"
 #include "../Arguments.h"
+#include "../ConnectionLabel.h"
 
 namespace commands::scene {
 
@@ -36,6 +37,11 @@ namespace commands::scene {
             const cameras::Preset* preset = camera->getPresetByName(presetName);
             if (!preset) {
                 ctx.err << "Preset not found: " << presetName << " for " << serial << " (skipping)" << std::endl;
+                skipped++;
+                continue;
+            }
+
+            if (commands::refuseInactiveOnvif(ctx, *camera)) {
                 skipped++;
                 continue;
             }

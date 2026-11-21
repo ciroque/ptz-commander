@@ -12,6 +12,9 @@ namespace cameras::onvif {
         std::string servicePath = "/onvif/device_service";
         std::string user;
         std::string password;
+        // Set when the file has no password, or its dpapi: blob does not
+        // decrypt for this user. Not saved. setup load asks, then connects.
+        bool needsPassword = false;
         // Display name from WS-Discovery. Not required to connect, and not saved.
         std::string label;
 
@@ -25,6 +28,9 @@ namespace cameras::onvif {
     struct OnvifAddResult {
         OnvifAddStatus status = OnvifAddStatus::Failed;
         std::string detail;
+        // The camera answered and rejected the username or password.
+        // Other failures (no answer, no PTZ profile) leave this false.
+        bool authRejected = false;
     };
 
     struct OnvifScanResult {

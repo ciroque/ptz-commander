@@ -1,8 +1,10 @@
 #include "OnvifCameraAdapter.h"
 
 #include "OnvifCamera.h"
+#include "OnvifClient.h"
 #include "../../core/Logger.h"
 
+#include <algorithm>
 #include <memory>
 
 namespace cameras::onvif {
@@ -43,6 +45,7 @@ namespace cameras::onvif {
         std::string error;
         if (!camera->probe(error)) {
             result.detail = error.empty() ? ("could not add ONVIF camera " + endpoint.address()) : error;
+            result.authRejected = result.detail == kAuthRejected;
             core::Logger::warn("ONVIF add failed for " + endpoint.address() + ": " + result.detail);
             return result;
         }
@@ -52,6 +55,62 @@ namespace cameras::onvif {
         endpoints_.push_back(endpoint);
         result.status = OnvifAddStatus::Added;
         core::Logger::info("Added ONVIF camera " + endpoint.serial() + " (" + camera->getName() + ")");
+        return result;
+    }
+
+    OnvifAddResult OnvifCameraAdapter::addInactive(const OnvifEndpoint& requested) {
+        OnvifAddResult result;
+        OnvifEndpoint endpoint = normalized(requested);
+        endpoint.password.clear();
+        endpoint.needsPassword = false;
+        endpoint.label.clear();
+        if (endpoint.host.empty() || endpoint.user.empty()) {
+            result.detail = "host and username are required";
+            return result;
+        }
+        if (manager_.findBySerial(endpoint.serial())) {
+            result.status = OnvifAddStatus::AlreadyPresent;
+            result.detail = endpoint.serial() + " is already added";
+            return result;
+        }
+
+        manager_.addCamera(std::make_shared<OnvifCamera>(endpoint));
+        endpoints_.push_back(endpoint);
+        result.status = OnvifAddStatus::Added;
+        core::Logger::info("ONVIF camera " + endpoint.serial() + " left inactive");
+        return result;
+    }
+
+    OnvifAddResult OnvifCameraAdapter::login(const std::string& serial, const std::string& password) {
+        OnvifAddResult result;
+        if (password.empty()) {
+            result.detail = "a password is required";
+            return result;
+        }
+        auto camera = std::dynamic_pointer_cast<OnvifCamera>(manager_.findBySerial(serial));
+        if (!camera) {
+            result.detail = serial + " is not an ONVIF camera";
+            return result;
+        }
+
+        std::string error;
+        if (!camera->signIn(password, error)) {
+            result.detail = error.empty() ? "could not sign in" : error;
+            result.authRejected = result.detail == kAuthRejected;
+            core::Logger::warn("ONVIF login failed for " + serial + ": " + result.detail);
+            return result;
+        }
+
+        const OnvifEndpoint stored = camera->endpoint();
+        const auto it = std::find_if(endpoints_.begin(), endpoints_.end(),
+                                     [&stored](const OnvifEndpoint& ep) { return ep.serial() == stored.serial(); });
+        if (it == endpoints_.end()) {
+            endpoints_.push_back(stored);
+        } else {
+            *it = stored;
+        }
+        result.status = OnvifAddStatus::Added;
+        core::Logger::info("ONVIF camera " + stored.serial() + " is active");
         return result;
     }
 

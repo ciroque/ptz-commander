@@ -1,4 +1,5 @@
 #include "ListCommand.h"
+#include "../ConnectionLabel.h"
 #include "../ResolveCameras.h"
 
 #include <iostream>
@@ -30,7 +31,7 @@ namespace commands::camera {
         for (const auto& camera : cameras) {
             ctx.out << std::left << std::setw(NameColWidth) << camera->getName() << " | " << std::setw(AliasColWidth)
                     << camera->getAlias() << " | " << std::setw(SerialNumberColWidth) << camera->getSerialNumber()
-                    << " | " << std::setw(ConnectedColWidth) << (camera->isConnected() ? "Yes" : "No") << std::endl;
+                    << " | " << std::setw(ConnectedColWidth) << commands::connectionLabel(*camera) << std::endl;
         }
     }
 } // namespace commands::camera

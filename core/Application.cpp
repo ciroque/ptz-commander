@@ -51,6 +51,16 @@ namespace core {
             context_.onvifEndpoints = onvifAdapter_->endpoints();
             return result;
         };
+        context_.addInactiveOnvif = [this](const cameras::onvif::OnvifEndpoint& endpoint) {
+            const auto result = onvifAdapter_->addInactive(endpoint);
+            context_.onvifEndpoints = onvifAdapter_->endpoints();
+            return result;
+        };
+        context_.loginOnvif = [this](const std::string& serial, const std::string& password) {
+            const auto result = onvifAdapter_->login(serial, password);
+            context_.onvifEndpoints = onvifAdapter_->endpoints();
+            return result;
+        };
         sceneControlServer_.setOnSceneApply([this](const std::string& name) {
             std::lock_guard<std::mutex> lock(commandMutex_);
             context_.out << std::endl;

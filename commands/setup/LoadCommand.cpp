@@ -7,6 +7,39 @@
 #include <vector>
 
 namespace commands::setup {
+
+    namespace {
+
+        // Added: the camera is now inactive. AlreadyPresent: leave the camera
+        // that is already loaded alone. Failed: it could not be kept.
+        enum class SkipResult { Inactive, AlreadyPresent, Failed };
+
+        SkipResult skipOnvif(data::Context& ctx, const cameras::onvif::OnvifEndpoint& endpoint) {
+            auto stored = endpoint;
+            stored.password.clear();
+            stored.needsPassword = false;
+            const auto added = ctx.addInactiveOnvif(stored);
+            if (added.status == cameras::onvif::OnvifAddStatus::Failed) {
+                ctx.err << "Could not keep ONVIF camera " << endpoint.address() << ": " << added.detail << std::endl;
+                return SkipResult::Failed;
+            }
+            if (added.status == cameras::onvif::OnvifAddStatus::AlreadyPresent) {
+                return SkipResult::AlreadyPresent;
+            }
+            ctx.err << "ONVIF camera " << endpoint.user << "@" << endpoint.host << " left inactive" << std::endl;
+            return SkipResult::Inactive;
+        }
+
+        void noteSkip(SkipResult skip, bool& onvifMissing, bool& onvifInactive) {
+            if (skip == SkipResult::Failed) {
+                onvifMissing = true;
+            } else if (skip == SkipResult::Inactive) {
+                onvifInactive = true;
+            }
+        }
+
+    } // namespace
+
     void LoadCommand::execute(data::Context& ctx, const std::string& args) {
         std::string filename = "presets.ptzc";
         auto tokens = commands::splitArgs(args);
@@ -70,13 +103,12 @@ namespace commands::setup {
             return;
         }
         for (const auto& ep : staged.onvif) {
-            if (ep.host.empty() || ep.user.empty() || ep.password.empty()) {
-                ctx.err << "Failed to load " << filename << ": an onvif entry needs a host, user, and password"
-                        << std::endl;
+            if (ep.host.empty() || ep.user.empty()) {
+                ctx.err << "Failed to load " << filename << ": an onvif entry needs a host and a user" << std::endl;
                 return;
             }
         }
-        if (!staged.onvif.empty() && !ctx.addOnvif) {
+        if (!staged.onvif.empty() && (!ctx.addOnvif || !ctx.addInactiveOnvif)) {
             ctx.err << "Failed to load " << filename << ": ONVIF is not available." << std::endl;
             return;
         }
@@ -98,29 +130,66 @@ namespace commands::setup {
                 return;
             }
         }
-        // A password saved on another Windows account cannot be decrypted.
-        // Leave that camera out and keep going, the same as one that is off.
-        for (const auto& host : staged.onvifSkipped) {
-            ctx.err << "ONVIF password for " << host
-                    << " could not be decrypted on this Windows account; that camera was not added" << std::endl;
-        }
-
-        // A camera that does not answer is left out. Presets for the cameras
-        // that are present are still applied below.
+        // A camera that does not answer is left out. A missing password, or a
+        // dpapi: blob this user cannot decrypt, is asked for. Skipping keeps
+        // the camera inactive so its presets and scene bindings survive.
+        // An auth fault asks again, up to three tries. Anything else (the
+        // camera is off, it has no PTZ profile) is left out, as before.
         bool onvifMissing = false;
+        bool onvifInactive = false;
         for (const auto& ep : staged.onvif) {
-            const auto added = ctx.addOnvif(ep);
-            if (added.status == cameras::onvif::OnvifAddStatus::Failed) {
-                ctx.err << "Could not add ONVIF camera " << ep.address() << ": " << added.detail << std::endl;
-                onvifMissing = true;
+            if (!ep.needsPassword) {
+                const auto added = ctx.addOnvif(ep);
+                if (added.status == cameras::onvif::OnvifAddStatus::Failed) {
+                    ctx.err << "Could not add ONVIF camera " << ep.address() << ": " << added.detail << std::endl;
+                    onvifMissing = true;
+                }
+                continue;
+            }
+
+            bool settled = false;
+            for (int attempt = 0; attempt < 3; ++attempt) {
+                const auto password = prompt_ ? prompt_(ep) : std::nullopt;
+                if (!password || password->empty()) {
+                    noteSkip(skipOnvif(ctx, ep), onvifMissing, onvifInactive);
+                    settled = true;
+                    break;
+                }
+
+                auto withPassword = ep;
+                withPassword.password = *password;
+                withPassword.needsPassword = false;
+                const auto added = ctx.addOnvif(withPassword);
+                if (added.status != cameras::onvif::OnvifAddStatus::Failed) {
+                    settled = true;
+                    break;
+                }
+                if (!added.authRejected) {
+                    ctx.err << "Could not add ONVIF camera " << ep.address() << ": " << added.detail << std::endl;
+                    onvifMissing = true;
+                    settled = true;
+                    break;
+                }
+                ctx.err << "ONVIF password rejected for " << ep.user << "@" << ep.host;
+                if (attempt + 1 < 3) {
+                    ctx.err << "; try again";
+                }
+                ctx.err << std::endl;
+            }
+            if (!settled) {
+                noteSkip(skipOnvif(ctx, ep), onvifMissing, onvifInactive);
             }
         }
         store.apply(ctx.cameraMgr, ctx.sceneStore, staged);
 
         ctx.notifySetupChanged();
         ctx.out << "Loaded setup from " << filename;
-        if (onvifMissing) {
+        if (onvifMissing && onvifInactive) {
+            ctx.out << " (an ONVIF camera did not answer, and one was left inactive)";
+        } else if (onvifMissing) {
             ctx.out << " (an ONVIF camera did not answer and was not added)";
+        } else if (onvifInactive) {
+            ctx.out << " (an ONVIF camera was left inactive)";
         }
         ctx.out << std::endl;
     }
