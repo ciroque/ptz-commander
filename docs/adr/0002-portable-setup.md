@@ -14,7 +14,7 @@ Leaving out a camera whose password cannot be decrypted drops its presets on the
 ## Decision
 
 1. A setup file is portable. `setup export` writes the same JSON as `setup save` with no `password` key on `onvif` entries.
-2. `setup save` is unchanged for a password the process has: it writes a `dpapi:` blob for the current Windows user. An inactive camera has no password, so that key is omitted.
+2. `setup save` writes a `dpapi:` blob for a password the process has. An inactive camera with no password omits that key. A `dpapi:` blob this user cannot decrypt is written back unchanged until a new password replaces it.
 3. `setup load` asks when an `onvif` entry has no password, or its `dpapi:` blob does not decrypt for this user. The prompt is hidden. A blank answer skips. Input that is not a console skips without asking.
 4. The password is tried immediately. An authentication fault asks again, up to three times. A camera that does not answer is still left out.
 5. A skipped camera stays in the setup, inactive. It is listed, it cannot be moved, and it keeps its presets and scene bindings. `camera login` sets the password, connects, and makes it active.
@@ -26,4 +26,5 @@ Leaving out a camera whose password cannot be decrypted drops its presets on the
 - Copying an exported file does not reveal ONVIF passwords.
 - Each Windows user is asked once. The next `setup save` binds the entered password to that user.
 - A skipped camera survives a later save. Its presets and scene bindings are still there for `camera login`.
+- Skipping a camera whose blob does not decrypt keeps that blob in the next save, so the Windows user who saved it can still open it.
 - A saved password for a camera that is switched off still does not keep that camera. That is the same as today.

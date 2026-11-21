@@ -52,6 +52,7 @@ namespace cameras::onvif {
 
         manager_.addCamera(camera);
         endpoint.label.clear();
+        endpoint.preservedPassword.clear();
         endpoints_.push_back(endpoint);
         result.status = OnvifAddStatus::Added;
         core::Logger::info("Added ONVIF camera " + endpoint.serial() + " (" + camera->getName() + ")");
@@ -101,7 +102,8 @@ namespace cameras::onvif {
             return result;
         }
 
-        const OnvifEndpoint stored = camera->endpoint();
+        OnvifEndpoint stored = camera->endpoint();
+        stored.preservedPassword.clear();
         const auto it = std::find_if(endpoints_.begin(), endpoints_.end(),
                                      [&stored](const OnvifEndpoint& ep) { return ep.serial() == stored.serial(); });
         if (it == endpoints_.end()) {

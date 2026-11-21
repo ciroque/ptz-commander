@@ -19,10 +19,14 @@
 
 #include <nlohmann/json.hpp>
 
+using cameras::CameraManager;
 using cameras::LoadStatus;
 using cameras::PresetStore;
+using cameras::SceneStore;
 using cameras::onvif::kDpapiPasswordPrefix;
+using cameras::onvif::OnvifEndpoint;
 using cameras::onvif::protectPassword;
+using cameras::onvif::unprotectPassword;
 
 namespace {
 
@@ -79,6 +83,7 @@ TEST(PresetStore, KeepsAnUndecryptableOnvifEntryForThePrompt) {
          {"user", "admin"},
          {"password", bad},
          {"path", "/onvif/device_service"}},
+        {{"host", "192.168.1.22"}, {"port", 80}, {"user", "guest"}, {"path", "/onvif/device_service"}},
     });
 
     const TempPtzc temp(std::filesystem::temp_directory_path() / "ptz-onvif-load-one-bad.ptzc");
@@ -94,16 +99,23 @@ TEST(PresetStore, KeepsAnUndecryptableOnvifEntryForThePrompt) {
     const auto status = store.read(temp.path.string(), staged, &error);
     EXPECT_EQ(status, LoadStatus::Ok) << error;
 
-    ASSERT_EQ(staged.onvif.size(), 2u);
+    ASSERT_EQ(staged.onvif.size(), 3u);
     EXPECT_EQ(staged.onvif[0].host, "192.168.1.20");
     EXPECT_EQ(staged.onvif[0].user, "admin");
     EXPECT_EQ(staged.onvif[0].password, "good-secret");
     EXPECT_FALSE(staged.onvif[0].needsPassword);
+    EXPECT_TRUE(staged.onvif[0].preservedPassword.empty());
 
     EXPECT_EQ(staged.onvif[1].host, "192.168.1.21");
     EXPECT_EQ(staged.onvif[1].user, "admin");
     EXPECT_TRUE(staged.onvif[1].password.empty());
     EXPECT_TRUE(staged.onvif[1].needsPassword);
+    EXPECT_EQ(staged.onvif[1].preservedPassword, bad);
+
+    EXPECT_EQ(staged.onvif[2].host, "192.168.1.22");
+    EXPECT_TRUE(staged.onvif[2].password.empty());
+    EXPECT_TRUE(staged.onvif[2].needsPassword);
+    EXPECT_TRUE(staged.onvif[2].preservedPassword.empty());
 
     const auto camera = staged.cameras.find("CAM1");
     ASSERT_NE(camera, staged.cameras.end());
@@ -115,4 +127,92 @@ TEST(PresetStore, KeepsAnUndecryptableOnvifEntryForThePrompt) {
     const auto scene = staged.scenes.find("sermon");
     ASSERT_NE(scene, staged.scenes.end());
     EXPECT_EQ(scene->second.bindings.at("CAM1"), "wide");
+}
+
+TEST(PresetStore, WritesAnUndecryptableBlobBack) {
+    const std::string bad = undecryptablePassword();
+    ASSERT_FALSE(bad.empty());
+
+    OnvifEndpoint ep;
+    ep.host = "192.168.1.21";
+    ep.port = 80;
+    ep.user = "admin";
+    ep.servicePath = "/onvif/device_service";
+    ep.needsPassword = true;
+    ep.preservedPassword = bad;
+
+    CameraManager mgr;
+    SceneStore scenes;
+    const TempPtzc saved(std::filesystem::temp_directory_path() / "ptz-onvif-blob-save.ptzc");
+    PresetStore store;
+    ASSERT_TRUE(store.save(mgr, scenes, {}, {}, {ep}, saved.path.string(), true));
+
+    std::ifstream in(saved.path);
+    ASSERT_TRUE(in.is_open());
+    nlohmann::json savedJson;
+    in >> savedJson;
+    ASSERT_EQ(savedJson["onvif"].size(), 1u);
+    EXPECT_EQ(savedJson["onvif"][0]["password"].get<std::string>(), bad);
+
+    cameras::StagedSetup staged;
+    std::string error;
+    ASSERT_EQ(store.read(saved.path.string(), staged, &error), LoadStatus::Ok) << error;
+    ASSERT_EQ(staged.onvif.size(), 1u);
+    EXPECT_TRUE(staged.onvif[0].password.empty());
+    EXPECT_TRUE(staged.onvif[0].needsPassword);
+    EXPECT_EQ(staged.onvif[0].preservedPassword, bad);
+}
+
+TEST(PresetStore, ReplacesAPreservedBlobWithTheNewPassword) {
+    const std::string bad = undecryptablePassword();
+    ASSERT_FALSE(bad.empty());
+
+    OnvifEndpoint ep;
+    ep.host = "192.168.1.21";
+    ep.port = 80;
+    ep.user = "admin";
+    ep.password = "new-secret";
+    ep.preservedPassword = bad;
+
+    CameraManager mgr;
+    SceneStore scenes;
+    const TempPtzc saved(std::filesystem::temp_directory_path() / "ptz-onvif-blob-replace.ptzc");
+    PresetStore store;
+    ASSERT_TRUE(store.save(mgr, scenes, {}, {}, {ep}, saved.path.string(), true));
+
+    std::ifstream in(saved.path);
+    ASSERT_TRUE(in.is_open());
+    nlohmann::json savedJson;
+    in >> savedJson;
+    ASSERT_EQ(savedJson["onvif"].size(), 1u);
+    const auto written = savedJson["onvif"][0]["password"].get<std::string>();
+    EXPECT_EQ(written.find(bad), std::string::npos);
+    const auto opened = unprotectPassword(written);
+    ASSERT_TRUE(opened);
+    EXPECT_EQ(*opened, "new-secret");
+}
+
+TEST(PresetStore, ExportOmitsAPreservedBlob) {
+    const std::string bad = undecryptablePassword();
+    ASSERT_FALSE(bad.empty());
+
+    OnvifEndpoint ep;
+    ep.host = "192.168.1.21";
+    ep.user = "admin";
+    ep.password = "new-secret";
+    ep.preservedPassword = bad;
+
+    CameraManager mgr;
+    SceneStore scenes;
+    const TempPtzc saved(std::filesystem::temp_directory_path() / "ptz-onvif-blob-export.ptzc");
+    PresetStore store;
+    ASSERT_TRUE(store.save(mgr, scenes, {}, {}, {ep}, saved.path.string(), false));
+
+    std::ifstream in(saved.path);
+    ASSERT_TRUE(in.is_open());
+    nlohmann::json savedJson;
+    in >> savedJson;
+    ASSERT_EQ(savedJson["onvif"].size(), 1u);
+    EXPECT_FALSE(savedJson["onvif"][0].contains("password"));
+    EXPECT_EQ(savedJson["onvif"][0]["host"], "192.168.1.21");
 }

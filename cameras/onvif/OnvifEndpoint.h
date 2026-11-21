@@ -17,6 +17,9 @@ namespace cameras::onvif {
         bool needsPassword = false;
         // Display name from WS-Discovery. Not required to connect, and not saved.
         std::string label;
+        // Original dpapi: text this Windows user cannot decrypt. setup save
+        // writes it back until a new password replaces it. Never logged.
+        std::string preservedPassword;
 
         std::string address() const { return host + ":" + std::to_string(port > 0 ? port : 80); }
 
