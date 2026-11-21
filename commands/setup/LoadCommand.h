@@ -5,10 +5,6 @@
 #include "../Arguments.h"
 #include "ConsolePassword.h"
 
-#include <functional>
-#include <optional>
-#include <string>
-
 namespace commands::setup {
     class LoadCommand : public Command {
     public:
@@ -17,7 +13,7 @@ namespace commands::setup {
         // The REPL uses the hidden console reader. Tests pass a stub.
         // setup load is registered only on the REPL. The WebSocket accepts
         // scene apply and nothing else, so this prompt cannot block a client.
-        using PasswordPrompt = std::function<std::optional<std::string>(const cameras::onvif::OnvifEndpoint&)>;
+        using PasswordPrompt = OnvifPasswordPrompt;
 
         explicit LoadCommand(PasswordPrompt prompt = readHiddenOnvifPassword)
             : Command("setup", "load", "setup load [file]",
