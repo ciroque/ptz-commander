@@ -1,6 +1,7 @@
 # Command system: camera, console, preset, setup, scene
 target_sources(ptz_commander PRIVATE
     Arguments.h
+    ConnectionLabel.h
     ResolveCameras.h
     Command.h
     CommandHandler.cpp
@@ -14,6 +15,8 @@ target_sources(ptz_commander PRIVATE
     camera/CalibrateCommand.h
     camera/ListCommand.cpp
     camera/ListCommand.h
+    camera/LoginCommand.cpp
+    camera/LoginCommand.h
     camera/MoveCommand.cpp
     camera/MoveCommand.h
     camera/PushCommand.cpp
@@ -38,6 +41,10 @@ target_sources(ptz_commander PRIVATE
     preset/StoreCommand.cpp
     preset/StoreCommand.h
 
+    setup/ConsolePassword.cpp
+    setup/ConsolePassword.h
+    setup/ExportCommand.cpp
+    setup/ExportCommand.h
     setup/ListCommand.cpp
     setup/ListCommand.h
     setup/LoadCommand.cpp

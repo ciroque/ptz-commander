@@ -31,6 +31,21 @@ namespace cameras::onvif {
         return true;
     }
 
+    bool OnvifCamera::signIn(const std::string& password, std::string& error) {
+        const std::string previous = endpoint_.password;
+        endpoint_.password = password;
+        client_ = OnvifClient(endpoint_.host, endpoint_.port, endpoint_.servicePath, endpoint_.user, password);
+        haveRaw_ = false;
+        if (!probe(error)) {
+            endpoint_.password = previous;
+            client_ = OnvifClient(endpoint_.host, endpoint_.port, endpoint_.servicePath, endpoint_.user, previous);
+            connected_ = false;
+            haveRaw_ = false;
+            return false;
+        }
+        return true;
+    }
+
     std::string OnvifCamera::getSerialNumber() const { return serial_; }
 
     std::string OnvifCamera::getName() const { return name_; }
@@ -55,7 +70,7 @@ namespace cameras::onvif {
 
     bool OnvifCamera::setPosition(float pan, float tilt, int zoom) {
         if (!connected_) {
-            core::Logger::error("ONVIF setPosition on a camera that did not answer: " + serial_);
+            core::Logger::error("ONVIF setPosition on an inactive camera: " + serial_);
             return false;
         }
         const double panX = panDegreesToX(pan);
@@ -71,7 +86,7 @@ namespace cameras::onvif {
 
     bool OnvifCamera::setZoom(int zoom, int speed) {
         if (!connected_) {
-            core::Logger::error("ONVIF setZoom on a camera that did not answer: " + serial_);
+            core::Logger::error("ONVIF setZoom on an inactive camera: " + serial_);
             return false;
         }
         if (!haveRaw_) {

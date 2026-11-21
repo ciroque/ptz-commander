@@ -13,6 +13,15 @@ namespace cameras::onvif {
         explicit OnvifCameraAdapter(CameraManager& manager);
 
         OnvifAddResult add(const OnvifEndpoint& endpoint);
+
+        // Keeps the camera, its presets, and this connection record without
+        // probing. The stored password is cleared. The camera is not connected.
+        OnvifAddResult addInactive(const OnvifEndpoint& endpoint);
+
+        // Sets the password on a camera already in the manager, probes, and
+        // on success stores the password for the next setup save.
+        OnvifAddResult login(const std::string& serial, const std::string& password);
+
         const std::vector<OnvifEndpoint>& endpoints() const { return endpoints_; }
 
     private:

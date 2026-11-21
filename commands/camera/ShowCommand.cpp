@@ -1,4 +1,5 @@
 #include "ShowCommand.h"
+#include "../ConnectionLabel.h"
 #include "../ResolveCameras.h"
 #include <iostream>
 #include <iomanip>
@@ -40,7 +41,7 @@ namespace commands::camera {
                     << camera->getSerialNumber() << std::endl;
 
             ctx.out << std::left << std::setw(20) << "Connected" << " | " << std::setw(30)
-                    << (camera->isConnected() ? "Yes" : "No") << std::endl;
+                    << commands::connectionLabel(*camera) << std::endl;
 
             ctx.out << std::left << std::setw(20) << "Pan" << " | " << std::setw(30) << ptz.pan << std::endl;
 

@@ -56,7 +56,7 @@ namespace {
 
 } // namespace
 
-TEST(PresetStore, SkipsOneUndecryptableOnvifPasswordAndLoadsTheRest) {
+TEST(PresetStore, KeepsAnUndecryptableOnvifEntryForThePrompt) {
     const auto good = protectPassword("good-secret");
     ASSERT_TRUE(good);
     const std::string bad = undecryptablePassword();
@@ -94,13 +94,16 @@ TEST(PresetStore, SkipsOneUndecryptableOnvifPasswordAndLoadsTheRest) {
     const auto status = store.read(temp.path.string(), staged, &error);
     EXPECT_EQ(status, LoadStatus::Ok) << error;
 
-    ASSERT_EQ(staged.onvif.size(), 1u);
+    ASSERT_EQ(staged.onvif.size(), 2u);
     EXPECT_EQ(staged.onvif[0].host, "192.168.1.20");
     EXPECT_EQ(staged.onvif[0].user, "admin");
     EXPECT_EQ(staged.onvif[0].password, "good-secret");
+    EXPECT_FALSE(staged.onvif[0].needsPassword);
 
-    ASSERT_EQ(staged.onvifSkipped.size(), 1u);
-    EXPECT_EQ(staged.onvifSkipped[0], "192.168.1.21");
+    EXPECT_EQ(staged.onvif[1].host, "192.168.1.21");
+    EXPECT_EQ(staged.onvif[1].user, "admin");
+    EXPECT_TRUE(staged.onvif[1].password.empty());
+    EXPECT_TRUE(staged.onvif[1].needsPassword);
 
     const auto camera = staged.cameras.find("CAM1");
     ASSERT_NE(camera, staged.cameras.end());

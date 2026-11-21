@@ -20,6 +20,9 @@ namespace cameras::onvif {
         double zoomX = 0;
     };
 
+    // Probe and move both surface a rejected login with this text.
+    inline constexpr const char* kAuthRejected = "the camera rejected the username or password";
+
     // Talks to one camera: WS-Security digest against the camera clock, then
     // AbsoluteMove / GetStatus on the PTZ service advertised by GetCapabilities.
     class OnvifClient {

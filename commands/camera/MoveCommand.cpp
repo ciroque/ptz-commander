@@ -1,4 +1,5 @@
 #include "MoveCommand.h"
+#include "../ConnectionLabel.h"
 #include "../ResolveCameras.h"
 #include <iostream>
 
@@ -43,6 +44,10 @@ namespace commands::camera {
 
             bool allGood = true;
             for (auto& camera : cameras) {
+                if (commands::refuseInactiveOnvif(ctx, *camera)) {
+                    allGood = false;
+                    continue;
+                }
                 if (!camera->setPosition(ptz.pan, ptz.tilt, ptz.zoom)) {
                     ctx.err << "Failed to move camera: " << camera->getSerialNumber() << std::endl;
                     allGood = false;

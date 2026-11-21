@@ -17,6 +17,12 @@ namespace cameras::onvif {
         // camera unconnected so the caller can refuse to add it.
         bool probe(std::string& error);
 
+        // Replaces the password and probes. On failure the previous password
+        // is restored and the camera stays unconnected.
+        bool signIn(const std::string& password, std::string& error);
+
+        const OnvifEndpoint& endpoint() const { return endpoint_; }
+
         std::string getSerialNumber() const override;
         std::string getName() const override;
         bool isConnected() const override;

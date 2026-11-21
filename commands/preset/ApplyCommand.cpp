@@ -1,4 +1,5 @@
 #include "ApplyCommand.h"
+#include "../ConnectionLabel.h"
 #include "../ResolveCameras.h"
 #include <iostream>
 #include <iterator>
@@ -50,6 +51,10 @@ namespace commands::preset {
 
         bool allGood = true;
         for (auto& camera : cameras) {
+            if (commands::refuseInactiveOnvif(ctx, *camera)) {
+                allGood = false;
+                continue;
+            }
             if (presetNameOrWildcard == "*") {
                 // Cycle through all presets for this camera
                 auto presets = camera->getPresets();

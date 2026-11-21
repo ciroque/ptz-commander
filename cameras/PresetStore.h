@@ -56,12 +56,12 @@ namespace cameras {
         // One per VISCA:COMn:a camera entry; the port and address come from
         // the key.
         std::vector<visca::ViscaSerialEndpoint> viscaSerial;
-        // Connection records. save() writes the password with DPAPI.
+        // Connection records. save() writes a password it has with DPAPI, and
+        // omits the key when the password is empty (an inactive camera).
         // toJsonString() (the WebSocket snapshot) never includes it.
+        // An entry with needsPassword set was missing a password, or its
+        // dpapi: blob did not decrypt. It is still in this list.
         std::vector<onvif::OnvifEndpoint> onvif;
-        // Hosts left out because the stored password could not be decrypted.
-        // The rest of the file still loads.
-        std::vector<std::string> onvifSkipped;
     };
 
     class PresetStore {
@@ -88,8 +88,10 @@ namespace cameras {
          * that must change cameras in between (adding VISCA-IP cameras) use
          * the two halves directly.
          * On ParseError, error (if given) says what was wrong.
-         * An ONVIF password that cannot be decrypted omits that camera
-         * (onvifSkipped) instead of failing the file.
+         * An ONVIF entry with no password, or a dpapi: blob that cannot be
+         * decrypted, stays in the list with needsPassword set. The rest of
+         * the file still loads. Older plaintext and dpapi: values that do
+         * decrypt are returned as the password, with needsPassword clear.
          */
         LoadStatus read(std::string filename, StagedSetup& out, std::string* error = nullptr) const;
 
@@ -117,10 +119,14 @@ namespace cameras {
             return save(mgr, scenes, {}, {}, {}, filename);
         }
 
+        // includePasswords false writes the same file with no password key
+        // on onvif entries (setup export). An empty password is omitted
+        // either way, because there is nothing to encrypt.
         bool save(const CameraManager& mgr, const SceneStore& scenes,
                   const std::vector<visca::ViscaIpEndpoint>& viscaIp,
                   const std::vector<visca::ViscaSerialEndpoint>& viscaSerial,
-                  const std::vector<onvif::OnvifEndpoint>& onvif, std::string filename = "presets.ptzc") const;
+                  const std::vector<onvif::OnvifEndpoint>& onvif, std::string filename = "presets.ptzc",
+                  bool includePasswords = true) const;
 
         /**
          * Normalizes a filename for .ptzc files: appends ".ptzc" if the path has no extension.

@@ -104,7 +104,7 @@ A scan only sends inquiries and moves nothing. `camera add` also sends an inquir
 
 ### Stored credentials
 
-ONVIF passwords are written to `.ptzc` files as Windows DPAPI blobs (`dpapi:` plus base64), which only the Windows user who saved them can decrypt. Older plaintext files still load. If a password cannot be decrypted, for example after copying the file to another account, that one camera is left out and the rest of the setup loads. The password never appears in logs or in the WebSocket snapshot.
+ONVIF passwords are written to `.ptzc` files as Windows DPAPI blobs (`dpapi:` plus base64), which only the Windows user who saved them can decrypt. `setup export` writes the same file with those passwords omitted, so a setup can move to another PC or Windows account. `setup load` asks for a missing or undecryptable password. Skipping, or giving a password the camera rejects three times, leaves that camera in the setup, inactive, with its presets and scene bindings. `camera login` connects it later. A later `setup save` stores a password the user entered as a DPAPI blob for the current user. Older plaintext files still load. A camera whose password decrypts but that does not answer is still left out. The password never appears in logs or in the WebSocket snapshot. The socket accepts scene apply only, so `setup load` cannot block a client waiting for a password.
 
 ### OBS integration
 
@@ -113,11 +113,12 @@ ONVIF passwords are written to `.ptzc` files as Windows DPAPI blobs (`dpapi:` pl
 ## Build, test, and release
 
 - **Build:** CMake with C++20 and MSVC x64. spdlog, nlohmann/json, IXWebSocket, and GoogleTest come in through `FetchContent`. Only the OBSBOT SDK is checked in, because it is not available any other way; [`lib/obsbot/README.md`](../lib/obsbot/README.md) explains its license status.
-- **Tests:** GoogleTest covers the parts with no hardware: the degree mapping, VISCA-IP framing, ONVIF URL and XML parsing, argument splitting, DPAPI round trips and tamper detection, and loading a setup in which one ONVIF password cannot be decrypted.
+- **Tests:** GoogleTest covers the parts with no hardware: the degree mapping, VISCA-IP framing, ONVIF URL and XML parsing, argument splitting, DPAPI round trips and tamper detection, loading a setup whose ONVIF password is missing or cannot be decrypted, and `setup export` omitting those passwords.
 - **CI:** every pull request builds the app and runs the tests on Windows.
 - **Release:** pushing a `vX.Y.Z` tag builds a WiX MSI, stamps it with that version, and attaches it to a GitHub Release.
 
 ## Decisions
 
 - [ADR 0001: Scenes as named preset bindings](adr/0001-scenes.md)
+- [ADR 0002: Portable setup files](adr/0002-portable-setup.md)
 - [VISCA PTZ ranges and coordinate system](VISCA-PTZ-Ranges-and-Coordinate-System.md)

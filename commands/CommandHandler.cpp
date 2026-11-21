@@ -4,6 +4,7 @@
 #include "camera/AliasCommand.h"
 #include "camera/CalibrateCommand.h"
 #include "camera/ListCommand.h"
+#include "camera/LoginCommand.h"
 #include "camera/MoveCommand.h"
 #include "camera/PushCommand.h"
 #include "camera/ScanCommand.h"
@@ -17,6 +18,7 @@
 #include "preset/ListCommand.h"
 #include "preset/StoreCommand.h"
 
+#include "setup/ExportCommand.h"
 #include "setup/ListCommand.h"
 #include "setup/LoadCommand.h"
 #include "setup/SaveCommand.h"
@@ -37,6 +39,7 @@ namespace commands {
 
     CommandHandler::CommandHandler() {
         addCommand(std::make_unique<camera::ListCommand>());
+        addCommand(std::make_unique<camera::LoginCommand>());
         addCommand(std::make_unique<camera::AddCommand>());
         addCommand(std::make_unique<camera::AliasCommand>());
         addCommand(std::make_unique<camera::CalibrateCommand>());
@@ -53,6 +56,7 @@ namespace commands {
         addCommand(std::make_unique<setup::ListCommand>());
         addCommand(std::make_unique<setup::LoadCommand>());
         addCommand(std::make_unique<setup::SaveCommand>());
+        addCommand(std::make_unique<setup::ExportCommand>());
 
         addCommand(std::make_unique<scene::ListCommand>());
         addCommand(std::make_unique<scene::ShowCommand>());

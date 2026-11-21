@@ -215,8 +215,7 @@ namespace cameras {
             return true;
         }
 
-        bool parseOnvif(const nlohmann::json& j, std::vector<onvif::OnvifEndpoint>& out,
-                        std::vector<std::string>& skipped) {
+        bool parseOnvif(const nlohmann::json& j, std::vector<onvif::OnvifEndpoint>& out) {
             if (!j.contains("onvif")) {
                 return true;
             }
@@ -225,20 +224,29 @@ namespace cameras {
             }
             for (const auto& item : j["onvif"]) {
                 if (!item.is_object() || !item.contains("host") || !item["host"].is_string() || !item.contains("user")
-                    || !item["user"].is_string() || !item.contains("password") || !item["password"].is_string()) {
+                    || !item["user"].is_string()) {
+                    return false;
+                }
+                if (item.contains("password") && !item["password"].is_string()) {
                     return false;
                 }
                 onvif::OnvifEndpoint ep;
                 ep.host = item["host"].get<std::string>();
                 ep.port = item.value("port", 80);
                 ep.user = item["user"].get<std::string>();
+                ep.servicePath = item.value("path", std::string("/onvif/device_service"));
+                if (!item.contains("password")) {
+                    ep.needsPassword = true;
+                    out.push_back(std::move(ep));
+                    continue;
+                }
                 const auto password = onvif::unprotectPassword(item["password"].get<std::string>());
-                if (!password) {
-                    skipped.push_back(ep.host);
+                if (!password || password->empty()) {
+                    ep.needsPassword = true;
+                    out.push_back(std::move(ep));
                     continue;
                 }
                 ep.password = *password;
-                ep.servicePath = item.value("path", std::string("/onvif/device_service"));
                 out.push_back(std::move(ep));
             }
             return true;
@@ -378,8 +386,8 @@ namespace cameras {
             if (!parseViscaIp(j, staged.viscaIp)) {
                 return parseError("\"visca_ip\" must be a list of entries that each have a host");
             }
-            if (!parseOnvif(j, staged.onvif, staged.onvifSkipped)) {
-                return parseError("\"onvif\" must be a list of entries that each have a host, user, and password");
+            if (!parseOnvif(j, staged.onvif)) {
+                return parseError("\"onvif\" must be a list of entries that each have a host and a user");
             }
 
             out = std::move(staged);
@@ -429,7 +437,8 @@ namespace cameras {
     bool PresetStore::save(const CameraManager& mgr, const SceneStore& scenes,
                            const std::vector<visca::ViscaIpEndpoint>& viscaIp,
                            const std::vector<visca::ViscaSerialEndpoint>& viscaSerial,
-                           const std::vector<onvif::OnvifEndpoint>& onvif, std::string filename) const {
+                           const std::vector<onvif::OnvifEndpoint>& onvif, std::string filename,
+                           bool includePasswords) const {
         filename = resolvePresetPath(std::move(filename));
 
         std::ofstream file(filename);
@@ -452,16 +461,17 @@ namespace cameras {
         if (!onvif.empty()) {
             nlohmann::json arr = nlohmann::json::array();
             for (const auto& ep : onvif) {
-                const auto password = onvif::protectPassword(ep.password);
-                if (!password) {
-                    core::Logger::error("Could not encrypt the ONVIF password for " + ep.host);
-                    return false;
+                nlohmann::json entry = {{"host", ep.host}, {"port", ep.port}, {"user", ep.user}};
+                if (includePasswords && !ep.password.empty()) {
+                    const auto password = onvif::protectPassword(ep.password);
+                    if (!password) {
+                        core::Logger::error("Could not encrypt the ONVIF password for " + ep.host);
+                        return false;
+                    }
+                    entry["password"] = *password;
                 }
-                arr.push_back({{"host", ep.host},
-                               {"port", ep.port},
-                               {"user", ep.user},
-                               {"password", *password},
-                               {"path", ep.servicePath}});
+                entry["path"] = ep.servicePath;
+                arr.push_back(std::move(entry));
             }
             j["onvif"] = std::move(arr);
         }
