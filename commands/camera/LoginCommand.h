@@ -11,12 +11,13 @@ namespace commands::camera {
     class LoginCommand : public Command {
     public:
         // Asks with the hidden reader when no password is given and none is
-        // stored. A stored password is retried and is not asked for again.
+        // stored. A stored password is retried. If the camera rejects it, asks
+        // up to three times. A blank answer keeps the stored password.
         // A password on the command line is the script form.
         explicit LoginCommand(commands::setup::OnvifPasswordPrompt prompt = commands::setup::readHiddenOnvifPassword)
             : Command("camera", "login", "camera login <id> [password]",
                       "Set an ONVIF password, connect, and make that camera active. "
-                      "Retries a stored password without asking, and asks when none is stored"),
+                      "Retries a stored password, and asks if the camera rejects it"),
               prompt_(std::move(prompt)) {}
         void execute(data::Context& ctx, const std::string& args) override;
 
