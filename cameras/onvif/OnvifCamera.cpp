@@ -15,7 +15,13 @@ namespace cameras::onvif {
     }
 
     ::cameras::ConnectionState OnvifCamera::connectionState() const {
-        return connected_ ? ::cameras::ConnectionState::Connected : ::cameras::ConnectionState::NeedsLogin;
+        if (connected_) {
+            return ::cameras::ConnectionState::Connected;
+        }
+        if (endpoint_.password.empty()) {
+            return ::cameras::ConnectionState::NeedsLogin;
+        }
+        return ::cameras::ConnectionState::Offline;
     }
 
     bool OnvifCamera::probe(std::string& error) {
