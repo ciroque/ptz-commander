@@ -4,6 +4,7 @@
 #include "OnvifCamera.h"
 #include "OnvifCameraAdapter.h"
 #include "SceneStore.h"
+#include "ConnectionLabel.h"
 #include "camera/LoginCommand.h"
 
 #include "../data/Context.h"
@@ -181,7 +182,20 @@ TEST(OnvifSignIn, AddInactiveKeepsThePassword) {
     const auto camera = mgr.findBySerial("ONVIF:192.168.1.21:80");
     ASSERT_NE(camera, nullptr);
     EXPECT_FALSE(camera->isConnected());
+    EXPECT_EQ(camera->connectionState(), cameras::ConnectionState::Offline);
+    EXPECT_STREQ(commands::connectionLabel(*camera), "Offline");
+}
+
+TEST(OnvifSignIn, AddInactiveWithoutAPasswordNeedsLogin) {
+    CameraManager mgr;
+    OnvifCameraAdapter adapter(mgr);
+    const auto result
+        = adapter.addInactive(OnvifEndpoint{"192.168.1.22", 80, "/onvif/device_service", "admin", "", false, ""});
+    EXPECT_EQ(result.status, OnvifAddStatus::Added);
+    const auto camera = mgr.findBySerial("ONVIF:192.168.1.22:80");
+    ASSERT_NE(camera, nullptr);
     EXPECT_EQ(camera->connectionState(), cameras::ConnectionState::NeedsLogin);
+    EXPECT_STREQ(commands::connectionLabel(*camera), "Inactive");
 }
 
 TEST(OnvifSignIn, RewordedAuthTextStillCountsAsRejected) {

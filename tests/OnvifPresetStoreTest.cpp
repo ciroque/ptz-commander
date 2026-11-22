@@ -99,6 +99,32 @@ TEST(PresetStoreCommand, StarStoresTheOtherCameras) {
     EXPECT_NE(out.str().find("Stored preset 'sermon' for 1 camera"), std::string::npos);
 }
 
+TEST(PresetStoreCommand, RefusesOfflineAndInactive) {
+    CameraManager mgr;
+    cameras::SceneStore scenes;
+    auto offline = std::make_shared<ShelfCamera>("ONVIF:192.168.1.21:80", false, Ptz{0.0f, 0.0f, 0});
+    offline->setConnectionState(cameras::ConnectionState::Offline);
+    offline->addPreset("sermon", Preset("sermon", Ptz{12.0f, -3.0f, 40}));
+    auto inactive = std::make_shared<ShelfCamera>("ONVIF:192.168.1.22:80", false, Ptz{0.0f, 0.0f, 0});
+    inactive->setConnectionState(cameras::ConnectionState::NeedsLogin);
+    inactive->addPreset("wide", Preset("wide", Ptz{1.5f, -2.0f, 10}));
+    mgr.addCamera(offline);
+    mgr.addCamera(inactive);
+
+    std::ostringstream out;
+    std::ostringstream err;
+    data::Context ctx(mgr, scenes, out, err);
+    commands::preset::StoreCommand command;
+    command.execute(ctx, "ONVIF:192.168.1.21:80 sermon");
+    command.execute(ctx, "ONVIF:192.168.1.22:80 wide");
+
+    EXPECT_FLOAT_EQ(offline->getPresetByName("sermon")->ptz.pan, 12.0f);
+    EXPECT_FLOAT_EQ(inactive->getPresetByName("wide")->ptz.pan, 1.5f);
+    EXPECT_NE(err.str().find("ONVIF:192.168.1.21:80 is offline"), std::string::npos);
+    EXPECT_NE(err.str().find("ONVIF:192.168.1.22:80 is inactive"), std::string::npos);
+    EXPECT_EQ(out.str().find("Stored preset"), std::string::npos);
+}
+
 TEST(ConnectionState, CommandsAskTheCameraNotTheSerial) {
     ShelfCamera needsLogin("VISCA-IP:192.168.1.30:52381", false, Ptz{});
     needsLogin.setConnectionState(cameras::ConnectionState::NeedsLogin);

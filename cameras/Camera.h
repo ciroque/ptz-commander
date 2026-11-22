@@ -8,7 +8,7 @@
 #include <vector>
 
 namespace cameras {
-    enum class ConnectionState { Connected, NotConnected, NeedsLogin };
+    enum class ConnectionState { Connected, NotConnected, NeedsLogin, Offline };
 
     class Camera {
     protected:
@@ -28,7 +28,7 @@ namespace cameras {
         virtual std::string getName() const = 0;
         virtual bool isConnected() const = 0;
 
-        // NeedsLogin is a camera kept in the setup until camera login.
+        // NeedsLogin has no password yet. Offline has one and is not connected.
         // The default is Connected or NotConnected from isConnected().
         virtual ConnectionState connectionState() const {
             return isConnected() ? ConnectionState::Connected : ConnectionState::NotConnected;
