@@ -40,6 +40,7 @@ using cameras::onvif::OnvifAddResult;
 using cameras::onvif::OnvifAddStatus;
 using cameras::onvif::OnvifEndpoint;
 using cameras::onvif::protectPassword;
+using cameras::onvif::unprotectPassword;
 
 namespace {
 
@@ -386,8 +387,14 @@ TEST(SetupLoad, AuthFaultAsksAgainThenLeavesTheCameraInactive) {
     EXPECT_FALSE(camera->isConnected());
 }
 
-TEST(SetupLoad, ACameraThatDoesNotAnswerIsLeftOut) {
+TEST(SetupLoad, ACameraThatDoesNotAnswerIsKept) {
+    const std::string serial = "ONVIF:192.168.1.21:80";
     nlohmann::json file = nlohmann::json::object();
+    file[serial] = {
+        {"alias", "Pulpit"},
+        {"presets", {{"wide", {{"name", "wide"}, {"pan", 1.5}, {"tilt", -2.0}, {"zoom", 10}}}}},
+    };
+    file["scenes"] = {{"sermon", {{serial, "wide"}}}};
     file["onvif"] = nlohmann::json::array({onvifEntry("192.168.1.21", "admin", "known-secret")});
     const TempPtzc temp = writePtzc(std::filesystem::temp_directory_path() / "ptz-offline-load.ptzc", file);
 
@@ -409,9 +416,89 @@ TEST(SetupLoad, ACameraThatDoesNotAnswerIsLeftOut) {
     EXPECT_EQ(prompts, 0);
     ASSERT_EQ(harness.connected.size(), 1u);
     EXPECT_EQ(harness.connected[0].password, "known-secret");
-    EXPECT_TRUE(harness.inactive.empty());
-    EXPECT_EQ(harness.mgr.getCameras().size(), 0u);
-    EXPECT_NE(harness.err.str().find("did not answer"), std::string::npos);
+    ASSERT_EQ(harness.inactive.size(), 1u);
+    EXPECT_EQ(harness.inactive[0].password, "known-secret");
+    EXPECT_NE(harness.err.str().find("left inactive"), std::string::npos);
+    EXPECT_EQ(harness.out.str().find("was not added"), std::string::npos);
+
+    const auto camera = harness.mgr.findBySerial(serial);
+    ASSERT_NE(camera, nullptr);
+    EXPECT_FALSE(camera->isConnected());
+    EXPECT_EQ(camera->getAlias(), "Pulpit");
+    const auto* preset = camera->getPresetByName("wide");
+    ASSERT_NE(preset, nullptr);
+    EXPECT_FLOAT_EQ(preset->ptz.pan, 1.5f);
+    const auto* scene = harness.scenes.find("sermon");
+    ASSERT_NE(scene, nullptr);
+    EXPECT_EQ(scene->bindings.at(serial), "wide");
+
+    const TempPtzc saved(std::filesystem::temp_directory_path() / "ptz-offline-save.ptzc");
+    PresetStore store;
+    ASSERT_TRUE(store.save(harness.mgr, harness.scenes, {}, {}, harness.ctx.onvifEndpoints, saved.path.string()));
+    std::ifstream savedIn(saved.path);
+    ASSERT_TRUE(savedIn.is_open());
+    nlohmann::json savedJson;
+    savedIn >> savedJson;
+    ASSERT_EQ(savedJson["onvif"].size(), 1u);
+    const auto written = savedJson["onvif"][0]["password"].get<std::string>();
+    const auto opened = unprotectPassword(written);
+    ASSERT_TRUE(opened);
+    EXPECT_EQ(*opened, "known-secret");
+    EXPECT_EQ(savedJson[serial]["alias"], "Pulpit");
+}
+
+TEST(SetupLoad, TypedPasswordForAnOfflineCameraIsKept) {
+    nlohmann::json file = nlohmann::json::object();
+    file["onvif"] = nlohmann::json::array({onvifEntry("192.168.1.21", "admin", nullptr)});
+    const TempPtzc temp = writePtzc(std::filesystem::temp_directory_path() / "ptz-offline-typed.ptzc", file);
+
+    LoadHarness harness;
+    int prompts = 0;
+    harness.connect = [&](const OnvifEndpoint& ep) {
+        harness.connected.push_back(ep);
+        OnvifAddResult result;
+        result.status = OnvifAddStatus::Failed;
+        result.detail = "the camera did not answer";
+        return result;
+    };
+    commands::setup::LoadCommand command([&](const OnvifEndpoint&) {
+        ++prompts;
+        return std::optional<std::string>("typed-secret");
+    });
+    command.execute(harness.ctx, temp.path.string());
+
+    EXPECT_EQ(prompts, 1);
+    ASSERT_EQ(harness.connected.size(), 1u);
+    EXPECT_EQ(harness.connected[0].password, "typed-secret");
+    ASSERT_EQ(harness.inactive.size(), 1u);
+    EXPECT_EQ(harness.inactive[0].password, "typed-secret");
+    const auto camera = harness.mgr.findBySerial("ONVIF:192.168.1.21:80");
+    ASSERT_NE(camera, nullptr);
+    EXPECT_FALSE(camera->isConnected());
+}
+
+TEST(SetupLoad, StoredPasswordRejectedKeepsTheCamera) {
+    const std::string serial = "ONVIF:192.168.1.21:80";
+    nlohmann::json file = nlohmann::json::object();
+    file[serial] = {
+        {"presets", {{"wide", {{"name", "wide"}, {"pan", 4.0}, {"tilt", 1.0}, {"zoom", 8}}}}},
+    };
+    file["onvif"] = nlohmann::json::array({onvifEntry("192.168.1.21", "admin", "kept-secret")});
+    const TempPtzc temp = writePtzc(std::filesystem::temp_directory_path() / "ptz-stored-rejected.ptzc", file);
+
+    LoadHarness harness;
+    harness.connect = [&](const OnvifEndpoint&) { return authRejected(); };
+    commands::setup::LoadCommand command(
+        [](const OnvifEndpoint&) { return std::optional<std::string>("should-not-be-asked"); });
+    command.execute(harness.ctx, temp.path.string());
+
+    ASSERT_EQ(harness.inactive.size(), 1u);
+    EXPECT_EQ(harness.inactive[0].password, "kept-secret");
+    EXPECT_NE(harness.err.str().find("rejected the stored password"), std::string::npos);
+    const auto camera = harness.mgr.findBySerial(serial);
+    ASSERT_NE(camera, nullptr);
+    EXPECT_FALSE(camera->isConnected());
+    ASSERT_NE(camera->getPresetByName("wide"), nullptr);
 }
 
 TEST(SetupLoad, SkipThenSaveWritesTheUndecryptableBlob) {

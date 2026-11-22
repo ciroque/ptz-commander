@@ -62,7 +62,6 @@ namespace cameras::onvif {
     OnvifAddResult OnvifCameraAdapter::addInactive(const OnvifEndpoint& requested) {
         OnvifAddResult result;
         OnvifEndpoint endpoint = normalized(requested);
-        endpoint.password.clear();
         endpoint.needsPassword = false;
         endpoint.label.clear();
         if (endpoint.host.empty() || endpoint.user.empty()) {

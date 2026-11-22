@@ -15,8 +15,9 @@ namespace cameras::onvif {
         OnvifAddResult add(const OnvifEndpoint& endpoint);
 
         // Keeps the camera, its presets, and this connection record without
-        // probing. The stored password is cleared. A dpapi blob this user
-        // cannot decrypt is kept. The camera is not connected.
+        // probing. The password it is given is kept, including an empty one.
+        // A dpapi blob this user cannot decrypt is kept. The camera is not
+        // connected.
         OnvifAddResult addInactive(const OnvifEndpoint& endpoint);
 
         // Sets the password on a camera already in the manager, probes, and

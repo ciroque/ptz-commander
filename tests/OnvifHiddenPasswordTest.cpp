@@ -146,17 +146,41 @@ TEST(OnvifHiddenPassword, CommandLinePasswordDoesNotAsk) {
     EXPECT_EQ(harness.logins[0], camera->getSerialNumber() + "=secret-arg");
 }
 
-TEST(OnvifHiddenPassword, StoredPasswordIsLeftAlone) {
+TEST(OnvifHiddenPassword, StoredPasswordIsRetriedWithoutAsking) {
     Harness harness;
-    const auto camera = harness.addCamera("ONVIF:192.168.1.21:80", true);
+    const auto camera = harness.addCamera("ONVIF:192.168.1.21:80", false);
     harness.ctx.onvifEndpoints = {stored("192.168.1.21", "admin", "kept")};
 
     harness.login.execute(harness.ctx, camera->getSerialNumber());
 
     EXPECT_EQ(harness.prompt.calls, 0);
-    EXPECT_TRUE(harness.logins.empty());
-    EXPECT_TRUE(camera->isConnected());
-    EXPECT_NE(harness.err.str().find("already has a password"), std::string::npos);
+    ASSERT_EQ(harness.logins.size(), 1u);
+    EXPECT_EQ(harness.logins[0], camera->getSerialNumber() + "=kept");
+    EXPECT_NE(harness.out.str().find("is active"), std::string::npos);
+    EXPECT_EQ(harness.ctx.onvifEndpoints[0].password, "kept");
+    EXPECT_FALSE(camera->isConnected());
+}
+
+TEST(OnvifHiddenPassword, RejectedStoredPasswordIsKept) {
+    Harness harness;
+    const auto camera = harness.addCamera("ONVIF:192.168.1.21:80", false);
+    harness.ctx.onvifEndpoints = {stored("192.168.1.21", "admin", "kept")};
+    harness.ctx.loginOnvif = [&](const std::string& serial, const std::string& password) {
+        harness.logins.push_back(serial + "=" + password);
+        OnvifAddResult result;
+        result.status = OnvifAddStatus::Failed;
+        result.authRejected = true;
+        result.detail = "the camera rejected the username or password";
+        return result;
+    };
+
+    harness.login.execute(harness.ctx, camera->getSerialNumber());
+
+    EXPECT_EQ(harness.prompt.calls, 0);
+    ASSERT_EQ(harness.logins.size(), 1u);
+    EXPECT_EQ(harness.ctx.onvifEndpoints[0].password, "kept");
+    EXPECT_FALSE(camera->isConnected());
+    EXPECT_NE(harness.err.str().find("is still inactive"), std::string::npos);
 }
 
 TEST(OnvifHiddenPassword, LoginOfAViscaCameraDoesNotAsk) {
