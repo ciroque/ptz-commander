@@ -41,7 +41,7 @@ namespace commands::scene {
                 continue;
             }
 
-            if (commands::refuseInactiveOnvif(ctx, *camera)) {
+            if (commands::refuseNeedsLogin(ctx, *camera)) {
                 skipped++;
                 continue;
             }

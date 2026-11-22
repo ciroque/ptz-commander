@@ -51,7 +51,7 @@ namespace commands::preset {
 
         bool allGood = true;
         for (auto& camera : cameras) {
-            if (commands::refuseInactiveOnvif(ctx, *camera)) {
+            if (commands::refuseNeedsLogin(ctx, *camera)) {
                 allGood = false;
                 continue;
             }

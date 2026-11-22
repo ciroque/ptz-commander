@@ -26,6 +26,10 @@ namespace cameras::onvif {
         std::string getSerialNumber() const override;
         std::string getName() const override;
         bool isConnected() const override;
+        ::cameras::ConnectionState connectionState() const override;
+
+        // Kind of the last failed probe or sign-in. None after a success.
+        OnvifError lastError() const { return lastKind_; }
 
         bool setPosition(float pan, float tilt, int zoom) override;
         bool setZoom(int zoom, int speed) override;
@@ -38,6 +42,7 @@ namespace cameras::onvif {
         mutable OnvifPosition lastRaw_{};
         mutable bool haveRaw_ = false;
         mutable bool connected_ = false;
+        OnvifError lastKind_ = OnvifError::None;
 
     private:
         bool moveRaw(double panX, double tiltY, double zoomX, double panTiltSpeed, double zoomSpeed) const;

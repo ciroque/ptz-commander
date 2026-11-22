@@ -208,6 +208,7 @@ namespace cameras::onvif {
         if (authenticate) {
             header = securityHeader(user_, password_, clockOffset_);
             if (header.empty()) {
+                result.kind = OnvifError::Fault;
                 result.error = "could not build the ONVIF login token";
                 return result;
             }
@@ -217,6 +218,7 @@ namespace cameras::onvif {
         const std::wstring hostWide = widen(host);
         const std::wstring pathWide = widen(path.empty() ? "/" : path);
         if (hostWide.empty() || pathWide.empty()) {
+            result.kind = OnvifError::NoAnswer;
             result.error = "the ONVIF address is not valid";
             return result;
         }
@@ -224,6 +226,7 @@ namespace cameras::onvif {
         WinHttpHandle session(WinHttpOpen(L"PTZCommander", WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_NO_PROXY_NAME,
                                           WINHTTP_NO_PROXY_BYPASS, 0));
         if (!session.handle) {
+            result.kind = OnvifError::Http;
             result.error = "could not open an HTTP session";
             return result;
         }
@@ -231,6 +234,7 @@ namespace cameras::onvif {
 
         WinHttpHandle connection(WinHttpConnect(session.handle, hostWide.c_str(), static_cast<INTERNET_PORT>(port), 0));
         if (!connection.handle) {
+            result.kind = OnvifError::NoAnswer;
             result.error = "could not connect to " + host;
             return result;
         }
@@ -238,6 +242,7 @@ namespace cameras::onvif {
         WinHttpHandle request(WinHttpOpenRequest(connection.handle, L"POST", pathWide.c_str(), nullptr,
                                                  WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, 0));
         if (!request.handle) {
+            result.kind = OnvifError::Http;
             result.error = "could not create the ONVIF request";
             return result;
         }
@@ -246,6 +251,7 @@ namespace cameras::onvif {
         if (!WinHttpSendRequest(request.handle, headers, static_cast<DWORD>(-1), const_cast<char*>(body.data()),
                                 static_cast<DWORD>(body.size()), static_cast<DWORD>(body.size()), 0)
             || !WinHttpReceiveResponse(request.handle, nullptr)) {
+            result.kind = OnvifError::NoAnswer;
             result.error = "the ONVIF request to " + host + " failed";
             return result;
         }
@@ -254,6 +260,7 @@ namespace cameras::onvif {
         DWORD statusSize = sizeof(status);
         if (!WinHttpQueryHeaders(request.handle, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
                                  WINHTTP_HEADER_NAME_BY_INDEX, &status, &statusSize, WINHTTP_NO_HEADER_INDEX)) {
+            result.kind = OnvifError::Http;
             result.error = "could not read the ONVIF response";
             return result;
         }
@@ -263,6 +270,7 @@ namespace cameras::onvif {
         for (;;) {
             DWORD available = 0;
             if (!WinHttpQueryDataAvailable(request.handle, &available)) {
+                result.kind = OnvifError::Http;
                 result.error = "could not read the ONVIF response";
                 return result;
             }
@@ -270,6 +278,7 @@ namespace cameras::onvif {
                 break;
             }
             if (payload.size() + available > 1024 * 1024) {
+                result.kind = OnvifError::Http;
                 result.error = "the ONVIF response was too large";
                 return result;
             }
@@ -277,6 +286,7 @@ namespace cameras::onvif {
             payload.resize(offset + available);
             DWORD read = 0;
             if (!WinHttpReadData(request.handle, payload.data() + offset, available, &read)) {
+                result.kind = OnvifError::Http;
                 result.error = "could not read the ONVIF response";
                 return result;
             }
@@ -289,22 +299,29 @@ namespace cameras::onvif {
         result.body = std::move(payload);
         result.ok = true;
         if (result.status == 401 || isAuthFault(result.body)) {
+            result.kind = OnvifError::AuthRejected;
             result.error = kAuthRejected;
         } else if (result.status != 200) {
+            result.kind = OnvifError::Http;
             result.error = "the camera returned HTTP " + std::to_string(result.status);
         } else if (isFault(result.body)) {
+            result.kind = OnvifError::Fault;
             result.error = faultText(result.body);
         }
         return result;
     }
 
-    bool OnvifClient::syncClock(std::string& error) {
+    OnvifCallResult OnvifClient::failureOf(const SoapResult& response, const char* fallback, OnvifError fallbackKind) {
+        const OnvifError kind = response.kind == OnvifError::None ? fallbackKind : response.kind;
+        return OnvifCallResult::failure(kind, response.error.empty() ? fallback : response.error);
+    }
+
+    OnvifCallResult OnvifClient::syncClock() {
         const auto response
             = post(host_, port_, servicePath_,
                    "<tds:GetSystemDateAndTime xmlns:tds=\"http://www.onvif.org/ver10/device/wsdl\"/>", false);
         if (!response.ok || response.status != 200 || isFault(response.body)) {
-            error = response.error.empty() ? "could not read the camera clock" : response.error;
-            return false;
+            return failureOf(response, "could not read the camera clock", OnvifError::NoAnswer);
         }
 
         const size_t utc = findXmlTag(response.body, "UTCDateTime");
@@ -317,8 +334,7 @@ namespace cameras::onvif {
         const int second = fieldNumber(block, "Second");
         if (year < 1970 || month < 1 || month > 12 || day < 1 || day > 31 || hour < 0 || hour > 23 || minute < 0
             || minute > 59 || second < 0 || second > 60) {
-            error = "the camera clock was not readable";
-            return false;
+            return OnvifCallResult::failure(OnvifError::Fault, "the camera clock was not readable");
         }
 
         std::tm utcTm{};
@@ -330,23 +346,26 @@ namespace cameras::onvif {
         utcTm.tm_sec = second;
         const std::time_t cameraTime = _mkgmtime(&utcTm);
         if (cameraTime == static_cast<std::time_t>(-1)) {
-            error = "the camera clock was not readable";
-            return false;
+            return OnvifCallResult::failure(OnvifError::Fault, "the camera clock was not readable");
         }
         const auto cameraPoint = std::chrono::system_clock::from_time_t(cameraTime);
         clockOffset_ = cameraPoint - std::chrono::system_clock::now();
         clockSynced_ = true;
-        return true;
+        return OnvifCallResult::success();
     }
 
     OnvifClient::SoapResult OnvifClient::callAuthenticated(const std::string& host, int port, const std::string& path,
                                                            const std::string& inner) {
         SoapResult response;
         for (int attempt = 0; attempt < 2; ++attempt) {
-            std::string clockError;
-            if (!clockSynced_ && !syncClock(clockError)) {
-                response.error = clockError;
-                return response;
+            if (!clockSynced_) {
+                const auto clock = syncClock();
+                if (!clock.ok) {
+                    response.ok = false;
+                    response.error = clock.detail;
+                    response.kind = clock.kind;
+                    return response;
+                }
             }
             response = post(host, port, path, inner, true);
             if (response.ok && response.status == 200 && !isFault(response.body)) {
@@ -361,41 +380,38 @@ namespace cameras::onvif {
         return response;
     }
 
-    bool OnvifClient::loadServices(std::string& error) {
+    OnvifCallResult OnvifClient::loadServices() {
         const auto caps = callAuthenticated(host_, port_, servicePath_,
                                             "<tds:GetCapabilities "
                                             "xmlns:tds=\"http://www.onvif.org/ver10/device/wsdl\"><tds:Category>All</"
                                             "tds:Category></tds:GetCapabilities>");
         if (!caps.ok || caps.status != 200 || isFault(caps.body)) {
-            error = caps.error.empty() ? "could not read the camera services" : caps.error;
-            return false;
+            return failureOf(caps, "could not read the camera services", OnvifError::Fault);
         }
 
         const size_t mediaAt = findXmlTag(caps.body, "Media");
         const size_t ptzAt = findXmlTag(caps.body, "PTZ");
         if (mediaAt == std::string::npos || ptzAt == std::string::npos) {
-            error = "the camera has no ONVIF PTZ service";
-            return false;
+            return OnvifCallResult::failure(OnvifError::NoPtzProfile, "the camera has no ONVIF PTZ service");
         }
         const std::string mediaXaddr = xmlElementText(caps.body, "XAddr", mediaAt);
         const std::string ptzXaddr = xmlElementText(caps.body, "XAddr", ptzAt);
-        if (!parseServiceUrl(mediaXaddr, host_, mediaHost_, mediaPort_, mediaPath_, error)
-            || !parseServiceUrl(ptzXaddr, host_, ptzHost_, ptzPort_, ptzPath_, error)) {
-            return false;
+        std::string addressError;
+        if (!parseServiceUrl(mediaXaddr, host_, mediaHost_, mediaPort_, mediaPath_, addressError)
+            || !parseServiceUrl(ptzXaddr, host_, ptzHost_, ptzPort_, ptzPath_, addressError)) {
+            return OnvifCallResult::failure(OnvifError::Fault, addressError);
         }
 
         const auto profiles
             = callAuthenticated(mediaHost_, mediaPort_, mediaPath_,
                                 "<trt:GetProfiles xmlns:trt=\"http://www.onvif.org/ver10/media/wsdl\"/>");
         if (!profiles.ok || profiles.status != 200 || isFault(profiles.body)) {
-            error = profiles.error.empty() ? "could not read the camera profiles" : profiles.error;
-            return false;
+            return failureOf(profiles, "could not read the camera profiles", OnvifError::Fault);
         }
 
         const size_t profileAt = profiles.body.find("Profiles token=\"");
         if (profileAt == std::string::npos) {
-            error = "the camera has no PTZ profile";
-            return false;
+            return OnvifCallResult::failure(OnvifError::NoPtzProfile, "the camera has no PTZ profile");
         }
         profileToken_ = xmlAttr(profiles.body.substr(profileAt, 80), "token");
         if (profileToken_.empty()) {
@@ -405,19 +421,17 @@ namespace cameras::onvif {
             }
         }
         if (profileToken_.empty()) {
-            error = "the camera has no PTZ profile";
-            return false;
+            return OnvifCallResult::failure(OnvifError::NoPtzProfile, "the camera has no PTZ profile");
         }
-        return true;
+        return OnvifCallResult::success();
     }
 
-    bool OnvifClient::prepare(OnvifDeviceInfo& info, std::string& error) {
+    OnvifCallResult OnvifClient::prepare(OnvifDeviceInfo& info) {
         const auto device
             = callAuthenticated(host_, port_, servicePath_,
                                 "<tds:GetDeviceInformation xmlns:tds=\"http://www.onvif.org/ver10/device/wsdl\"/>");
         if (!device.ok || device.status != 200 || isFault(device.body)) {
-            error = device.error.empty() ? "the camera did not answer" : device.error;
-            return false;
+            return failureOf(device, "the camera did not answer", OnvifError::NoAnswer);
         }
         info.manufacturer = xmlElementText(device.body, "Manufacturer");
         info.model = xmlElementText(device.body, "Model");
@@ -425,20 +439,20 @@ namespace cameras::onvif {
         info.serialNumber = xmlElementText(device.body, "SerialNumber");
         info.hardwareId = xmlElementText(device.body, "HardwareId");
 
-        if (!loadServices(error)) {
-            return false;
+        auto services = loadServices();
+        if (!services.ok) {
+            return services;
         }
         ready_ = true;
         core::Logger::info("ONVIF ready " + host_ + ":" + std::to_string(port_) + " " + info.manufacturer + " "
                            + info.model);
-        return true;
+        return OnvifCallResult::success();
     }
 
-    bool OnvifClient::absoluteMove(double panX, double tiltY, double zoomX, double panTiltSpeed, double zoomSpeed,
-                                   std::string& error) {
+    OnvifCallResult OnvifClient::absoluteMove(double panX, double tiltY, double zoomX, double panTiltSpeed,
+                                              double zoomSpeed) {
         if (!ready_) {
-            error = "the camera is not ready";
-            return false;
+            return OnvifCallResult::failure(OnvifError::Fault, "the camera is not ready");
         }
         const std::string token = xmlEscape(profileToken_);
         // clang-format off
@@ -457,16 +471,14 @@ namespace cameras::onvif {
 
         const auto response = callAuthenticated(ptzHost_, ptzPort_, ptzPath_, body);
         if (!response.ok || response.status != 200 || isFault(response.body)) {
-            error = response.error.empty() ? "the move was rejected" : response.error;
-            return false;
+            return failureOf(response, "the move was rejected", OnvifError::Fault);
         }
-        return true;
+        return OnvifCallResult::success();
     }
 
-    bool OnvifClient::getStatus(OnvifPosition& position, std::string& error) {
+    OnvifCallResult OnvifClient::getStatus(OnvifPosition& position) {
         if (!ready_) {
-            error = "the camera is not ready";
-            return false;
+            return OnvifCallResult::failure(OnvifError::Fault, "the camera is not ready");
         }
         // clang-format off
         const std::string body =
@@ -476,8 +488,7 @@ namespace cameras::onvif {
         // clang-format on
         const auto response = callAuthenticated(ptzHost_, ptzPort_, ptzPath_, body);
         if (!response.ok || response.status != 200 || isFault(response.body)) {
-            error = response.error.empty() ? "could not read the camera position" : response.error;
-            return false;
+            return failureOf(response, "could not read the camera position", OnvifError::Fault);
         }
 
         const std::string panTilt = xmlStartTag(response.body, "PanTilt");
@@ -486,18 +497,16 @@ namespace cameras::onvif {
         const std::string yText = xmlAttr(panTilt, "y");
         const std::string zText = xmlAttr(zoom, "x");
         if (xText.empty() || yText.empty() || zText.empty()) {
-            error = "the camera position was not readable";
-            return false;
+            return OnvifCallResult::failure(OnvifError::Fault, "the camera position was not readable");
         }
         try {
             position.panX = std::stod(xText);
             position.tiltY = std::stod(yText);
             position.zoomX = std::stod(zText);
         } catch (const std::exception&) {
-            error = "the camera position was not readable";
-            return false;
+            return OnvifCallResult::failure(OnvifError::Fault, "the camera position was not readable");
         }
-        return true;
+        return OnvifCallResult::success();
     }
 
 } // namespace cameras::onvif
