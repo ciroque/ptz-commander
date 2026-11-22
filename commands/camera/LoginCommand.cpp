@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <optional>
 
 namespace commands::camera {
     namespace {
@@ -46,10 +47,14 @@ namespace commands::camera {
             return ep;
         }
 
-        bool hasStoredPassword(const data::Context& ctx, const std::string& serial) {
-            return std::any_of(
+        std::optional<std::string> storedPassword(const data::Context& ctx, const std::string& serial) {
+            const auto it = std::find_if(
                 ctx.onvifEndpoints.begin(), ctx.onvifEndpoints.end(),
                 [&](const cameras::onvif::OnvifEndpoint& ep) { return ep.serial() == serial && !ep.password.empty(); });
+            if (it == ctx.onvifEndpoints.end()) {
+                return std::nullopt;
+            }
+            return it->password;
         }
 
     } // namespace
@@ -80,19 +85,16 @@ namespace commands::camera {
                 ctx.err << serial << " is not an ONVIF camera" << std::endl;
                 return;
             }
-            // Retrying a stored password, without asking, belongs to a later
-            // change. Until then a stored password is left alone.
-            if (hasStoredPassword(ctx, serial)) {
-                ctx.err << serial << " already has a password. Use: camera login " << serial << " <password>"
-                        << std::endl;
-                return;
+            if (const auto stored = storedPassword(ctx, serial)) {
+                password = *stored;
+            } else {
+                const auto entered = prompt_ ? prompt_(promptEndpoint(ctx, serial)) : std::nullopt;
+                if (!entered || entered->empty()) {
+                    ctx.err << "No password entered." << std::endl;
+                    return;
+                }
+                password = *entered;
             }
-            const auto entered = prompt_ ? prompt_(promptEndpoint(ctx, serial)) : std::nullopt;
-            if (!entered || entered->empty()) {
-                ctx.err << "No password entered." << std::endl;
-                return;
-            }
-            password = *entered;
         }
 
         reportLogin(ctx, camera, ctx.loginOnvif(serial, password));

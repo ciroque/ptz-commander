@@ -160,3 +160,16 @@ TEST(OnvifSignIn, LoginMessageSaysStillInactiveOnlyWhenDisconnected) {
     EXPECT_NE(idleErr.str().find("is still inactive"), std::string::npos);
     EXPECT_FALSE(idle->isConnected());
 }
+
+TEST(OnvifSignIn, AddInactiveKeepsThePassword) {
+    CameraManager mgr;
+    OnvifCameraAdapter adapter(mgr);
+    const auto result
+        = adapter.addInactive(OnvifEndpoint{"192.168.1.21", 80, "/onvif/device_service", "admin", "kept", false, ""});
+    EXPECT_EQ(result.status, OnvifAddStatus::Added);
+    ASSERT_EQ(adapter.endpoints().size(), 1u);
+    EXPECT_EQ(adapter.endpoints()[0].password, "kept");
+    const auto camera = mgr.findBySerial("ONVIF:192.168.1.21:80");
+    ASSERT_NE(camera, nullptr);
+    EXPECT_FALSE(camera->isConnected());
+}

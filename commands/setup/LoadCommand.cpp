@@ -4,6 +4,8 @@
 #include "../../cameras/visca/ViscaIpEndpoint.h"
 #include "../../cameras/visca/ViscaSerialEndpoint.h"
 #include <iostream>
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace commands::setup {
@@ -14,20 +16,40 @@ namespace commands::setup {
         // that is already loaded alone. Failed: it could not be kept.
         enum class SkipResult { Inactive, AlreadyPresent, Failed };
 
-        SkipResult skipOnvif(data::Context& ctx, const cameras::onvif::OnvifEndpoint& endpoint) {
-            auto stored = endpoint;
-            stored.password.clear();
+        SkipResult storeInactive(data::Context& ctx, cameras::onvif::OnvifEndpoint stored, const std::string& why) {
             stored.needsPassword = false;
             const auto added = ctx.addInactiveOnvif(stored);
             if (added.status == cameras::onvif::OnvifAddStatus::Failed) {
-                ctx.err << "Could not keep ONVIF camera " << endpoint.address() << ": " << added.detail << std::endl;
+                ctx.err << "Could not keep ONVIF camera " << stored.address() << ": " << added.detail << std::endl;
                 return SkipResult::Failed;
             }
             if (added.status == cameras::onvif::OnvifAddStatus::AlreadyPresent) {
                 return SkipResult::AlreadyPresent;
             }
-            ctx.err << "ONVIF camera " << endpoint.user << "@" << endpoint.host << " left inactive" << std::endl;
+            ctx.err << "ONVIF camera " << stored.user << "@" << stored.host << " left inactive";
+            if (!why.empty()) {
+                ctx.err << ": " << why;
+            }
+            ctx.err << std::endl;
             return SkipResult::Inactive;
+        }
+
+        // A blank answer, or three rejected passwords, stores no password.
+        SkipResult skipOnvif(data::Context& ctx, const cameras::onvif::OnvifEndpoint& endpoint) {
+            auto stored = endpoint;
+            stored.password.clear();
+            return storeInactive(ctx, std::move(stored), "");
+        }
+
+        // The camera did not come up, or it rejected a password already stored.
+        // The password stays so the next save and a later login can use it.
+        SkipResult keepOnvif(data::Context& ctx, const cameras::onvif::OnvifEndpoint& endpoint,
+                             const std::string& why) {
+            auto stored = endpoint;
+            if (!stored.password.empty()) {
+                stored.preservedPassword.clear();
+            }
+            return storeInactive(ctx, std::move(stored), why);
         }
 
         void noteSkip(SkipResult skip, bool& onvifMissing, bool& onvifInactive) {
@@ -130,19 +152,20 @@ namespace commands::setup {
                 return;
             }
         }
-        // A camera that does not answer is left out. A missing password, or a
-        // dpapi: blob this user cannot decrypt, is asked for. Skipping keeps
-        // the camera inactive so its presets and scene bindings survive.
-        // An auth fault asks again, up to three tries. Anything else (the
-        // camera is off, it has no PTZ profile) is left out, as before.
+        // A missing password, or a dpapi: blob this user cannot decrypt, is
+        // asked for. A blank answer leaves the camera inactive with no
+        // password. An auth fault asks again, up to three tries, and that
+        // attempt is not stored. Any other failure keeps the camera inactive
+        // and keeps the password it has, so presets and scene bindings survive.
         bool onvifMissing = false;
         bool onvifInactive = false;
         for (const auto& ep : staged.onvif) {
             if (!ep.needsPassword) {
                 const auto added = ctx.addOnvif(ep);
                 if (added.status == cameras::onvif::OnvifAddStatus::Failed) {
-                    ctx.err << "Could not add ONVIF camera " << ep.address() << ": " << added.detail << std::endl;
-                    onvifMissing = true;
+                    const std::string why
+                        = added.authRejected ? "the camera rejected the stored password" : added.detail;
+                    noteSkip(keepOnvif(ctx, ep, why), onvifMissing, onvifInactive);
                 }
                 continue;
             }
@@ -165,8 +188,7 @@ namespace commands::setup {
                     break;
                 }
                 if (!added.authRejected) {
-                    ctx.err << "Could not add ONVIF camera " << ep.address() << ": " << added.detail << std::endl;
-                    onvifMissing = true;
+                    noteSkip(keepOnvif(ctx, withPassword, added.detail), onvifMissing, onvifInactive);
                     settled = true;
                     break;
                 }
