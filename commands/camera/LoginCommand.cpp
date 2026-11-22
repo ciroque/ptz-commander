@@ -57,6 +57,34 @@ namespace commands::camera {
             return it->password;
         }
 
+        // The stored password was rejected. Ask up to three times. A blank
+        // answer leaves that password where it is.
+        void promptReplacement(data::Context& ctx, const cameras::Camera& camera, const std::string& serial,
+                               const commands::setup::OnvifPasswordPrompt& prompt) {
+            const auto endpoint = promptEndpoint(ctx, serial);
+            cameras::onvif::OnvifAddResult last;
+            for (int attempt = 0; attempt < 3; ++attempt) {
+                const auto entered = prompt ? prompt(endpoint) : std::nullopt;
+                if (!entered || entered->empty()) {
+                    ctx.err << "No password entered." << std::endl;
+                    if (!camera.isConnected()) {
+                        ctx.err << serial << " is still inactive" << std::endl;
+                    }
+                    return;
+                }
+                last = ctx.loginOnvif(serial, *entered);
+                if (last.status == cameras::onvif::OnvifAddStatus::Added || !last.authRejected) {
+                    reportLogin(ctx, camera, last);
+                    return;
+                }
+                if (attempt + 1 < 3) {
+                    ctx.err << "ONVIF password rejected for " << endpoint.user << "@" << endpoint.host << "; try again"
+                            << std::endl;
+                }
+            }
+            reportLogin(ctx, camera, last);
+        }
+
     } // namespace
 
     void LoginCommand::execute(data::Context& ctx, const std::string& args) {
@@ -86,15 +114,21 @@ namespace commands::camera {
                 return;
             }
             if (const auto stored = storedPassword(ctx, serial)) {
-                password = *stored;
-            } else {
-                const auto entered = prompt_ ? prompt_(promptEndpoint(ctx, serial)) : std::nullopt;
-                if (!entered || entered->empty()) {
-                    ctx.err << "No password entered." << std::endl;
+                const auto tried = ctx.loginOnvif(serial, *stored);
+                if (tried.status == cameras::onvif::OnvifAddStatus::Added || !tried.authRejected) {
+                    reportLogin(ctx, camera, tried);
                     return;
                 }
-                password = *entered;
+                ctx.err << serial << ": the camera rejected the stored password" << std::endl;
+                promptReplacement(ctx, camera, serial, prompt_);
+                return;
             }
+            const auto entered = prompt_ ? prompt_(promptEndpoint(ctx, serial)) : std::nullopt;
+            if (!entered || entered->empty()) {
+                ctx.err << "No password entered." << std::endl;
+                return;
+            }
+            password = *entered;
         }
 
         reportLogin(ctx, camera, ctx.loginOnvif(serial, password));

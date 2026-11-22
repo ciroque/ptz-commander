@@ -161,17 +161,86 @@ TEST(OnvifHiddenPassword, StoredPasswordIsRetriedWithoutAsking) {
     EXPECT_FALSE(camera->isConnected());
 }
 
+OnvifAddResult rejectedLogin(const std::string& detail, bool authRejected) {
+    OnvifAddResult result;
+    result.status = OnvifAddStatus::Failed;
+    result.authRejected = authRejected;
+    result.detail = detail;
+    return result;
+}
+
 TEST(OnvifHiddenPassword, RejectedStoredPasswordIsKept) {
+    Harness harness;
+    const auto camera = harness.addCamera("ONVIF:192.168.1.21:80", false);
+    harness.ctx.onvifEndpoints = {stored("192.168.1.21", "admin", "kept")};
+    harness.prompt.answer = std::nullopt;
+    harness.ctx.loginOnvif = [&](const std::string& serial, const std::string& password) {
+        harness.logins.push_back(serial + "=" + password);
+        return rejectedLogin("the camera rejected the username or password", true);
+    };
+
+    harness.login.execute(harness.ctx, camera->getSerialNumber());
+
+    EXPECT_EQ(harness.prompt.calls, 1);
+    ASSERT_EQ(harness.logins.size(), 1u);
+    EXPECT_EQ(harness.logins[0], camera->getSerialNumber() + "=kept");
+    EXPECT_EQ(harness.ctx.onvifEndpoints[0].password, "kept");
+    EXPECT_FALSE(camera->isConnected());
+    EXPECT_NE(harness.err.str().find("No password entered."), std::string::npos);
+    EXPECT_NE(harness.err.str().find("is still inactive"), std::string::npos);
+}
+
+TEST(OnvifHiddenPassword, RejectedStoredPasswordAsksAndUsesTheNewOne) {
+    Harness harness;
+    const auto camera = harness.addCamera("ONVIF:192.168.1.21:80", false);
+    harness.ctx.onvifEndpoints = {stored("192.168.1.21", "admin", "kept")};
+    harness.prompt.answer = "new-secret";
+    harness.ctx.loginOnvif = [&](const std::string& serial, const std::string& password) {
+        harness.logins.push_back(serial + "=" + password);
+        if (password == "kept") {
+            return rejectedLogin("the camera rejected the username or password", true);
+        }
+        OnvifAddResult result;
+        result.status = OnvifAddStatus::Added;
+        harness.ctx.onvifEndpoints[0].password = password;
+        return result;
+    };
+
+    harness.login.execute(harness.ctx, camera->getSerialNumber());
+
+    EXPECT_EQ(harness.prompt.calls, 1);
+    ASSERT_EQ(harness.logins.size(), 2u);
+    EXPECT_EQ(harness.logins[1], camera->getSerialNumber() + "=new-secret");
+    EXPECT_EQ(harness.ctx.onvifEndpoints[0].password, "new-secret");
+    EXPECT_NE(harness.out.str().find("is active"), std::string::npos);
+}
+
+TEST(OnvifHiddenPassword, ThreeRejectedReplacementsKeepTheStoredPassword) {
+    Harness harness;
+    const auto camera = harness.addCamera("ONVIF:192.168.1.21:80", false);
+    harness.ctx.onvifEndpoints = {stored("192.168.1.21", "admin", "kept")};
+    harness.prompt.answer = "nope";
+    harness.ctx.loginOnvif = [&](const std::string& serial, const std::string& password) {
+        harness.logins.push_back(serial + "=" + password);
+        return rejectedLogin("the camera rejected the username or password", true);
+    };
+
+    harness.login.execute(harness.ctx, camera->getSerialNumber());
+
+    EXPECT_EQ(harness.prompt.calls, 3);
+    EXPECT_EQ(harness.logins.size(), 4u);
+    EXPECT_EQ(harness.ctx.onvifEndpoints[0].password, "kept");
+    EXPECT_NE(harness.err.str().find("is still inactive"), std::string::npos);
+    EXPECT_EQ(harness.out.str().find("is active"), std::string::npos);
+}
+
+TEST(OnvifHiddenPassword, StoredPasswordFailureThatIsNotAuthDoesNotAsk) {
     Harness harness;
     const auto camera = harness.addCamera("ONVIF:192.168.1.21:80", false);
     harness.ctx.onvifEndpoints = {stored("192.168.1.21", "admin", "kept")};
     harness.ctx.loginOnvif = [&](const std::string& serial, const std::string& password) {
         harness.logins.push_back(serial + "=" + password);
-        OnvifAddResult result;
-        result.status = OnvifAddStatus::Failed;
-        result.authRejected = true;
-        result.detail = "the camera rejected the username or password";
-        return result;
+        return rejectedLogin("the camera did not answer", false);
     };
 
     harness.login.execute(harness.ctx, camera->getSerialNumber());
@@ -179,8 +248,8 @@ TEST(OnvifHiddenPassword, RejectedStoredPasswordIsKept) {
     EXPECT_EQ(harness.prompt.calls, 0);
     ASSERT_EQ(harness.logins.size(), 1u);
     EXPECT_EQ(harness.ctx.onvifEndpoints[0].password, "kept");
-    EXPECT_FALSE(camera->isConnected());
-    EXPECT_NE(harness.err.str().find("is still inactive"), std::string::npos);
+    EXPECT_NE(harness.err.str().find("the camera did not answer"), std::string::npos);
+    EXPECT_EQ(harness.err.str().find("is still inactive"), std::string::npos);
 }
 
 TEST(OnvifHiddenPassword, LoginOfAViscaCameraDoesNotAsk) {
