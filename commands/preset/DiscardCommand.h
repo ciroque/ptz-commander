@@ -8,7 +8,7 @@
 namespace commands::preset {
     class DiscardCommand : public Command {
     public:
-        DiscardCommand() : Command("preset", "discard", "preset discard <id|*> <name>", "Remove a named preset") {}
+        DiscardCommand() : Command("preset", "discard", "preset discard <id|*> <name>", "Discard a named preset") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 } // namespace commands::preset

@@ -20,6 +20,8 @@ A camera id is a serial number, an alias, or a product name. `*` means every cam
 
 ## Commands
 
+discard deletes a whole preset, scene, or camera. remove takes one camera out of a scene. store creates or replaces a preset or the bindings in a scene.
+
 ### Version
 
 | Command          | Arguments | Description                                                                 |
@@ -63,7 +65,7 @@ A preset is a named pan, tilt, and zoom on one camera. `preset store` saves wher
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
 | `preset apply`                 | ```<id\|*> <name\|*> [delay_ms]```           | Applies a named preset, or every preset when the name is `*`. `delay_ms` is the pause between presets in that cycle. Preset lookup walks the presets stored on that camera. |
-| `preset discard`               | ```<id\|*> <name>```                         | Removes a named preset from memory.                                        |
+| `preset discard`               | ```<id\|*> <name>```                         | Discards a named preset from memory.                                       |
 | `preset list`                  | None                                    | Lists all presets for all cameras.  |
 | `preset store`                 | ```<id\|*> <name>```                         | Stores current PTZ as a named preset in memory—e.g., ```"intro"```.            |
 
@@ -75,7 +77,7 @@ A scene is a named set of camera → preset bindings. Bindings are resolved when
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
 | `scene add`                    | ```<name> <id> <preset> [<id> <preset> ...]``` | Adds or replaces bindings. Camera id is alias, serial, or name. Stored as serial. |
 | `scene apply`                  | ```<name>```                            | Moves each bound camera to that camera's named preset. Missing camera/preset is skipped. |
-| `scene discard`                | ```<name>```                            | Deletes the scene.                                                          |
+| `scene discard`                | ```<name>```                            | Discards the scene.                                                         |
 | `scene list`                   | None                                    | Lists scene names and binding counts.                                       |
 | `scene remove`                 | ```<name> <id>```                       | Removes one camera from a scene.                                            |
 | `scene show`                   | ```<name>```                            | Shows each binding (friendly name, serial, preset).                         |
