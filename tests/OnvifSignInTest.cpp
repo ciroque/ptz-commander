@@ -20,6 +20,7 @@ using cameras::onvif::OnvifAddResult;
 using cameras::onvif::OnvifAddStatus;
 using cameras::onvif::OnvifCameraAdapter;
 using cameras::onvif::OnvifEndpoint;
+using cameras::onvif::OnvifError;
 
 namespace {
 
@@ -27,7 +28,10 @@ namespace {
     public:
         explicit ScriptedOnvifCamera(OnvifEndpoint endpoint) : OnvifCamera(std::move(endpoint)) {}
 
-        void setProbeResult(bool ok) { probeOk_ = ok; }
+        void setProbeResult(bool ok, std::string errorText = kAuthRejected) {
+            probeOk_ = ok;
+            probeError_ = std::move(errorText);
+        }
 
         void markConnected(Ptz ptz) {
             connected_ = true;
@@ -44,16 +48,19 @@ namespace {
 
         bool probe(std::string& error) override {
             if (!probeOk_) {
-                error = kAuthRejected;
+                error = probeError_;
+                lastKind_ = OnvifError::AuthRejected;
                 connected_ = false;
                 return false;
             }
+            lastKind_ = OnvifError::None;
             connected_ = true;
             return true;
         }
 
     private:
         bool probeOk_ = false;
+        std::string probeError_ = kAuthRejected;
     };
 
     OnvifEndpoint endpoint(const std::string& host, const std::string& password) {
@@ -111,6 +118,7 @@ TEST(OnvifSignIn, SuccessfulLoginStoresThePassword) {
     ASSERT_EQ(adapter.endpoints().size(), 1u);
     EXPECT_EQ(adapter.endpoints()[0].password, "right");
     EXPECT_TRUE(camera->isConnected());
+    EXPECT_EQ(camera->connectionState(), cameras::ConnectionState::Connected);
     EXPECT_EQ(camera->endpoint().password, "right");
 }
 
@@ -126,6 +134,7 @@ TEST(OnvifSignIn, RejectedAdapterLoginOnAnActiveCameraStaysConnected) {
     EXPECT_EQ(result.status, OnvifAddStatus::Failed);
     EXPECT_TRUE(result.authRejected);
     EXPECT_EQ(result.detail, kAuthRejected);
+    EXPECT_EQ(camera->lastError(), OnvifError::AuthRejected);
     EXPECT_TRUE(camera->isConnected());
     EXPECT_EQ(camera->endpoint().password, "kept");
     EXPECT_TRUE(camera->haveRaw());
@@ -172,4 +181,21 @@ TEST(OnvifSignIn, AddInactiveKeepsThePassword) {
     const auto camera = mgr.findBySerial("ONVIF:192.168.1.21:80");
     ASSERT_NE(camera, nullptr);
     EXPECT_FALSE(camera->isConnected());
+    EXPECT_EQ(camera->connectionState(), cameras::ConnectionState::NeedsLogin);
+}
+
+TEST(OnvifSignIn, RewordedAuthTextStillCountsAsRejected) {
+    CameraManager mgr;
+    auto camera = std::make_shared<ScriptedOnvifCamera>(endpoint("192.168.1.26", "kept"));
+    camera->setProbeResult(false, "the password was not accepted");
+    mgr.addCamera(camera);
+
+    OnvifCameraAdapter adapter(mgr);
+    const auto result = adapter.login(camera->getSerialNumber(), "wrong");
+    EXPECT_EQ(result.status, OnvifAddStatus::Failed);
+    EXPECT_TRUE(result.authRejected);
+    EXPECT_EQ(result.detail, "the password was not accepted");
+    EXPECT_NE(result.detail, kAuthRejected);
+    EXPECT_EQ(camera->lastError(), OnvifError::AuthRejected);
+    EXPECT_EQ(camera->endpoint().password, "kept");
 }

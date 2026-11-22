@@ -45,7 +45,7 @@ namespace cameras::onvif {
         std::string error;
         if (!camera->probe(error)) {
             result.detail = error.empty() ? ("could not add ONVIF camera " + endpoint.address()) : error;
-            result.authRejected = result.detail == kAuthRejected;
+            result.authRejected = camera->lastError() == OnvifError::AuthRejected;
             core::Logger::warn("ONVIF add failed for " + endpoint.address() + ": " + result.detail);
             return result;
         }
@@ -96,7 +96,7 @@ namespace cameras::onvif {
         std::string error;
         if (!camera->signIn(password, error)) {
             result.detail = error.empty() ? "could not sign in" : error;
-            result.authRejected = result.detail == kAuthRejected;
+            result.authRejected = camera->lastError() == OnvifError::AuthRejected;
             core::Logger::warn("ONVIF login failed for " + serial + ": " + result.detail);
             return result;
         }

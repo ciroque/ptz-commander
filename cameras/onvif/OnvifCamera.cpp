@@ -14,12 +14,20 @@ namespace cameras::onvif {
         }
     }
 
+    ::cameras::ConnectionState OnvifCamera::connectionState() const {
+        return connected_ ? ::cameras::ConnectionState::Connected : ::cameras::ConnectionState::NeedsLogin;
+    }
+
     bool OnvifCamera::probe(std::string& error) {
         OnvifDeviceInfo info;
-        if (!client_.prepare(info, error)) {
+        const auto prepared = client_.prepare(info);
+        if (!prepared.ok) {
+            error = prepared.detail;
+            lastKind_ = prepared.kind;
             connected_ = false;
             return false;
         }
+        lastKind_ = OnvifError::None;
         if (!info.manufacturer.empty() && !info.model.empty()) {
             name_ = info.manufacturer + " " + info.model;
         } else if (!info.model.empty()) {
@@ -59,9 +67,9 @@ namespace cameras::onvif {
     bool OnvifCamera::isConnected() const { return connected_; }
 
     bool OnvifCamera::moveRaw(double panX, double tiltY, double zoomX, double panTiltSpeed, double zoomSpeed) const {
-        std::string error;
-        if (!client_.absoluteMove(panX, tiltY, zoomX, panTiltSpeed, zoomSpeed, error)) {
-            core::Logger::error("ONVIF move failed on " + serial_ + ": " + error);
+        const auto moved = client_.absoluteMove(panX, tiltY, zoomX, panTiltSpeed, zoomSpeed);
+        if (!moved.ok) {
+            core::Logger::error("ONVIF move failed on " + serial_ + ": " + moved.detail);
             return false;
         }
         lastRaw_.panX = panX;
@@ -113,9 +121,9 @@ namespace cameras::onvif {
             return lastPtz_;
         }
         OnvifPosition raw;
-        std::string error;
-        if (!client_.getStatus(raw, error)) {
-            core::Logger::warn("ONVIF position read failed on " + serial_ + ": " + error);
+        const auto status = client_.getStatus(raw);
+        if (!status.ok) {
+            core::Logger::warn("ONVIF position read failed on " + serial_ + ": " + status.detail);
             return lastPtz_;
         }
         lastRaw_ = raw;

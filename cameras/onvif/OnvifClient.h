@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <string>
+#include <utility>
 
 namespace cameras::onvif {
 
@@ -23,16 +24,38 @@ namespace cameras::onvif {
     // Probe and move both surface a rejected login with this text.
     inline constexpr const char* kAuthRejected = "the camera rejected the username or password";
 
+    // What failed, separate from the sentence shown to the user. AuthRejected
+    // stays AuthRejected if that sentence is reworded.
+    enum class OnvifError { None, AuthRejected, NoAnswer, Http, Fault, NoPtzProfile };
+
+    struct OnvifCallResult {
+        bool ok = false;
+        OnvifError kind = OnvifError::None;
+        std::string detail;
+
+        static OnvifCallResult success() {
+            OnvifCallResult result;
+            result.ok = true;
+            return result;
+        }
+
+        static OnvifCallResult failure(OnvifError kind, std::string detail) {
+            OnvifCallResult result;
+            result.kind = kind;
+            result.detail = std::move(detail);
+            return result;
+        }
+    };
+
     // Talks to one camera: WS-Security digest against the camera clock, then
     // AbsoluteMove / GetStatus on the PTZ service advertised by GetCapabilities.
     class OnvifClient {
     public:
         OnvifClient(std::string host, int port, std::string servicePath, std::string user, std::string password);
 
-        bool prepare(OnvifDeviceInfo& info, std::string& error);
-        bool absoluteMove(double panX, double tiltY, double zoomX, double panTiltSpeed, double zoomSpeed,
-                          std::string& error);
-        bool getStatus(OnvifPosition& position, std::string& error);
+        OnvifCallResult prepare(OnvifDeviceInfo& info);
+        OnvifCallResult absoluteMove(double panX, double tiltY, double zoomX, double panTiltSpeed, double zoomSpeed);
+        OnvifCallResult getStatus(OnvifPosition& position);
 
     private:
         struct SoapResult {
@@ -40,14 +63,16 @@ namespace cameras::onvif {
             int status = 0;
             std::string body;
             std::string error;
+            OnvifError kind = OnvifError::None;
         };
 
-        bool syncClock(std::string& error);
+        OnvifCallResult syncClock();
+        OnvifCallResult failureOf(const SoapResult& response, const char* fallback, OnvifError fallbackKind);
         SoapResult post(const std::string& host, int port, const std::string& path, const std::string& inner,
                         bool authenticate);
         SoapResult callAuthenticated(const std::string& host, int port, const std::string& path,
                                      const std::string& inner);
-        bool loadServices(std::string& error);
+        OnvifCallResult loadServices();
         static bool isFault(const std::string& body);
         static bool isAuthFault(const std::string& body);
         static std::string faultText(const std::string& body);

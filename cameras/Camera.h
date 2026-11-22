@@ -8,6 +8,8 @@
 #include <vector>
 
 namespace cameras {
+    enum class ConnectionState { Connected, NotConnected, NeedsLogin };
+
     class Camera {
     protected:
         std::map<std::string, Preset> presets_;
@@ -25,6 +27,12 @@ namespace cameras {
         virtual std::string getSerialNumber() const = 0;
         virtual std::string getName() const = 0;
         virtual bool isConnected() const = 0;
+
+        // NeedsLogin is a camera kept in the setup until camera login.
+        // The default is Connected or NotConnected from isConnected().
+        virtual ConnectionState connectionState() const {
+            return isConnected() ? ConnectionState::Connected : ConnectionState::NotConnected;
+        }
         virtual bool setPosition(float pan, float tilt, int zoom) = 0;
         virtual bool setZoom(int zoom, int speed) = 0;
         virtual Ptz getCurrentPtz() const = 0;

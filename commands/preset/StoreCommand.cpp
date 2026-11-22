@@ -28,7 +28,7 @@ namespace commands::preset {
         for (auto& camera : cameras) {
             // An inactive camera reports pan 0, tilt 0, zoom 0. Storing that
             // would replace a real preset.
-            if (commands::refuseInactiveOnvif(ctx, *camera)) {
+            if (commands::refuseNeedsLogin(ctx, *camera)) {
                 continue;
             }
             cameras::Preset preset;

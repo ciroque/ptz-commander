@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "CameraManager.h"
+#include "ConnectionLabel.h"
 #include "preset/StoreCommand.h"
 
 #include "../data/Context.h"
@@ -19,18 +20,28 @@ namespace {
     class ShelfCamera : public Camera {
     public:
         explicit ShelfCamera(std::string serial, bool connected, Ptz position)
-            : serial_(std::move(serial)), connected_(connected), position_(position) {}
+            : serial_(std::move(serial)), connected_(connected), position_(position) {
+            if (connected_) {
+                state_ = cameras::ConnectionState::Connected;
+            } else if (serial_.rfind("ONVIF:", 0) == 0) {
+                state_ = cameras::ConnectionState::NeedsLogin;
+            }
+        }
 
         std::string getSerialNumber() const override { return serial_; }
         std::string getName() const override { return serial_; }
         bool isConnected() const override { return connected_; }
+        cameras::ConnectionState connectionState() const override { return state_; }
         bool setPosition(float, float, int) override { return connected_; }
         bool setZoom(int, int) override { return connected_; }
         Ptz getCurrentPtz() const override { return position_; }
 
+        void setConnectionState(cameras::ConnectionState state) { state_ = state; }
+
     private:
         std::string serial_;
         bool connected_ = false;
+        cameras::ConnectionState state_ = cameras::ConnectionState::NotConnected;
         Ptz position_{0.0f, 0.0f, 0};
     };
 
@@ -86,4 +97,23 @@ TEST(PresetStoreCommand, StarStoresTheOtherCameras) {
 
     EXPECT_NE(err.str().find("is inactive"), std::string::npos);
     EXPECT_NE(out.str().find("Stored preset 'sermon' for 1 camera"), std::string::npos);
+}
+
+TEST(ConnectionState, CommandsAskTheCameraNotTheSerial) {
+    ShelfCamera needsLogin("VISCA-IP:192.168.1.30:52381", false, Ptz{});
+    needsLogin.setConnectionState(cameras::ConnectionState::NeedsLogin);
+    EXPECT_STREQ(commands::connectionLabel(needsLogin), "Inactive");
+
+    CameraManager mgr;
+    cameras::SceneStore scenes;
+    std::ostringstream out;
+    std::ostringstream err;
+    data::Context ctx(mgr, scenes, out, err);
+    EXPECT_TRUE(commands::refuseNeedsLogin(ctx, needsLogin));
+    EXPECT_NE(err.str().find("is inactive"), std::string::npos);
+
+    ShelfCamera plainOnvif("ONVIF:192.168.1.21:80", false, Ptz{});
+    plainOnvif.setConnectionState(cameras::ConnectionState::NotConnected);
+    EXPECT_STREQ(commands::connectionLabel(plainOnvif), "No");
+    EXPECT_FALSE(commands::refuseNeedsLogin(ctx, plainOnvif));
 }
