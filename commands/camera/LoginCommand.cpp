@@ -21,47 +21,24 @@ namespace commands::camera {
             }
         }
 
-        // Host and user for the hidden prompt. The stored record is preferred
-        // so the question names the account setup load already has.
-        cameras::onvif::OnvifEndpoint promptEndpoint(const data::Context& ctx, const std::string& serial) {
+        // The endpoint record setup load or camera add stored. There is no
+        // fallback that parses the serial.
+        std::optional<cameras::onvif::OnvifEndpoint> endpointRecord(const data::Context& ctx,
+                                                                    const std::string& serial) {
             const auto it
                 = std::find_if(ctx.onvifEndpoints.begin(), ctx.onvifEndpoints.end(),
                                [&](const cameras::onvif::OnvifEndpoint& ep) { return ep.serial() == serial; });
-            if (it != ctx.onvifEndpoints.end()) {
-                return *it;
-            }
-            cameras::onvif::OnvifEndpoint ep;
-            const std::string prefix = "ONVIF:";
-            const auto body = serial.substr(prefix.size());
-            const auto colon = body.rfind(':');
-            if (colon == std::string::npos) {
-                ep.host = body;
-                return ep;
-            }
-            ep.host = body.substr(0, colon);
-            try {
-                ep.port = std::stoi(body.substr(colon + 1));
-            } catch (const std::exception&) {
-                ep.port = 80;
-            }
-            return ep;
-        }
-
-        std::optional<std::string> storedPassword(const data::Context& ctx, const std::string& serial) {
-            const auto it = std::find_if(
-                ctx.onvifEndpoints.begin(), ctx.onvifEndpoints.end(),
-                [&](const cameras::onvif::OnvifEndpoint& ep) { return ep.serial() == serial && !ep.password.empty(); });
             if (it == ctx.onvifEndpoints.end()) {
                 return std::nullopt;
             }
-            return it->password;
+            return *it;
         }
 
         // The stored password was rejected. Ask up to three times. A blank
         // answer leaves that password where it is.
         void promptReplacement(data::Context& ctx, const cameras::Camera& camera, const std::string& serial,
+                               const cameras::onvif::OnvifEndpoint& endpoint,
                                const commands::setup::OnvifPasswordPrompt& prompt) {
-            const auto endpoint = promptEndpoint(ctx, serial);
             cameras::onvif::OnvifAddResult last;
             for (int attempt = 0; attempt < 3; ++attempt) {
                 const auto entered = prompt ? prompt(endpoint) : std::nullopt;
@@ -109,21 +86,22 @@ namespace commands::camera {
         if (tokens.size() == 2) {
             password = tokens[1];
         } else {
-            if (serial.rfind("ONVIF:", 0) != 0) {
+            const auto record = endpointRecord(ctx, serial);
+            if (!record) {
                 ctx.err << serial << " is not an ONVIF camera" << std::endl;
                 return;
             }
-            if (const auto stored = storedPassword(ctx, serial)) {
-                const auto tried = ctx.loginOnvif(serial, *stored);
+            if (!record->password.empty()) {
+                const auto tried = ctx.loginOnvif(serial, record->password);
                 if (tried.status == cameras::onvif::OnvifAddStatus::Added || !tried.authRejected) {
                     reportLogin(ctx, camera, tried);
                     return;
                 }
                 ctx.err << serial << ": the camera rejected the stored password" << std::endl;
-                promptReplacement(ctx, camera, serial, prompt_);
+                promptReplacement(ctx, camera, serial, *record, prompt_);
                 return;
             }
-            const auto entered = prompt_ ? prompt_(promptEndpoint(ctx, serial)) : std::nullopt;
+            const auto entered = prompt_ ? prompt_(*record) : std::nullopt;
             if (!entered || entered->empty()) {
                 ctx.err << "No password entered." << std::endl;
                 return;

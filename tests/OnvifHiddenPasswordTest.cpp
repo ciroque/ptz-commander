@@ -113,6 +113,7 @@ TEST(OnvifHiddenPassword, LoginAsksOnceAndUsesTheAnswer) {
 TEST(OnvifHiddenPassword, BlankLoginChangesNothing) {
     Harness harness;
     const auto camera = harness.addCamera("ONVIF:192.168.1.21:80", false);
+    harness.ctx.onvifEndpoints = {stored("192.168.1.21", "admin", "")};
     harness.prompt.answer = std::nullopt;
 
     harness.login.execute(harness.ctx, camera->getSerialNumber());
@@ -262,6 +263,18 @@ TEST(OnvifHiddenPassword, LoginOfAViscaCameraDoesNotAsk) {
     EXPECT_TRUE(harness.logins.empty());
     EXPECT_NE(harness.err.str().find("is not an ONVIF camera"), std::string::npos);
     EXPECT_TRUE(camera->isConnected());
+}
+
+TEST(OnvifHiddenPassword, OnvifSerialWithoutARecordDoesNotAsk) {
+    Harness harness;
+    const auto camera = harness.addCamera("ONVIF:192.168.1.21:80", false);
+
+    harness.login.execute(harness.ctx, camera->getSerialNumber());
+
+    EXPECT_EQ(harness.prompt.calls, 0);
+    EXPECT_TRUE(harness.logins.empty());
+    EXPECT_NE(harness.err.str().find("is not an ONVIF camera"), std::string::npos);
+    EXPECT_EQ(harness.prompt.host, "");
 }
 
 TEST(OnvifHiddenPassword, AddOnvifAsksOnce) {
