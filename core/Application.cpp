@@ -1,4 +1,5 @@
 #include "Application.h"
+#include "../cameras/obsbot/ObsbotCamera.h"
 #include "ptz_version.h"
 
 #include <iostream>
@@ -60,6 +61,24 @@ namespace core {
             const auto result = onvifAdapter_->login(serial, password);
             context_.onvifEndpoints = onvifAdapter_->endpoints();
             return result;
+        };
+        context_.discardCamera = [this](const std::string& serial) {
+            auto camera = cameraMgr_.findBySerial(serial);
+            if (!camera) {
+                return data::Context::DiscardCameraStatus::NotFound;
+            }
+            if (dynamic_cast<cameras::ObsbotCamera*>(camera.get())) {
+                return data::Context::DiscardCameraStatus::Obsbot;
+            }
+            viscaAdapter_->discard(serial);
+            onvifAdapter_->discard(serial);
+            if (cameraMgr_.findBySerial(serial)) {
+                cameraMgr_.removeCamera(serial);
+            }
+            context_.viscaIpEndpoints = viscaAdapter_->ipEndpoints();
+            context_.viscaSerialEndpoints = viscaAdapter_->serialEndpoints();
+            context_.onvifEndpoints = onvifAdapter_->endpoints();
+            return data::Context::DiscardCameraStatus::Removed;
         };
         sceneControlServer_.setOnSceneApply([this](const std::string& name) {
             std::lock_guard<std::mutex> lock(commandMutex_);

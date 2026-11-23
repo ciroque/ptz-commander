@@ -115,4 +115,15 @@ namespace cameras::onvif {
         return result;
     }
 
+    bool OnvifCameraAdapter::discard(const std::string& serial) {
+        const auto it = std::find_if(endpoints_.begin(), endpoints_.end(),
+                                     [&serial](const OnvifEndpoint& ep) { return ep.serial() == serial; });
+        if (it == endpoints_.end()) {
+            return false;
+        }
+        endpoints_.erase(it);
+        manager_.removeCamera(serial);
+        return true;
+    }
+
 } // namespace cameras::onvif

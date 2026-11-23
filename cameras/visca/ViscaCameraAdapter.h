@@ -14,7 +14,7 @@ namespace cameras::visca {
 
     class ViscaCameraAdapter {
     public:
-        explicit ViscaCameraAdapter(CameraManager& manager);
+        explicit ViscaCameraAdapter(CameraManager& manager) : manager_(manager) {}
 
         // Adds the camera only if it answers a VISCA inquiry. False with error
         // set if it can't be added.
@@ -28,6 +28,15 @@ namespace cameras::visca {
         bool addSerialCamera(const ViscaSerialEndpoint& endpoint, std::string& error);
         bool loadSerialCamera(const ViscaSerialEndpoint& endpoint);
         const std::vector<ViscaSerialEndpoint>& serialEndpoints() const { return serialEndpoints_; }
+
+        // Records an endpoint for a camera already in the manager. Does not
+        // open a socket. setup save writes the record.
+        bool keepIp(const ViscaIpEndpoint& endpoint);
+        bool keepSerial(const ViscaSerialEndpoint& endpoint);
+
+        // Drops the IP or serial record and the camera. False when this
+        // adapter has no record for the serial.
+        bool discard(const std::string& serial);
 
         // Calibrates a VISCA camera, IP or serial, switches it to the measured
         // profile and keeps the profile with its endpoint for `setup save`.
