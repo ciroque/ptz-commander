@@ -69,7 +69,7 @@ A preset is a named pan, tilt, and zoom on one camera. `preset store` saves wher
 
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
-| `preset apply`                 | ```<id\|*> <name>```                         | Applies one named preset. `preset apply <id\|*> * [delay_ms]` still cycles for this release, in milliseconds, and prints `use preset tour <id> [seconds]`. Applying a preset stops a running tour. |
+| `preset apply`                 | ```<id\|*> <name>```                         | Applies one named preset. The id may be `*` for every camera. A `*` in the name position is refused: use `preset tour`. Applying a preset stops a running tour. |
 | `preset tour`                  | ```<id\|*> [seconds]```                      | One camera after another, in `camera list` order. Presets on each camera are in name order. The wait sits between presets, including between the last of one camera and the first of the next, and not after the last. Seconds, default 7, same rules as `scene tour`. The wait does not block the OBS dock. `tour stop`, `scene apply`, and `preset apply` end it. |
 | `preset discard`               | ```<id\|*> <name>```                         | Discards a named preset from memory.                                       |
 | `preset list`                  | None                                    | Lists all presets for all cameras.  |

@@ -77,7 +77,7 @@ TEST(PresetTourCommand, AppliesEachCamerasPresetsInNameOrder) {
     EXPECT_TRUE(err.str().empty());
 }
 
-TEST(PresetTourCommand, ApplyStarPrintsTheTourMessage) {
+TEST(PresetTourCommand, StarNameIsRefused) {
     CameraManager mgr;
     cameras::SceneStore scenes;
     auto camera = addCamera(mgr, "VISCA-IP:192.168.1.30:52381");
@@ -88,14 +88,23 @@ TEST(PresetTourCommand, ApplyStarPrintsTheTourMessage) {
     std::ostringstream err;
     data::Context ctx(mgr, scenes, out, err);
     commands::preset::ApplyCommand command;
+    const char* refused = "preset apply takes one preset name. Use: preset tour <id|*> [seconds]";
+
     command.execute(ctx, "VISCA-IP:192.168.1.30:52381 * 0");
+    EXPECT_NE(err.str().find(refused), std::string::npos);
+    EXPECT_TRUE(camera->pans.empty());
 
-    EXPECT_NE(out.str().find("use preset tour VISCA-IP:192.168.1.30:52381 [seconds]"), std::string::npos);
-    EXPECT_EQ(camera->pans, (std::vector<float>{10.0f, 20.0f}));
+    command.execute(ctx, "* *");
+    EXPECT_TRUE(camera->pans.empty());
 
-    camera->pans.clear();
+    command.execute(ctx, "VISCA-IP:192.168.1.30:52381 a 500");
+    EXPECT_NE(err.str().find("Usage: preset apply <id|*> <name>"), std::string::npos);
+    EXPECT_TRUE(camera->pans.empty());
+
     out.str("");
+    out.clear();
     err.str("");
+    err.clear();
     command.execute(ctx, "VISCA-IP:192.168.1.30:52381 a");
     EXPECT_EQ(out.str().find("use preset tour"), std::string::npos);
     EXPECT_EQ(camera->pans, (std::vector<float>{10.0f}));

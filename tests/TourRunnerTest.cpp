@@ -206,51 +206,35 @@ TEST(TourRunner, DelayZeroFinishesWithoutWaiting) {
     EXPECT_TRUE(h.err.str().empty());
 }
 
-TEST(TourRunner, ApplyStarStopsInsideTheWait) {
+TEST(TourRunner, StarNameDoesNotStopTheTour) {
     Harness h;
     auto pulpit = h.add("pulpit");
     pulpit->addPreset("a", Preset("a", Ptz{10.0f, 0.0f, 0}));
     pulpit->addPreset("m", Preset("m", Ptz{20.0f, 0.0f, 0}));
+    auto lectern = h.add("lectern");
+    lectern->addPreset("a", Preset("a", Ptz{1.0f, 0.0f, 0}));
+
+    commands::preset::TourCommand tour;
+    tour.execute(h.ctx, "pulpit 7");
+    h.runner.waitUntilWaiting();
 
     commands::preset::ApplyCommand apply;
-    apply.execute(h.ctx, "pulpit * 2000");
-    h.runner.waitUntilWaiting();
+    apply.execute(h.ctx, "pulpit *");
+    apply.execute(h.ctx, "* *");
+    apply.execute(h.ctx, "pulpit * 500");
+    apply.execute(h.ctx, "pulpit a 500");
+
+    EXPECT_EQ(h.runner.running(), "preset tour pulpit");
     EXPECT_EQ(pulpit->pans, (std::vector<float>{10.0f}));
-    EXPECT_NE(h.out.str().find("use preset tour pulpit [seconds]"), std::string::npos);
-    EXPECT_EQ(h.out.str().find("Waiting"), std::string::npos);
-    EXPECT_EQ(h.runner.running(), "preset apply pulpit *");
+    EXPECT_TRUE(lectern->pans.empty());
+    EXPECT_NE(h.err.str().find("preset apply takes one preset name. Use: preset tour <id|*> [seconds]"),
+              std::string::npos);
+    EXPECT_NE(h.err.str().find("Usage: preset apply <id|*> <name>"), std::string::npos);
 
     commands::TourCommand stop;
     stop.execute(h.ctx, "stop");
     h.runner.waitUntilIdle();
     EXPECT_EQ(pulpit->pans, (std::vector<float>{10.0f}));
-    EXPECT_EQ(h.out.str().find("Applied presets to pulpit"), std::string::npos);
-}
-
-TEST(TourRunner, ApplyStarDelayZeroPrintsTheSummaryAfterTheMoves) {
-    Harness h;
-    auto pulpit = h.add("pulpit");
-    pulpit->addPreset("a", Preset("a", Ptz{10.0f, 0.0f, 0}));
-    pulpit->addPreset("m", Preset("m", Ptz{20.0f, 0.0f, 0}));
-
-    commands::preset::ApplyCommand apply;
-    apply.execute(h.ctx, "pulpit * 0");
-    h.runner.waitUntilIdle();
-    EXPECT_EQ(pulpit->pans, (std::vector<float>{10.0f, 20.0f}));
-    const auto text = h.out.str();
-    const auto use = text.find("use preset tour pulpit [seconds]");
-    const auto a = text.find("Applied preset 'a'");
-    const auto m = text.find("Applied preset 'm'");
-    const auto summary = text.find("Applied presets to pulpit");
-    ASSERT_NE(use, std::string::npos);
-    ASSERT_NE(a, std::string::npos);
-    ASSERT_NE(m, std::string::npos);
-    ASSERT_NE(summary, std::string::npos);
-    EXPECT_LT(use, a);
-    EXPECT_LT(a, m);
-    EXPECT_LT(m, summary);
-    EXPECT_EQ(text.find("Waiting"), std::string::npos);
-    EXPECT_TRUE(h.err.str().empty());
 }
 
 TEST(TourRunner, NamedPresetApplyStopsTheTour) {
