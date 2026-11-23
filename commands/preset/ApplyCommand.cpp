@@ -10,9 +10,7 @@ namespace commands::preset {
     namespace {
         constexpr int kDefaultDelayMs = 2000;
 
-        void printUsage(data::Context& ctx) {
-            ctx.err << "Usage: preset apply <id|*> <name|*> [delay_ms]" << std::endl;
-        }
+        void printUsage(data::Context& ctx) { ctx.err << "Usage: preset apply <id|*> <name>" << std::endl; }
     } // namespace
 
     void ApplyCommand::execute(data::Context& ctx, const std::string& args) {
@@ -28,20 +26,28 @@ namespace commands::preset {
         }
 
         std::string serialNumber = tokens[0];
-        std::string presetNameOrWildcard = tokens[1];
+        std::string presetName = tokens[1];
         int delayMs = kDefaultDelayMs;
 
-        if (tokens.size() > 2) {
-            try {
-                delayMs = std::stoi(tokens[2]);
-                if (delayMs < 0) {
+        // One release: * still cycles in milliseconds and names preset tour.
+        const bool cycle = presetName == "*";
+        if (cycle) {
+            ctx.out << "use preset tour " << serialNumber << " [seconds]" << std::endl;
+            if (tokens.size() > 2) {
+                try {
+                    delayMs = std::stoi(tokens[2]);
+                    if (delayMs < 0) {
+                        ctx.err << "Invalid delay_ms, using default " << kDefaultDelayMs << "ms" << std::endl;
+                        delayMs = kDefaultDelayMs;
+                    }
+                } catch (const std::exception&) {
                     ctx.err << "Invalid delay_ms, using default " << kDefaultDelayMs << "ms" << std::endl;
                     delayMs = kDefaultDelayMs;
                 }
-            } catch (const std::exception&) {
-                ctx.err << "Invalid delay_ms, using default " << kDefaultDelayMs << "ms" << std::endl;
-                delayMs = kDefaultDelayMs;
             }
+        } else if (tokens.size() > 2) {
+            printUsage(ctx);
+            return;
         }
 
         auto cameras = commands::resolveCameras(ctx, serialNumber);
@@ -55,7 +61,7 @@ namespace commands::preset {
                 allGood = false;
                 continue;
             }
-            if (presetNameOrWildcard == "*") {
+            if (cycle) {
                 // Cycle through all presets for this camera
                 auto presets = camera->getPresets();
                 if (presets.empty()) {
@@ -80,31 +86,29 @@ namespace commands::preset {
                 }
             } else {
                 // Apply single preset by name
-                const cameras::Preset* preset = camera->getPresetByName(presetNameOrWildcard);
+                const cameras::Preset* preset = camera->getPresetByName(presetName);
                 if (!preset) {
-                    ctx.err << "Preset not found: " << presetNameOrWildcard << " for " << camera->getSerialNumber()
-                            << std::endl;
+                    ctx.err << "Preset not found: " << presetName << " for " << camera->getSerialNumber() << std::endl;
                     allGood = false;
                     continue;
                 }
 
                 if (!camera->setPosition(preset->ptz.pan, preset->ptz.tilt, preset->ptz.zoom)) {
-                    ctx.err << "Failed to apply preset '" << presetNameOrWildcard << "' to "
-                            << camera->getSerialNumber() << std::endl;
+                    ctx.err << "Failed to apply preset '" << presetName << "' to " << camera->getSerialNumber()
+                            << std::endl;
                     allGood = false;
                 } else {
-                    ctx.out << "Applied preset '" << presetNameOrWildcard << "' to " << camera->getSerialNumber()
-                            << std::endl;
+                    ctx.out << "Applied preset '" << presetName << "' to " << camera->getSerialNumber() << std::endl;
                 }
             }
         }
 
         const std::string target = serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber;
         if (allGood) {
-            if (presetNameOrWildcard == "*") {
+            if (cycle) {
                 ctx.out << "Applied presets to " << target << std::endl;
             } else {
-                ctx.out << "Applied preset '" << presetNameOrWildcard << "' to " << target << std::endl;
+                ctx.out << "Applied preset '" << presetName << "' to " << target << std::endl;
             }
         } else {
             ctx.err << "Some presets failed to apply for " << target << "." << std::endl;

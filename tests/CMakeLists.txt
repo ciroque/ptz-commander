@@ -27,8 +27,13 @@ add_executable(ptz_tests
     OnvifHiddenPasswordTest.cpp
     SceneStoreCommandTest.cpp
     PresetShowCommandTest.cpp
+    PresetTourCommandTest.cpp
     "${CMAKE_SOURCE_DIR}/commands/preset/StoreCommand.cpp"
     "${CMAKE_SOURCE_DIR}/commands/preset/ShowCommand.cpp"
+    "${CMAKE_SOURCE_DIR}/commands/preset/ApplyCommand.cpp"
+    "${CMAKE_SOURCE_DIR}/commands/preset/TourCommand.cpp"
+    "${CMAKE_SOURCE_DIR}/commands/scene/TourCommand.cpp"
+    "${CMAKE_SOURCE_DIR}/commands/scene/ApplyCommand.cpp"
     "${CMAKE_SOURCE_DIR}/commands/scene/StoreCommand.cpp"
     "${CMAKE_SOURCE_DIR}/commands/scene/AddCommand.cpp"
     "${CMAKE_SOURCE_DIR}/commands/camera/LoginCommand.cpp"

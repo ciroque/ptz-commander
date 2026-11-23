@@ -3,6 +3,7 @@ target_sources(ptz_commander PRIVATE
     Arguments.h
     ConnectionLabel.h
     ResolveCameras.h
+    TourDelay.h
     Command.h
     CommandHandler.cpp
     CommandHandler.h
@@ -42,6 +43,8 @@ target_sources(ptz_commander PRIVATE
     preset/ShowCommand.h
     preset/StoreCommand.cpp
     preset/StoreCommand.h
+    preset/TourCommand.cpp
+    preset/TourCommand.h
 
     setup/ConsolePassword.cpp
     setup/ConsolePassword.h
