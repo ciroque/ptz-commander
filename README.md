@@ -74,16 +74,16 @@ A preset is a named pan, tilt, and zoom on one camera. `preset store` saves wher
 
 ### Scene
 
-A scene is a named set of camera → preset bindings. Bindings are resolved when you apply the scene (they are not baked PTZ values). `*` is not accepted. `scene add` still runs `scene store` for this release and prints `scene add is now scene store`. Persist with `setup save` / `setup load` (reserved top-level `"scenes"` key in the `.ptzc` file).
+A scene is a named set of camera → preset bindings. Bindings are resolved when you apply the scene (they are not baked PTZ values). `scene show *` prints every scene. `scene discard *` asks `Discard every scene? [y/N]` and deletes them only when the answer is y or Y, and only at a console. `scene apply *` applies nothing and prints `use scene tour`. `scene store` does not accept `*`. `scene add` still runs `scene store` for this release and prints `scene add is now scene store`. Persist with `setup save` / `setup load` (reserved top-level `"scenes"` key in the `.ptzc` file).
 
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
-| `scene store`                  | ```<name> <id> <preset> [<id> <preset> ...]``` | Stores or replaces bindings. Camera id is alias, serial, or name. Stored as serial. |
-| `scene apply`                  | ```<name>```                            | Moves each bound camera to that camera's named preset. Missing camera/preset is skipped. |
-| `scene discard`                | ```<name>```                            | Discards the scene.                                                         |
+| `scene store`                  | ```<name> <id> <preset> [<id> <preset> ...]``` | Stores or replaces bindings. Camera id is alias, serial, or name. Stored as serial. Does not accept `*`. |
+| `scene apply`                  | ```<name>```                            | Moves each bound camera to that camera's named preset. Missing camera/preset is skipped. `*` applies nothing and prints `use scene tour`. |
+| `scene discard`                | ```<name\|*>```                          | Discards the scene. `*` asks `Discard every scene? [y/N]` and deletes them only on y or Y, and only at a console. |
 | `scene list`                   | None                                    | Lists scene names and binding counts.                                       |
 | `scene remove`                 | ```<name> <id>```                       | Removes one camera from a scene.                                            |
-| `scene show`                   | ```<name>```                            | Shows each binding (friendly name, serial, preset).                         |
+| `scene show`                   | ```<name\|*>```                          | Shows each binding (friendly name, serial, preset). `*` shows every scene. |
 | `scene tour`                   | ```[seconds]```                         | Applies every scene in `scene list` order, waiting between them (not after the last). Default: 7 seconds. REPL is blocked until the tour finishes. |
 
 ### Setup
