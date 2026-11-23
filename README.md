@@ -67,6 +67,7 @@ A preset is a named pan, tilt, and zoom on one camera. `preset store` saves wher
 | `preset apply`                 | ```<id\|*> <name\|*> [delay_ms]```           | Applies a named preset, or every preset when the name is `*`. `delay_ms` is the pause between presets in that cycle. Preset lookup walks the presets stored on that camera. |
 | `preset discard`               | ```<id\|*> <name>```                         | Discards a named preset from memory.                                       |
 | `preset list`                  | None                                    | Lists all presets for all cameras.  |
+| `preset show`                  | ```<id\|*> [name]```                         | Shows that camera's presets. With a name, shows that preset on each matching camera. Same columns as `preset list`. |
 | `preset store`                 | ```<id\|*> <name>```                         | Stores current PTZ as a named preset in memory—e.g., ```"intro"```.            |
 
 ### Scene

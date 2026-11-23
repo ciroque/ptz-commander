@@ -16,6 +16,7 @@
 #include "preset/ApplyCommand.h"
 #include "preset/DiscardCommand.h"
 #include "preset/ListCommand.h"
+#include "preset/ShowCommand.h"
 #include "preset/StoreCommand.h"
 
 #include "setup/ExportCommand.h"
@@ -50,6 +51,7 @@ namespace commands {
         addCommand(std::make_unique<camera::ShowCommand>());
 
         addCommand(std::make_unique<preset::ListCommand>());
+        addCommand(std::make_unique<preset::ShowCommand>());
         addCommand(std::make_unique<preset::ApplyCommand>());
         addCommand(std::make_unique<preset::DiscardCommand>());
         addCommand(std::make_unique<preset::StoreCommand>());
