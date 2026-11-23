@@ -20,6 +20,9 @@ namespace cameras::onvif {
         // Original dpapi: text this Windows user cannot decrypt. setup save
         // writes it back until a new password replaces it. Never logged.
         std::string preservedPassword;
+        // setup load sets this when the camera rejected the stored password.
+        // Not written to the file. addInactive records it as AuthRejected.
+        bool passwordRejected = false;
 
         std::string address() const { return host + ":" + std::to_string(port > 0 ? port : 80); }
 

@@ -5,7 +5,8 @@
 
 namespace commands {
 
-    // "Inactive" needs a password. "Offline" has one and is not connected.
+    // "Inactive" needs a password, including a stored one the camera rejected.
+    // "Offline" has a stored password and is not connected for another reason.
     // Other cameras that are not connected stay "No".
     inline const char* connectionLabel(const cameras::Camera& camera) {
         switch (camera.connectionState()) {

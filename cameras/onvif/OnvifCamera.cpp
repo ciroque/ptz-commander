@@ -18,10 +18,17 @@ namespace cameras::onvif {
         if (connected_) {
             return ::cameras::ConnectionState::Connected;
         }
-        if (endpoint_.password.empty()) {
+        // A stored password the camera rejected still needs a login.
+        // Any other failure, including no answer, stays offline.
+        if (endpoint_.password.empty() || lastKind_ == OnvifError::AuthRejected) {
             return ::cameras::ConnectionState::NeedsLogin;
         }
         return ::cameras::ConnectionState::Offline;
+    }
+
+    void OnvifCamera::noteAuthRejected() {
+        lastKind_ = OnvifError::AuthRejected;
+        connected_ = false;
     }
 
     bool OnvifCamera::probe(std::string& error) {
