@@ -1,36 +1,28 @@
 #include "TourCommand.h"
 #include "ApplyCommand.h"
 #include "../Arguments.h"
+#include "../TourDelay.h"
 
 #include <chrono>
-#include <cmath>
 #include <string>
 #include <thread>
 
 namespace commands::scene {
 
-    namespace {
-        constexpr double kDefaultDelaySec = 7.0;
-    }
-
     void TourCommand::execute(data::Context& ctx, const std::string& args) {
-        double delaySec = kDefaultDelaySec;
+        double delaySec = commands::kDefaultTourDelaySec;
         auto tokens = commands::splitArgs(args);
         if (tokens.size() > 1) {
             ctx.err << "Usage: scene tour [seconds]" << std::endl;
             return;
         }
         if (tokens.size() == 1) {
-            try {
-                size_t idx = 0;
-                delaySec = std::stod(tokens[0], &idx);
-                if (idx != tokens[0].size() || delaySec < 0.0 || !std::isfinite(delaySec)) {
-                    throw std::invalid_argument("invalid delay");
-                }
-            } catch (const std::exception&) {
+            const auto parsed = commands::parseTourSeconds(tokens[0]);
+            if (!parsed) {
                 ctx.err << "Usage: scene tour [seconds]" << std::endl;
                 return;
             }
+            delaySec = *parsed;
         }
 
         const auto& scenes = ctx.sceneStore.all();

@@ -60,11 +60,12 @@ The `id` argument can be the camera's alias, serial number, or name. These value
 
 ### Preset
 
-A preset is a named pan, tilt, and zoom on one camera. `preset store` saves where that camera is now, and `preset apply` moves it back. The position is kept in the app and sent as an absolute move. Presets stored on the camera are not imported. Persist with `setup save` / `setup load`.
+A preset is a named pan, tilt, and zoom on one camera. `preset store` saves where that camera is now, and `preset apply` moves it back. `preset tour` walks that camera's presets in name order, waiting in seconds. The position is kept in the app and sent as an absolute move. Presets stored on the camera are not imported. Persist with `setup save` / `setup load`.
 
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
-| `preset apply`                 | ```<id\|*> <name\|*> [delay_ms]```           | Applies a named preset, or every preset when the name is `*`. `delay_ms` is the pause between presets in that cycle. Preset lookup walks the presets stored on that camera. |
+| `preset apply`                 | ```<id\|*> <name>```                         | Applies one named preset. `preset apply <id\|*> * [delay_ms]` still cycles for this release, in milliseconds, and prints `use preset tour <id> [seconds]`. |
+| `preset tour`                  | ```<id\|*> [seconds]```                      | Applies that camera's presets in name order, waiting between them (not after the last). Seconds, default 7, same rules as `scene tour`. |
 | `preset discard`               | ```<id\|*> <name>```                         | Discards a named preset from memory.                                       |
 | `preset list`                  | None                                    | Lists all presets for all cameras.  |
 | `preset show`                  | ```<id\|*> [name]```                         | Shows that camera's presets. With a name, shows that preset on each matching camera. Same columns as `preset list`. |

@@ -18,6 +18,7 @@
 #include "preset/ListCommand.h"
 #include "preset/ShowCommand.h"
 #include "preset/StoreCommand.h"
+#include "preset/TourCommand.h"
 
 #include "setup/ExportCommand.h"
 #include "setup/ListCommand.h"
@@ -53,6 +54,7 @@ namespace commands {
         addCommand(std::make_unique<preset::ListCommand>());
         addCommand(std::make_unique<preset::ShowCommand>());
         addCommand(std::make_unique<preset::ApplyCommand>());
+        addCommand(std::make_unique<preset::TourCommand>());
         addCommand(std::make_unique<preset::DiscardCommand>());
         addCommand(std::make_unique<preset::StoreCommand>());
 
