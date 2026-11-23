@@ -13,32 +13,34 @@
 namespace commands::preset {
 
     void TourCommand::execute(data::Context& ctx, const std::string& args) {
-        auto tokens = commands::splitArgs(args);
-        if (tokens.empty() || tokens.size() > 2) {
-            ctx.err << "Usage: preset tour <id|*> [seconds]" << std::endl;
+        const auto split = commands::splitTourWords(commands::splitArgs(args));
+        if (!split || split->words.empty() || split->words.size() > 2) {
+            ctx.err << "Usage: preset tour <id|*> [seconds] [--background]" << std::endl;
             return;
         }
 
         double delaySec = commands::kDefaultTourDelaySec;
-        if (tokens.size() == 2) {
-            const auto parsed = commands::parseTourSeconds(tokens[1]);
+        if (split->words.size() == 2) {
+            const auto parsed = commands::parseTourSeconds(split->words[1]);
             if (!parsed) {
-                ctx.err << "Usage: preset tour <id|*> [seconds]" << std::endl;
+                ctx.err << "Usage: preset tour <id|*> [seconds] [--background]" << std::endl;
                 return;
             }
             delaySec = *parsed;
         }
 
-        auto cameras = commands::resolveCameras(ctx, tokens[0]);
+        const std::string& id = split->words[0];
+        auto cameras = commands::resolveCameras(ctx, id);
         if (cameras.empty()) {
             return;
         }
 
-        // No runner: the delay-0 tests stay on this thread. The first-flag
-        // stays outside the camera loop, so the wait includes the gap
-        // between cameras.
-        if (!ctx.tour) {
+        // No flag, or no runner: block on this thread. The first-flag stays
+        // outside the camera loop, so the wait includes the gap between
+        // cameras. Stop a background tour once there is a move to make.
+        if (!split->background || !ctx.tour) {
             bool first = true;
+            bool stopped = false;
             for (auto& camera : cameras) {
                 if (commands::refuseNeedsLogin(ctx, *camera)) {
                     continue;
@@ -47,6 +49,10 @@ namespace commands::preset {
                 if (presets.empty()) {
                     ctx.err << "No presets found for " << camera->getSerialNumber() << std::endl;
                     continue;
+                }
+                if (!stopped && ctx.tour) {
+                    ctx.tour->stop();
+                    stopped = true;
                 }
 
                 for (const auto& preset : presets) {
@@ -99,7 +105,7 @@ namespace commands::preset {
         const auto delay
             = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(delaySec));
         ctx.tour->start(
-            "preset tour " + tokens[0], std::move(steps), delay,
+            "preset tour " + id, std::move(steps), delay,
             [delaySec](data::Context& stepCtx) { stepCtx.out << "Waiting " << delaySec << "s..." << std::endl; }, {},
             ctx);
     }

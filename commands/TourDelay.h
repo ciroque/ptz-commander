@@ -6,6 +6,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace commands {
 
@@ -24,6 +25,31 @@ namespace commands {
         } catch (const std::exception&) {
             return std::nullopt;
         }
+    }
+
+    // One optional --background, in any position. Any other -- word, or a
+    // second --background, is rejected. The other tokens stay in order.
+    struct TourWords {
+        bool background = false;
+        std::vector<std::string> words;
+    };
+
+    inline std::optional<TourWords> splitTourWords(const std::vector<std::string>& tokens) {
+        TourWords out;
+        for (const auto& token : tokens) {
+            if (token == "--background") {
+                if (out.background) {
+                    return std::nullopt;
+                }
+                out.background = true;
+                continue;
+            }
+            if (token.rfind("--", 0) == 0) {
+                return std::nullopt;
+            }
+            out.words.push_back(token);
+        }
+        return out;
     }
 
 } // namespace commands
