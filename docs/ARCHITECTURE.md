@@ -26,7 +26,7 @@ flowchart TB
     Onvif --> Client["OnvifClient<br/>SOAP over WinHTTP, WS-Security"]
 ```
 
-**Commands.** Each command is a small class with a family (`camera`, `preset`, `scene`, `setup`) and a verb. `CommandHandler` registers them and dispatches `family verb args`, and `help` is generated from the registry. Adding a command means adding one class and one registration line.
+**Commands.** Each command is a small class with a family (`camera`, `preset`, `scene`, `setup`) and a verb. `CommandHandler` registers them and dispatches `family verb args`, and `help` is generated from the registry. Adding a command means adding one class and one registration line. Arguments start with what the command acts on. A preset is found by camera, then name: `preset show` takes the camera, then an optional name. A scene is found by name. `camera discard` takes the camera.
 
 **Cameras.** `Camera` is the only type the commands see. It exposes absolute pan, tilt, and zoom in degrees and percent, and it owns that camera's presets. Each protocol has its own subclass and an adapter that creates them: `ObsbotCameraAdapter` watches USB plug and unplug events on its own thread, and the VISCA and ONVIF adapters add cameras on request from `camera add` or `setup load`.
 
