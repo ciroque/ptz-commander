@@ -24,7 +24,7 @@ Arguments start with what the command acts on. A preset is found by camera, then
 
 discard deletes a whole preset, scene, or camera. remove takes one camera out of a scene. store creates or replaces a preset or the bindings in a scene.
 
-`tour` prints the tour that is running, or that nothing is. `tour stop` ends it. The wait runs in the background, so the REPL and the OBS dock stay usable. Starting another tour, or applying a scene or a preset, stops the one that is running.
+`tour` prints the background tour that is running, or that nothing is. `tour stop` ends it. A tour blocks the REPL and the OBS dock unless `--background` is given. That flag keeps both usable while the tour waits. Starting another tour, or applying a scene or a preset, stops a background tour.
 
 ### Version
 
@@ -70,7 +70,7 @@ A preset is a named pan, tilt, and zoom on one camera. `preset store` saves wher
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
 | `preset apply`                 | ```<id\|*> <name>```                         | Applies one named preset. The id may be `*` for every camera. A `*` in the name position is refused: use `preset tour`. Applying a preset stops a running tour. |
-| `preset tour`                  | ```<id\|*> [seconds]```                      | One camera after another, in `camera list` order. Presets on each camera are in name order. The wait sits between presets, including between the last of one camera and the first of the next, and not after the last. Seconds, default 7, same rules as `scene tour`. The wait does not block the OBS dock. `tour stop`, `scene apply`, and `preset apply` end it. |
+| `preset tour`                  | ```<id\|*> [seconds] [--background]```       | One camera after another, in `camera list` order. Presets on each camera are in name order. The wait sits between presets, including between the last of one camera and the first of the next, and not after the last. Seconds, default 7, same rules as `scene tour`. The tour blocks the REPL and the OBS dock unless `--background` is given. That flag keeps both usable. `tour stop`, `scene apply`, and `preset apply` end a background tour. |
 | `preset discard`               | ```<id\|*> <name>```                         | Discards a named preset from memory.                                       |
 | `preset list`                  | None                                    | Lists all presets for all cameras.  |
 | `preset show`                  | ```<id\|*> [name]```                         | Shows that camera's presets. With a name, shows that preset on each matching camera. Same columns as `preset list`. |
@@ -88,7 +88,7 @@ A scene is a named set of camera → preset bindings. Bindings are resolved when
 | `scene list`                   | None                                    | Lists scene names and binding counts.                                       |
 | `scene remove`                 | ```<name> <id>```                       | Removes one camera from a scene.                                            |
 | `scene show`                   | ```<name\|*>```                          | Shows each binding (friendly name, serial, preset). `*` shows every scene. |
-| `scene tour`                   | ```[seconds]```                         | Applies every scene in `scene list` order, waiting between them (not after the last). Default: 7 seconds. The wait does not block the REPL or the OBS dock. `tour stop`, `scene apply`, and `preset apply` end it. |
+| `scene tour`                   | ```[seconds] [--background]```          | Applies every scene in `scene list` order, waiting between them (not after the last). Default: 7 seconds. The tour blocks the REPL and the OBS dock unless `--background` is given. That flag keeps both usable. `tour stop`, `scene apply`, and `preset apply` end a background tour. |
 
 ### Setup
 

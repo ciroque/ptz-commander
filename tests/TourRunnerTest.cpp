@@ -73,7 +73,7 @@ TEST(TourRunner, StopEndsTheTourInsideTheWait) {
     pulpit->addPreset("m", Preset("m", Ptz{20.0f, 0.0f, 0}));
 
     commands::preset::TourCommand tour;
-    tour.execute(h.ctx, "pulpit 7");
+    tour.execute(h.ctx, "pulpit 7 --background");
     h.runner.waitUntilWaiting();
     EXPECT_EQ(pulpit->pans, (std::vector<float>{10.0f}));
     EXPECT_NE(h.out.str().find("Waiting 7s..."), std::string::npos);
@@ -98,13 +98,13 @@ TEST(TourRunner, SecondTourStopsTheFirst) {
     h.scenes.upsertBinding("beta", "lectern", "tight");
 
     commands::preset::TourCommand presetTour;
-    presetTour.execute(h.ctx, "pulpit");
+    presetTour.execute(h.ctx, "pulpit --background");
     h.runner.waitUntilWaiting();
     EXPECT_EQ(pulpit->pans, (std::vector<float>{10.0f}));
     EXPECT_TRUE(lectern->pans.empty());
 
     commands::scene::TourCommand sceneTour;
-    sceneTour.execute(h.ctx, "7");
+    sceneTour.execute(h.ctx, "7 --background");
     h.runner.waitUntilWaiting();
     EXPECT_EQ(pulpit->pans, (std::vector<float>{10.0f}));
     EXPECT_EQ(lectern->pans, (std::vector<float>{1.0f}));
@@ -128,7 +128,7 @@ TEST(TourRunner, MoveLockCanBeTakenWhileTheTourWaits) {
     h.scenes.upsertBinding("cue", "lectern", "shot");
 
     commands::preset::TourCommand tour;
-    tour.execute(h.ctx, "pulpit 7");
+    tour.execute(h.ctx, "pulpit 7 --background");
     h.runner.waitUntilWaiting();
 
     ASSERT_TRUE(h.commandLock.try_lock());
@@ -154,7 +154,7 @@ TEST(TourRunner, StatusNamesTheRunningTour) {
     pulpit->addPreset("m", Preset("m", Ptz{20.0f, 0.0f, 0}));
 
     commands::preset::TourCommand tour;
-    tour.execute(h.ctx, "pulpit 7");
+    tour.execute(h.ctx, "pulpit 7 --background");
     h.runner.waitUntilWaiting();
 
     commands::TourCommand status;
@@ -178,7 +178,7 @@ TEST(TourRunner, AdvanceRunsTheNextStep) {
     pulpit->addPreset("z", Preset("z", Ptz{30.0f, 0.0f, 0}));
 
     commands::preset::TourCommand tour;
-    tour.execute(h.ctx, "pulpit 7");
+    tour.execute(h.ctx, "pulpit 7 --background");
     h.runner.waitUntilWaiting();
     EXPECT_EQ(pulpit->pans, (std::vector<float>{10.0f}));
 
@@ -199,7 +199,7 @@ TEST(TourRunner, DelayZeroFinishesWithoutWaiting) {
     pulpit->addPreset("m", Preset("m", Ptz{20.0f, 0.0f, 0}));
 
     commands::preset::TourCommand tour;
-    tour.execute(h.ctx, "pulpit 0");
+    tour.execute(h.ctx, "pulpit 0 --background");
     h.runner.waitUntilIdle();
     EXPECT_EQ(pulpit->pans, (std::vector<float>{10.0f, 20.0f}));
     EXPECT_EQ(h.out.str().find("Waiting"), std::string::npos);
@@ -215,7 +215,7 @@ TEST(TourRunner, StarNameDoesNotStopTheTour) {
     lectern->addPreset("a", Preset("a", Ptz{1.0f, 0.0f, 0}));
 
     commands::preset::TourCommand tour;
-    tour.execute(h.ctx, "pulpit 7");
+    tour.execute(h.ctx, "pulpit 7 --background");
     h.runner.waitUntilWaiting();
 
     commands::preset::ApplyCommand apply;
@@ -245,7 +245,7 @@ TEST(TourRunner, NamedPresetApplyStopsTheTour) {
     pulpit->addPreset("z", Preset("z", Ptz{30.0f, 0.0f, 0}));
 
     commands::preset::TourCommand tour;
-    tour.execute(h.ctx, "pulpit 7");
+    tour.execute(h.ctx, "pulpit 7 --background");
     h.runner.waitUntilWaiting();
 
     commands::preset::ApplyCommand apply;
@@ -262,7 +262,7 @@ TEST(TourRunner, BadTourAndStarApplyDoNotStop) {
     pulpit->addPreset("m", Preset("m", Ptz{20.0f, 0.0f, 0}));
 
     commands::preset::TourCommand tour;
-    tour.execute(h.ctx, "pulpit 7");
+    tour.execute(h.ctx, "pulpit 7 --background");
     h.runner.waitUntilWaiting();
 
     commands::scene::TourCommand sceneTour;
@@ -276,7 +276,7 @@ TEST(TourRunner, BadTourAndStarApplyDoNotStop) {
 
     EXPECT_EQ(h.runner.running(), "preset tour pulpit");
     EXPECT_EQ(pulpit->pans, (std::vector<float>{10.0f}));
-    EXPECT_NE(h.err.str().find("Usage: scene tour [seconds]"), std::string::npos);
+    EXPECT_NE(h.err.str().find("Usage: scene tour [seconds] [--background]"), std::string::npos);
     EXPECT_NE(h.out.str().find("use scene tour"), std::string::npos);
     EXPECT_NE(h.err.str().find("Usage: preset apply <id|*> <name>"), std::string::npos);
     EXPECT_NE(h.err.str().find("Usage: tour [stop]"), std::string::npos);
@@ -294,7 +294,7 @@ TEST(TourRunner, EmptyPresetTourDoesNotStop) {
     h.add("empty");
 
     commands::preset::TourCommand tour;
-    tour.execute(h.ctx, "pulpit 7");
+    tour.execute(h.ctx, "pulpit 7 --background");
     h.runner.waitUntilWaiting();
 
     tour.execute(h.ctx, "empty");
@@ -317,7 +317,7 @@ TEST(TourRunner, WaitSitsBetweenCameras) {
     right->addPreset("b", Preset("b", Ptz{15.0f, 0.0f, 0}));
 
     commands::preset::TourCommand tour;
-    tour.execute(h.ctx, "* 7");
+    tour.execute(h.ctx, "* 7 --background");
     h.runner.waitUntilWaiting();
     EXPECT_EQ(left->pans, (std::vector<float>{10.0f}));
     EXPECT_TRUE(right->pans.empty());
@@ -343,4 +343,86 @@ TEST(TourRunner, StopWhenNothingIsRunning) {
     tour.execute(h.ctx, "stop");
     EXPECT_NE(h.out.str().find("No tour is running."), std::string::npos);
     EXPECT_EQ(h.out.str().find("Tour stopped."), std::string::npos);
+}
+
+TEST(TourRunner, WithoutTheFlagTheTourStaysInline) {
+    Harness h;
+    auto pulpit = h.add("pulpit");
+    pulpit->addPreset("a", Preset("a", Ptz{10.0f, 0.0f, 0}));
+    pulpit->addPreset("m", Preset("m", Ptz{20.0f, 0.0f, 0}));
+
+    ASSERT_TRUE(h.commandLock.try_lock());
+    {
+        struct Release {
+            std::mutex& mutex;
+            ~Release() { mutex.unlock(); }
+        } release{h.commandLock};
+        commands::preset::TourCommand tour;
+        tour.execute(h.ctx, "pulpit 0");
+        EXPECT_EQ(pulpit->pans, (std::vector<float>{10.0f, 20.0f}));
+        EXPECT_TRUE(h.runner.running().empty());
+    }
+}
+
+TEST(TourRunner, BackgroundFlagWorksOnEitherSideOfTheSeconds) {
+    Harness h;
+    auto pulpit = h.add("pulpit");
+    pulpit->addPreset("a", Preset("a", Ptz{10.0f, 0.0f, 0}));
+    pulpit->addPreset("m", Preset("m", Ptz{20.0f, 0.0f, 0}));
+
+    commands::preset::TourCommand tour;
+    commands::TourCommand stop;
+    for (const char* args : {"pulpit 7 --background", "--background pulpit 7", "pulpit --background 7"}) {
+        pulpit->pans.clear();
+        tour.execute(h.ctx, args);
+        h.runner.waitUntilWaiting();
+        EXPECT_EQ(pulpit->pans, (std::vector<float>{10.0f})) << args;
+        EXPECT_EQ(h.runner.running(), "preset tour pulpit") << args;
+        stop.execute(h.ctx, "stop");
+        h.runner.waitUntilIdle();
+        EXPECT_EQ(pulpit->pans, (std::vector<float>{10.0f})) << args;
+    }
+}
+
+TEST(TourRunner, BogusFlagIsAUsageErrorAndDoesNotStop) {
+    Harness h;
+    auto pulpit = h.add("pulpit");
+    pulpit->addPreset("a", Preset("a", Ptz{10.0f, 0.0f, 0}));
+    pulpit->addPreset("m", Preset("m", Ptz{20.0f, 0.0f, 0}));
+
+    commands::preset::TourCommand tour;
+    tour.execute(h.ctx, "pulpit 7 --background");
+    h.runner.waitUntilWaiting();
+
+    tour.execute(h.ctx, "pulpit --bogus");
+    tour.execute(h.ctx, "pulpit 7 --background --background");
+    commands::scene::TourCommand sceneTour;
+    sceneTour.execute(h.ctx, "--bogus");
+    sceneTour.execute(h.ctx, "7 --bogus");
+
+    EXPECT_EQ(h.runner.running(), "preset tour pulpit");
+    EXPECT_EQ(pulpit->pans, (std::vector<float>{10.0f}));
+    EXPECT_NE(h.err.str().find("Usage: preset tour <id|*> [seconds] [--background]"), std::string::npos);
+    EXPECT_NE(h.err.str().find("Usage: scene tour [seconds] [--background]"), std::string::npos);
+
+    commands::TourCommand stop;
+    stop.execute(h.ctx, "stop");
+    h.runner.waitUntilIdle();
+    EXPECT_EQ(pulpit->pans, (std::vector<float>{10.0f}));
+}
+
+TEST(TourRunner, InlineTourStopsTheBackgroundTour) {
+    Harness h;
+    auto pulpit = h.add("pulpit");
+    pulpit->addPreset("a", Preset("a", Ptz{10.0f, 0.0f, 0}));
+    pulpit->addPreset("m", Preset("m", Ptz{20.0f, 0.0f, 0}));
+
+    commands::preset::TourCommand tour;
+    tour.execute(h.ctx, "pulpit 7 --background");
+    h.runner.waitUntilWaiting();
+
+    tour.execute(h.ctx, "pulpit 0");
+    EXPECT_EQ(pulpit->pans, (std::vector<float>{10.0f, 10.0f, 20.0f}));
+    EXPECT_TRUE(h.runner.running().empty());
+    h.runner.waitUntilIdle();
 }

@@ -12,16 +12,17 @@
 namespace commands::scene {
 
     void TourCommand::execute(data::Context& ctx, const std::string& args) {
-        double delaySec = commands::kDefaultTourDelaySec;
-        auto tokens = commands::splitArgs(args);
-        if (tokens.size() > 1) {
-            ctx.err << "Usage: scene tour [seconds]" << std::endl;
+        const auto split = commands::splitTourWords(commands::splitArgs(args));
+        if (!split || split->words.size() > 1) {
+            ctx.err << "Usage: scene tour [seconds] [--background]" << std::endl;
             return;
         }
-        if (tokens.size() == 1) {
-            const auto parsed = commands::parseTourSeconds(tokens[0]);
+
+        double delaySec = commands::kDefaultTourDelaySec;
+        if (split->words.size() == 1) {
+            const auto parsed = commands::parseTourSeconds(split->words[0]);
             if (!parsed) {
-                ctx.err << "Usage: scene tour [seconds]" << std::endl;
+                ctx.err << "Usage: scene tour [seconds] [--background]" << std::endl;
                 return;
             }
             delaySec = *parsed;
@@ -33,8 +34,9 @@ namespace commands::scene {
             return;
         }
 
-        // No runner: the delay-0 tests stay on this thread.
-        if (!ctx.tour) {
+        // No flag, or no runner: block on this thread. Scene apply stops a
+        // background tour before the first move.
+        if (!split->background || !ctx.tour) {
             ApplyCommand apply;
             bool first = true;
             for (const auto& entry : scenes) {

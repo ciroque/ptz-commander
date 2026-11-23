@@ -7,9 +7,10 @@ namespace commands::preset {
     class TourCommand : public Command {
     public:
         TourCommand()
-            : Command("preset", "tour", "preset tour <id|*> [seconds]",
+            : Command("preset", "tour", "preset tour <id|*> [seconds] [--background]",
                       "One camera after another, in camera list order; presets in name order; the wait "
-                      "includes the gap between cameras (default 7s). tour stop ends it") {}
+                      "includes the gap between cameras (default 7s). Blocks unless --background. "
+                      "tour stop ends a background tour") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 } // namespace commands::preset

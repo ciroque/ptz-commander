@@ -128,7 +128,7 @@ TEST(PresetTourCommand, BadDelaysRejectedByBothTours) {
         data::Context sceneCtx(mgr, scenes, sceneOut, sceneErr);
         commands::scene::TourCommand sceneTour;
         sceneTour.execute(sceneCtx, bad);
-        EXPECT_NE(sceneErr.str().find("Usage: scene tour [seconds]"), std::string::npos) << bad;
+        EXPECT_NE(sceneErr.str().find("Usage: scene tour [seconds] [--background]"), std::string::npos) << bad;
         EXPECT_EQ(sceneOut.str().find("Waiting"), std::string::npos) << bad;
 
         std::ostringstream presetOut;
@@ -136,7 +136,7 @@ TEST(PresetTourCommand, BadDelaysRejectedByBothTours) {
         data::Context presetCtx(mgr, scenes, presetOut, presetErr);
         commands::preset::TourCommand presetTour;
         presetTour.execute(presetCtx, std::string("VISCA-IP:192.168.1.30:52381 ") + bad);
-        EXPECT_NE(presetErr.str().find("Usage: preset tour <id|*> [seconds]"), std::string::npos) << bad;
+        EXPECT_NE(presetErr.str().find("Usage: preset tour <id|*> [seconds] [--background]"), std::string::npos) << bad;
         EXPECT_TRUE(camera->pans.empty()) << bad;
         EXPECT_EQ(presetOut.str().find("Applied"), std::string::npos) << bad;
     }
