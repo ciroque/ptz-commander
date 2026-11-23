@@ -1,6 +1,7 @@
 #include "ApplyCommand.h"
 #include "../Arguments.h"
 #include "../ConnectionLabel.h"
+#include "../TourRunner.h"
 
 namespace commands::scene {
 
@@ -17,6 +18,14 @@ namespace commands::scene {
             return;
         }
 
+        // The latest cue wins, including a scene that is missing or empty.
+        if (ctx.tour) {
+            ctx.tour->stop();
+        }
+        applyNamed(ctx, sceneName);
+    }
+
+    void ApplyCommand::applyNamed(data::Context& ctx, const std::string& sceneName) {
         const auto* scene = ctx.sceneStore.find(sceneName);
         if (!scene) {
             ctx.err << "Scene not found: " << sceneName << std::endl;

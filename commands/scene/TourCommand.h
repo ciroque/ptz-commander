@@ -8,7 +8,7 @@ namespace commands::scene {
     public:
         TourCommand()
             : Command("scene", "tour", "scene tour [seconds]",
-                      "Apply every scene in list order; wait between (default 7s)") {}
+                      "Apply every scene in list order; wait between (default 7s). tour stop ends it") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 } // namespace commands::scene

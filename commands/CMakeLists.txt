@@ -7,6 +7,10 @@ target_sources(ptz_commander PRIVATE
     Command.h
     CommandHandler.cpp
     CommandHandler.h
+    TourCommand.cpp
+    TourCommand.h
+    TourRunner.cpp
+    TourRunner.h
 
     camera/AddCommand.cpp
     camera/AddCommand.h

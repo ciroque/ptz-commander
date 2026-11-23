@@ -8,6 +8,8 @@ namespace commands::scene {
     public:
         ApplyCommand() : Command("scene", "apply", "scene apply <name>", "Apply each binding (setPosition)") {}
         void execute(data::Context& ctx, const std::string& args) override;
+        // One scene. Tour steps call this so a step does not stop the tour.
+        void applyNamed(data::Context& ctx, const std::string& sceneName);
     };
 } // namespace commands::scene
 

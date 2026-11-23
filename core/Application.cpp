@@ -90,11 +90,21 @@ namespace core {
             context_.out << Prompt << std::flush;
         });
 
+        // The wait runs here. commandMutex_ is held only around one move.
+        tourRunner_ = std::make_unique<commands::TourRunner>(commandMutex_);
+        context_.tour = tourRunner_.get();
+
         // Start OBSBOT adapter (hotplug + network scan) in its own thread
         obsbotAdapterThread_ = std::thread(&cameras::obsbot::ObsbotCameraAdapter::start, obsbotAdapter_.get());
     }
 
     Application::~Application() {
+        // Join before the cameras go away, and not while holding commandMutex_.
+        if (tourRunner_) {
+            tourRunner_->shutdown();
+            context_.tour = nullptr;
+        }
+
         sceneControlServer_.stop();
 
         if (obsbotAdapter_) {

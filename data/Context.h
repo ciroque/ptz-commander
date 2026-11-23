@@ -14,6 +14,10 @@
 #include <variant>
 #include <vector>
 
+namespace commands {
+    class TourRunner;
+}
+
 namespace data {
     class Context {
     public:
@@ -60,6 +64,10 @@ namespace data {
         using ScannedCamera = std::variant<cameras::visca::ViscaIpEndpoint, cameras::visca::ViscaSerialEndpoint,
                                            cameras::onvif::OnvifEndpoint>;
         std::optional<std::vector<ScannedCamera>> lastScan;
+        // Null keeps scene tour, preset tour, and the preset apply * cycle
+        // inline. Application installs one so the wait does not hold the
+        // command lock.
+        commands::TourRunner* tour = nullptr;
 
         Context(cameras::CameraManager& mgr, cameras::SceneStore& scenes, std::ostream& output = std::cout,
                 std::ostream& error = std::cerr)

@@ -24,6 +24,8 @@ Arguments start with what the command acts on. A preset is found by camera, then
 
 discard deletes a whole preset, scene, or camera. remove takes one camera out of a scene. store creates or replaces a preset or the bindings in a scene.
 
+`tour` prints the tour that is running, or that nothing is. `tour stop` ends it. The wait runs in the background, so the REPL and the OBS dock stay usable. Starting another tour, or applying a scene or a preset, stops the one that is running.
+
 ### Version
 
 | Command          | Arguments | Description                                                                 |
@@ -67,8 +69,8 @@ A preset is a named pan, tilt, and zoom on one camera. `preset store` saves wher
 
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
-| `preset apply`                 | ```<id\|*> <name>```                         | Applies one named preset. `preset apply <id\|*> * [delay_ms]` still cycles for this release, in milliseconds, and prints `use preset tour <id> [seconds]`. |
-| `preset tour`                  | ```<id\|*> [seconds]```                      | Applies that camera's presets in name order, waiting between them (not after the last). Seconds, default 7, same rules as `scene tour`. |
+| `preset apply`                 | ```<id\|*> <name>```                         | Applies one named preset. `preset apply <id\|*> * [delay_ms]` still cycles for this release, in milliseconds, and prints `use preset tour <id> [seconds]`. Applying a preset stops a running tour. |
+| `preset tour`                  | ```<id\|*> [seconds]```                      | Applies that camera's presets in name order, waiting between them (not after the last). Seconds, default 7, same rules as `scene tour`. The wait does not block the OBS dock. `tour stop`, `scene apply`, and `preset apply` end it. |
 | `preset discard`               | ```<id\|*> <name>```                         | Discards a named preset from memory.                                       |
 | `preset list`                  | None                                    | Lists all presets for all cameras.  |
 | `preset show`                  | ```<id\|*> [name]```                         | Shows that camera's presets. With a name, shows that preset on each matching camera. Same columns as `preset list`. |
@@ -81,12 +83,12 @@ A scene is a named set of camera → preset bindings. Bindings are resolved when
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
 | `scene store`                  | ```<name> <id> <preset> [<id> <preset> ...]``` | Stores or replaces bindings. Camera id is alias, serial, or name. Stored as serial. Does not accept `*`. |
-| `scene apply`                  | ```<name>```                            | Moves each bound camera to that camera's named preset. Missing camera/preset is skipped. `*` applies nothing and prints `use scene tour`. |
+| `scene apply`                  | ```<name>```                            | Moves each bound camera to that camera's named preset. Missing camera/preset is skipped. `*` applies nothing and prints `use scene tour`. A scene name stops a running tour. |
 | `scene discard`                | ```<name\|*>```                          | Discards the scene. `*` asks `Discard every scene? [y/N]` and deletes them only on y or Y, and only at a console. |
 | `scene list`                   | None                                    | Lists scene names and binding counts.                                       |
 | `scene remove`                 | ```<name> <id>```                       | Removes one camera from a scene.                                            |
 | `scene show`                   | ```<name\|*>```                          | Shows each binding (friendly name, serial, preset). `*` shows every scene. |
-| `scene tour`                   | ```[seconds]```                         | Applies every scene in `scene list` order, waiting between them (not after the last). Default: 7 seconds. REPL is blocked until the tour finishes. |
+| `scene tour`                   | ```[seconds]```                         | Applies every scene in `scene list` order, waiting between them (not after the last). Default: 7 seconds. The wait does not block the REPL or the OBS dock. `tour stop`, `scene apply`, and `preset apply` end it. |
 
 ### Setup
 
