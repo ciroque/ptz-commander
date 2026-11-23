@@ -28,11 +28,14 @@ add_executable(ptz_tests
     SceneStoreCommandTest.cpp
     PresetShowCommandTest.cpp
     PresetTourCommandTest.cpp
+    TourRunnerTest.cpp
     CameraDiscardTest.cpp
     ObsbotAbsentTest.cpp
     SceneStarCommandTest.cpp
     "${CMAKE_SOURCE_DIR}/commands/preset/StoreCommand.cpp"
     "${CMAKE_SOURCE_DIR}/commands/preset/ShowCommand.cpp"
+    "${CMAKE_SOURCE_DIR}/commands/TourCommand.cpp"
+    "${CMAKE_SOURCE_DIR}/commands/TourRunner.cpp"
     "${CMAKE_SOURCE_DIR}/commands/preset/ApplyCommand.cpp"
     "${CMAKE_SOURCE_DIR}/commands/preset/TourCommand.cpp"
     "${CMAKE_SOURCE_DIR}/commands/scene/TourCommand.cpp"

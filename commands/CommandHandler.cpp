@@ -13,6 +13,7 @@
 
 #include "console/ClearCommand.h"
 #include "console/VersionCommand.h"
+#include "TourCommand.h"
 
 #include "preset/ApplyCommand.h"
 #include "preset/DiscardCommand.h"
@@ -76,6 +77,7 @@ namespace commands {
 
         addCommand(std::make_unique<console::ClearCommand>());
         addCommand(std::make_unique<console::VersionCommand>());
+        addCommand(std::make_unique<TourCommand>());
     }
 
     void CommandHandler::addCommand(std::unique_ptr<Command> cmd) {

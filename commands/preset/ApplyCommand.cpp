@@ -1,16 +1,74 @@
 #include "ApplyCommand.h"
 #include "../ConnectionLabel.h"
 #include "../ResolveCameras.h"
+#include "../TourRunner.h"
+#include <chrono>
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <thread>
-#include <chrono>
 
 namespace commands::preset {
     namespace {
         constexpr int kDefaultDelayMs = 2000;
 
         void printUsage(data::Context& ctx) { ctx.err << "Usage: preset apply <id|*> <name>" << std::endl; }
+
+        // The summary prints after the last move. Empty cameras and inactive
+        // cameras are reported here, before the runner is started.
+        void startPresetCycle(data::Context& ctx, const std::string& serialNumber, int delayMs) {
+            ctx.tour->stop();
+            auto cameras = commands::resolveCameras(ctx, serialNumber);
+            if (cameras.empty()) {
+                return;
+            }
+
+            auto allGood = std::make_shared<bool>(true);
+            std::vector<commands::TourRunner::Step> steps;
+            for (auto& camera : cameras) {
+                if (commands::refuseNeedsLogin(ctx, *camera)) {
+                    *allGood = false;
+                    continue;
+                }
+                auto presets = camera->getPresets();
+                if (presets.empty()) {
+                    ctx.err << "No presets found for " << camera->getSerialNumber() << std::endl;
+                    *allGood = false;
+                    continue;
+                }
+
+                for (const auto& preset : presets) {
+                    auto cam = camera;
+                    auto presetCopy = preset;
+                    steps.push_back([cam, presetCopy, allGood](data::Context& stepCtx) {
+                        if (!cam->setPosition(presetCopy.ptz.pan, presetCopy.ptz.tilt, presetCopy.ptz.zoom)) {
+                            stepCtx.err << "Failed to apply preset '" << presetCopy.name << "' to "
+                                        << cam->getSerialNumber() << std::endl;
+                            *allGood = false;
+                        } else {
+                            stepCtx.out << "Applied preset '" << presetCopy.name << "' to " << cam->getSerialNumber()
+                                        << std::endl;
+                        }
+                    });
+                }
+            }
+
+            const std::string target = serialNumber == "*" ? std::to_string(cameras.size()) + " cameras" : serialNumber;
+            auto finish = [allGood, target](data::Context& stepCtx) {
+                if (*allGood) {
+                    stepCtx.out << "Applied presets to " << target << std::endl;
+                } else {
+                    stepCtx.err << "Some presets failed to apply for " << target << "." << std::endl;
+                }
+            };
+            if (steps.empty()) {
+                finish(ctx);
+                return;
+            }
+
+            ctx.tour->start("preset apply " + serialNumber + " *", std::move(steps), std::chrono::milliseconds(delayMs),
+                            {}, std::move(finish), ctx);
+        }
     } // namespace
 
     void ApplyCommand::execute(data::Context& ctx, const std::string& args) {
@@ -48,6 +106,14 @@ namespace commands::preset {
         } else if (tokens.size() > 2) {
             printUsage(ctx);
             return;
+        }
+
+        if (cycle && ctx.tour) {
+            startPresetCycle(ctx, serialNumber, delayMs);
+            return;
+        }
+        if (!cycle && ctx.tour) {
+            ctx.tour->stop();
         }
 
         auto cameras = commands::resolveCameras(ctx, serialNumber);

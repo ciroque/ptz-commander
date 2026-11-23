@@ -7,6 +7,7 @@
 #include "../cameras/onvif/OnvifCameraAdapter.h"
 #include "../cameras/visca/ViscaCameraAdapter.h"
 #include "../commands/CommandHandler.h"
+#include "../commands/TourRunner.h"
 #include "../data/Context.h"
 #include "SceneControlServer.h"
 #include <memory>
@@ -26,6 +27,7 @@ namespace core {
         std::thread obsbotAdapterThread_;
         SceneControlServer sceneControlServer_;
         std::mutex commandMutex_;
+        std::unique_ptr<commands::TourRunner> tourRunner_;
         bool running_;
         const std::string Prompt = "> ";
         const std::string StopToken = "exit";

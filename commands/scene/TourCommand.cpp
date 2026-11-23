@@ -2,10 +2,12 @@
 #include "ApplyCommand.h"
 #include "../Arguments.h"
 #include "../TourDelay.h"
+#include "../TourRunner.h"
 
 #include <chrono>
 #include <string>
 #include <thread>
+#include <vector>
 
 namespace commands::scene {
 
@@ -31,16 +33,34 @@ namespace commands::scene {
             return;
         }
 
-        ApplyCommand apply;
-        bool first = true;
-        for (const auto& entry : scenes) {
-            if (!first && delaySec > 0.0) {
-                ctx.out << "Waiting " << delaySec << "s..." << std::endl;
-                std::this_thread::sleep_for(std::chrono::duration<double>(delaySec));
+        // No runner: the delay-0 tests stay on this thread.
+        if (!ctx.tour) {
+            ApplyCommand apply;
+            bool first = true;
+            for (const auto& entry : scenes) {
+                if (!first && delaySec > 0.0) {
+                    ctx.out << "Waiting " << delaySec << "s..." << std::endl;
+                    std::this_thread::sleep_for(std::chrono::duration<double>(delaySec));
+                }
+                first = false;
+                apply.execute(ctx, entry.first);
             }
-            first = false;
-            apply.execute(ctx, entry.first);
+            return;
         }
+
+        std::vector<commands::TourRunner::Step> steps;
+        steps.reserve(scenes.size());
+        for (const auto& entry : scenes) {
+            const std::string name = entry.first;
+            steps.push_back([name](data::Context& stepCtx) { ApplyCommand{}.applyNamed(stepCtx, name); });
+        }
+
+        const auto delay
+            = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(delaySec));
+        ctx.tour->start(
+            "scene tour", std::move(steps), delay,
+            [delaySec](data::Context& stepCtx) { stepCtx.out << "Waiting " << delaySec << "s..." << std::endl; }, {},
+            ctx);
     }
 
 } // namespace commands::scene
