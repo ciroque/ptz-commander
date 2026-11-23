@@ -20,6 +20,8 @@ A camera id is a serial number, an alias, or a product name. `*` means every cam
 
 ## Commands
 
+Arguments start with what the command acts on. A preset is found by camera, then name: `preset show` takes the camera, then an optional name. A scene is found by name. `camera discard` takes the camera.
+
 discard deletes a whole preset, scene, or camera. remove takes one camera out of a scene. store creates or replaces a preset or the bindings in a scene.
 
 ### Version
