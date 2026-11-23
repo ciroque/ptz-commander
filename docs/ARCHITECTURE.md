@@ -71,7 +71,7 @@ classDiagram
     Camera <|-- Onvif
 ```
 
-A setup is what a `.ptzc` file holds. A preset is a name plus pan, tilt, and zoom on one camera. A scene stores references, not positions: each binding names a camera serial and a preset, and `scene apply` looks both up when it runs. Re-storing a preset therefore updates every scene that uses it, and a scene survives a camera being unplugged. The reasoning is in [ADR 0001](adr/0001-scenes.md).
+A setup is what a `.ptzc` file holds. A preset is a name plus pan, tilt, and zoom on one camera. A scene stores references, not positions: each binding names a camera serial and a preset, and `scene apply` looks both up when it runs. `scene store` writes those bindings and does not read where the cameras are now. Re-storing a preset therefore updates every scene that uses it, and a scene survives a camera being unplugged. The reasoning is in [ADR 0001](adr/0001-scenes.md).
 
 ## Parts worth a closer look
 

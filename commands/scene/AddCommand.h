@@ -6,9 +6,10 @@
 namespace commands::scene {
     class AddCommand : public Command {
     public:
+        // One release of the old name. Hidden from help.
         AddCommand()
             : Command("scene", "add", "scene add <name> <id> <preset> [<id> <preset> ...]",
-                      "Add camera/preset bindings") {}
+                      "Store camera/preset bindings", false) {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 } // namespace commands::scene

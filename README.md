@@ -71,11 +71,11 @@ A preset is a named pan, tilt, and zoom on one camera. `preset store` saves wher
 
 ### Scene
 
-A scene is a named set of camera → preset bindings. Bindings are resolved when you apply the scene (they are not baked PTZ values). `*` is not accepted. Persist with `setup save` / `setup load` (reserved top-level `"scenes"` key in the `.ptzc` file).
+A scene is a named set of camera → preset bindings. Bindings are resolved when you apply the scene (they are not baked PTZ values). `*` is not accepted. `scene add` still runs `scene store` for this release and prints `scene add is now scene store`. Persist with `setup save` / `setup load` (reserved top-level `"scenes"` key in the `.ptzc` file).
 
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
-| `scene add`                    | ```<name> <id> <preset> [<id> <preset> ...]``` | Adds or replaces bindings. Camera id is alias, serial, or name. Stored as serial. |
+| `scene store`                  | ```<name> <id> <preset> [<id> <preset> ...]``` | Stores or replaces bindings. Camera id is alias, serial, or name. Stored as serial. |
 | `scene apply`                  | ```<name>```                            | Moves each bound camera to that camera's named preset. Missing camera/preset is skipped. |
 | `scene discard`                | ```<name>```                            | Discards the scene.                                                         |
 | `scene list`                   | None                                    | Lists scene names and binding counts.                                       |
