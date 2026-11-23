@@ -62,13 +62,16 @@ namespace core {
             context_.onvifEndpoints = onvifAdapter_->endpoints();
             return result;
         };
-        context_.discardCamera = [this](const std::string& serial) {
+        context_.discardCamera = [this](const std::string& serial, bool commit) {
             auto camera = cameraMgr_.findBySerial(serial);
             if (!camera) {
                 return data::Context::DiscardCameraStatus::NotFound;
             }
             if (dynamic_cast<cameras::ObsbotCamera*>(camera.get())) {
                 return data::Context::DiscardCameraStatus::Obsbot;
+            }
+            if (!commit) {
+                return data::Context::DiscardCameraStatus::Removed;
             }
             viscaAdapter_->discard(serial);
             onvifAdapter_->discard(serial);
