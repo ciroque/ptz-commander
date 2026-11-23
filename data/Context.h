@@ -47,10 +47,12 @@ namespace data {
         std::function<cameras::onvif::OnvifAddResult(const std::string& serial, const std::string& password)>
             loginOnvif;
         // Removes one camera from its adapter and from the manager, then
-        // copies the adapter lists back onto the endpoint vectors. Obsbot
-        // means the camera is still plugged in and nothing was removed.
+        // copies the adapter lists back onto the endpoint vectors. commit
+        // false only checks: nothing is removed, and Removed means it can
+        // be discarded. Obsbot means the camera is still plugged in and
+        // nothing was removed.
         enum class DiscardCameraStatus { Removed, NotFound, Obsbot };
-        std::function<DiscardCameraStatus(const std::string& serial)> discardCamera;
+        std::function<DiscardCameraStatus(const std::string& serial, bool commit)> discardCamera;
         std::vector<cameras::onvif::OnvifEndpoint> onvifEndpoints;
         // Rows of the last `camera scan` (no VISCA profile, and no ONVIF
         // user or password yet), for `camera add scanned <n>`. nullopt until

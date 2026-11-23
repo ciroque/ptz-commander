@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 
@@ -53,9 +54,12 @@ namespace {
 
     void wireDiscard(data::Context& ctx, CameraManager& mgr, cameras::visca::ViscaCameraAdapter& visca,
                      cameras::onvif::OnvifCameraAdapter& onvif) {
-        ctx.discardCamera = [&](const std::string& serial) {
+        ctx.discardCamera = [&](const std::string& serial, bool commit) {
             if (!mgr.findBySerial(serial)) {
                 return data::Context::DiscardCameraStatus::NotFound;
+            }
+            if (!commit) {
+                return data::Context::DiscardCameraStatus::Removed;
             }
             visca.discard(serial);
             onvif.discard(serial);
@@ -128,7 +132,7 @@ TEST(CameraDiscard, RemovesAllThreeRecordsFromTheNextSave) {
     ctx.onSetupChanged = [&] { ++notifies; };
     wireDiscard(ctx, mgr, visca, onvif);
 
-    commands::camera::DiscardCommand command;
+    commands::camera::DiscardCommand command([] { return std::optional<std::string>("y"); });
     command.execute(ctx, "pulpit");
     command.execute(ctx, "VISCA:COM7:1");
     command.execute(ctx, "ONVIF:192.168.1.41:80");
@@ -189,9 +193,12 @@ TEST(CameraDiscard, RefusedDiscardLeavesTheCameraAndBindings) {
     data::Context ctx(mgr, scenes, out, err);
     int notifies = 0;
     ctx.onSetupChanged = [&] { ++notifies; };
-    ctx.discardCamera = [](const std::string&) { return data::Context::DiscardCameraStatus::Obsbot; };
+    ctx.discardCamera = [](const std::string&, bool) { return data::Context::DiscardCameraStatus::Obsbot; };
 
-    commands::camera::DiscardCommand command;
+    commands::camera::DiscardCommand command([]() -> std::optional<std::string> {
+        ADD_FAILURE() << "a plugged-in camera should not ask";
+        return std::string("y");
+    });
     command.execute(ctx, "OBSBOTSN");
 
     EXPECT_NE(err.str().find("Unplug it first."), std::string::npos);
@@ -212,12 +219,15 @@ TEST(CameraDiscard, UnknownIdAndStarAreRefused) {
     std::ostringstream out;
     std::ostringstream err;
     data::Context ctx(mgr, scenes, out, err);
-    ctx.discardCamera = [](const std::string&) {
+    ctx.discardCamera = [](const std::string&, bool) {
         ADD_FAILURE() << "discard was called";
         return data::Context::DiscardCameraStatus::Removed;
     };
 
-    commands::camera::DiscardCommand command;
+    commands::camera::DiscardCommand command([]() -> std::optional<std::string> {
+        ADD_FAILURE() << "discard should not ask";
+        return std::nullopt;
+    });
     command.execute(ctx, "missing");
     command.execute(ctx, "*");
     command.execute(ctx, "a b");
@@ -227,4 +237,181 @@ TEST(CameraDiscard, UnknownIdAndStarAreRefused) {
     EXPECT_NE(err.str().find("Usage: camera discard <id>"), std::string::npos);
     EXPECT_NE(mgr.findBySerial("KEPT:1"), nullptr);
     EXPECT_EQ(out.str().find("Discarded"), std::string::npos);
+}
+
+namespace {
+
+    void wireShelf(data::Context& ctx, CameraManager& mgr) {
+        ctx.discardCamera = [&](const std::string& serial, bool commit) {
+            if (!mgr.findBySerial(serial)) {
+                return data::Context::DiscardCameraStatus::NotFound;
+            }
+            if (commit) {
+                mgr.removeCamera(serial);
+            }
+            return data::Context::DiscardCameraStatus::Removed;
+        };
+    }
+
+    std::shared_ptr<ShelfCamera> addNamed(CameraManager& mgr, const std::string& serial, const std::string& alias) {
+        auto camera = std::make_shared<ShelfCamera>(serial);
+        camera->setAlias(alias);
+        mgr.addCamera(camera);
+        return camera;
+    }
+
+} // namespace
+
+TEST(CameraDiscard, YesDiscardsACameraThatHasAPreset) {
+    CameraManager mgr;
+    cameras::SceneStore scenes;
+    auto camera = addNamed(mgr, "VISCA-IP:192.168.1.40:52381", "pulpit");
+    camera->addPreset("wide", Preset("wide", Ptz{1.0f, 2.0f, 3}));
+
+    std::ostringstream out;
+    std::ostringstream err;
+    data::Context ctx(mgr, scenes, out, err);
+    int notifies = 0;
+    ctx.onSetupChanged = [&] { ++notifies; };
+    wireShelf(ctx, mgr);
+
+    commands::camera::DiscardCommand command([] { return std::optional<std::string>("y"); });
+    command.execute(ctx, "pulpit");
+
+    EXPECT_NE(out.str().find("1 preset. Discard pulpit? [y/N]"), std::string::npos);
+    EXPECT_NE(out.str().find("Discarded VISCA-IP:192.168.1.40:52381"), std::string::npos);
+    EXPECT_EQ(err.str(), "");
+    EXPECT_EQ(mgr.findById("pulpit"), nullptr);
+    EXPECT_EQ(notifies, 1);
+}
+
+TEST(CameraDiscard, CapitalYDiscards) {
+    CameraManager mgr;
+    cameras::SceneStore scenes;
+    auto camera = addNamed(mgr, "VISCA-IP:192.168.1.40:52381", "pulpit");
+    camera->addPreset("wide", Preset("wide", Ptz{1.0f, 2.0f, 3}));
+    camera->addPreset("tight", Preset("tight", Ptz{4.0f, 5.0f, 6}));
+
+    std::ostringstream out;
+    std::ostringstream err;
+    data::Context ctx(mgr, scenes, out, err);
+    wireShelf(ctx, mgr);
+
+    commands::camera::DiscardCommand command([] { return std::optional<std::string>("Y"); });
+    command.execute(ctx, "pulpit");
+
+    EXPECT_NE(out.str().find("2 presets. Discard pulpit? [y/N]"), std::string::npos);
+    EXPECT_EQ(mgr.findBySerial("VISCA-IP:192.168.1.40:52381"), nullptr);
+    EXPECT_EQ(err.str(), "");
+}
+
+TEST(CameraDiscard, DeclineDeletesNothing) {
+    CameraManager mgr;
+    cameras::SceneStore scenes;
+    auto camera = addNamed(mgr, "VISCA-IP:192.168.1.40:52381", "pulpit");
+    camera->addPreset("wide", Preset("wide", Ptz{1.0f, 2.0f, 3}));
+    scenes.upsertBinding("sermon", camera->getSerialNumber(), "wide");
+
+    std::ostringstream out;
+    std::ostringstream err;
+    data::Context ctx(mgr, scenes, out, err);
+    int notifies = 0;
+    int commits = 0;
+    ctx.onSetupChanged = [&] { ++notifies; };
+    ctx.discardCamera = [&](const std::string& serial, bool commit) {
+        if (!mgr.findBySerial(serial)) {
+            return data::Context::DiscardCameraStatus::NotFound;
+        }
+        if (commit) {
+            ++commits;
+            mgr.removeCamera(serial);
+        }
+        return data::Context::DiscardCameraStatus::Removed;
+    };
+
+    std::optional<std::string> answer = "";
+    commands::camera::DiscardCommand command([&] { return answer; });
+    command.execute(ctx, "pulpit");
+    answer = "n";
+    command.execute(ctx, "pulpit");
+
+    EXPECT_NE(out.str().find("1 preset, a binding in 1 scene. Discard pulpit? [y/N]"), std::string::npos);
+    EXPECT_NE(out.str().find("Discard declined."), std::string::npos);
+    EXPECT_EQ(out.str().find("Discarded"), std::string::npos);
+    EXPECT_EQ(err.str(), "");
+    EXPECT_NE(mgr.findBySerial("VISCA-IP:192.168.1.40:52381"), nullptr);
+    EXPECT_EQ(scenes.find("sermon")->bindings.at("VISCA-IP:192.168.1.40:52381"), "wide");
+    EXPECT_EQ(notifies, 0);
+    EXPECT_EQ(commits, 0);
+}
+
+TEST(CameraDiscard, MissingConsoleDeletesNothing) {
+    CameraManager mgr;
+    cameras::SceneStore scenes;
+    auto camera = addNamed(mgr, "VISCA-IP:192.168.1.40:52381", "pulpit");
+    scenes.upsertBinding("sermon", camera->getSerialNumber(), "wide");
+    scenes.upsertBinding("closing", camera->getSerialNumber(), "wide");
+
+    std::ostringstream out;
+    std::ostringstream err;
+    data::Context ctx(mgr, scenes, out, err);
+    int commits = 0;
+    ctx.discardCamera = [&](const std::string&, bool commit) {
+        if (commit) {
+            ++commits;
+        }
+        return data::Context::DiscardCameraStatus::Removed;
+    };
+
+    commands::camera::DiscardCommand command([]() -> std::optional<std::string> { return std::nullopt; });
+    command.execute(ctx, "pulpit");
+
+    EXPECT_NE(out.str().find("bindings in 2 scenes. Discard pulpit? [y/N]"), std::string::npos);
+    EXPECT_NE(err.str().find("camera discard needs a console."), std::string::npos);
+    EXPECT_EQ(out.str().find("Discarded"), std::string::npos);
+    EXPECT_NE(mgr.findBySerial("VISCA-IP:192.168.1.40:52381"), nullptr);
+    EXPECT_EQ(scenes.find("sermon")->bindings.size(), 1u);
+    EXPECT_EQ(commits, 0);
+}
+
+TEST(CameraDiscard, OneBindingAsksWithTheSingularLine) {
+    CameraManager mgr;
+    cameras::SceneStore scenes;
+    auto camera = addNamed(mgr, "VISCA-IP:192.168.1.40:52381", "pulpit");
+    scenes.upsertBinding("sermon", camera->getSerialNumber(), "wide");
+
+    std::ostringstream out;
+    std::ostringstream err;
+    data::Context ctx(mgr, scenes, out, err);
+    wireShelf(ctx, mgr);
+
+    commands::camera::DiscardCommand command([] { return std::optional<std::string>("y"); });
+    command.execute(ctx, "pulpit");
+
+    EXPECT_NE(out.str().find("a binding in 1 scene. Discard pulpit? [y/N]"), std::string::npos);
+    EXPECT_NE(out.str().find("Scene 'sermon' is empty."), std::string::npos);
+    EXPECT_EQ(mgr.findBySerial("VISCA-IP:192.168.1.40:52381"), nullptr);
+    EXPECT_TRUE(scenes.find("sermon")->bindings.empty());
+}
+
+TEST(CameraDiscard, EmptyCameraDoesNotAsk) {
+    CameraManager mgr;
+    cameras::SceneStore scenes;
+    addNamed(mgr, "KEPT:1", "spare");
+
+    std::ostringstream out;
+    std::ostringstream err;
+    data::Context ctx(mgr, scenes, out, err);
+    wireShelf(ctx, mgr);
+
+    commands::camera::DiscardCommand command([]() -> std::optional<std::string> {
+        ADD_FAILURE() << "a camera with nothing to lose should not ask";
+        return std::nullopt;
+    });
+    command.execute(ctx, "spare");
+
+    EXPECT_EQ(out.str().find("?"), std::string::npos);
+    EXPECT_NE(out.str().find("Discarded KEPT:1"), std::string::npos);
+    EXPECT_EQ(err.str(), "");
+    EXPECT_EQ(mgr.findBySerial("KEPT:1"), nullptr);
 }

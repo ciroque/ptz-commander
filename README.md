@@ -58,7 +58,7 @@ The `id` argument can be the camera's alias, serial number, or name. These value
 | `camera move`                  | ```<id\|*> <pan> <tilt> <zoom>```            | Moves camera(s) to an absolute pan, tilt, and zoom. Asterisk moves all cameras. An inactive or offline ONVIF camera is refused until `camera login`. |
 | `camera push`                  | ```<id\|*> <zoom> [speed]```                 | Zooms gradually to a target zoom (speed 0–100, default 50). Does nothing if the camera is already there or closer. There is no separate pull command. |
 | `camera show`                  | ```<id\|*>```                                | Shows camera details.           |
-| `camera discard`               | `<id>`                                  | Discards that camera, its presets, and its scene bindings. An emptied scene stays. `*` is not accepted. An OBSBOT camera that is plugged in is refused until it is unplugged. |
+| `camera discard`               | `<id>`                                  | Discards that camera, its presets, and its scene bindings. An emptied scene stays. `*` is not accepted. An OBSBOT camera that is plugged in is refused until it is unplugged. A camera with presets or scene bindings asks `Discard <id>? [y/N]` and is discarded only when the answer is y or Y. A missing console does not discard it. A camera with neither is discarded without asking. |
 
 
 ### Preset
