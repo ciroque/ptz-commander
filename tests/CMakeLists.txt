@@ -29,6 +29,7 @@ add_executable(ptz_tests
     PresetShowCommandTest.cpp
     PresetTourCommandTest.cpp
     CameraDiscardTest.cpp
+    ObsbotAbsentTest.cpp
     SceneStarCommandTest.cpp
     "${CMAKE_SOURCE_DIR}/commands/preset/StoreCommand.cpp"
     "${CMAKE_SOURCE_DIR}/commands/preset/ShowCommand.cpp"
@@ -50,6 +51,7 @@ add_executable(ptz_tests
     "${CMAKE_SOURCE_DIR}/cameras/onvif/OnvifCameraAdapter.cpp"
     "${CMAKE_SOURCE_DIR}/cameras/onvif/OnvifClient.cpp"
     "${CMAKE_SOURCE_DIR}/commands/setup/ExportCommand.cpp"
+    "${CMAKE_SOURCE_DIR}/cameras/AbsentObsbot.cpp"
     "${CMAKE_SOURCE_DIR}/cameras/CameraManager.cpp"
     "${CMAKE_SOURCE_DIR}/cameras/PresetStore.cpp"
     "${CMAKE_SOURCE_DIR}/cameras/visca/ViscaCamera.cpp"

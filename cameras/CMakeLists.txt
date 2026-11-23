@@ -1,5 +1,7 @@
 # Camera management and Obsbot-specific implementations
 target_sources(ptz_commander PRIVATE
+    AbsentObsbot.cpp
+    AbsentObsbot.h
     Camera.h
     CameraManager.cpp
     CameraManager.h

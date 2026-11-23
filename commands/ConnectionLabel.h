@@ -6,33 +6,36 @@
 namespace commands {
 
     // "Inactive" needs a password, including a stored one the camera rejected.
-    // "Offline" has a stored password and is not connected for another reason.
-    // Other cameras that are not connected stay "No".
+    // "Offline" has a stored password and is not connected for another reason,
+    // or is an OBSBOT that is in the setup but not plugged in.
+    // A VISCA camera that is not connected stays "No".
     inline const char* connectionLabel(const cameras::Camera& camera) {
         switch (camera.connectionState()) {
         case cameras::ConnectionState::Connected: return "Yes";
         case cameras::ConnectionState::NeedsLogin: return "Inactive";
-        case cameras::ConnectionState::Offline: return "Offline";
+        case cameras::ConnectionState::Offline:
+        case cameras::ConnectionState::Unplugged: return "Offline";
         case cameras::ConnectionState::NotConnected: return "No";
         }
         return "No";
     }
 
     // True when the command must not move this camera. Prints why.
+    // An unplugged OBSBOT is not an ONVIF login.
     inline bool refuseNeedsLogin(data::Context& ctx, const cameras::Camera& camera) {
-        const char* state = nullptr;
+        const auto serial = camera.getSerialNumber();
         switch (camera.connectionState()) {
-        case cameras::ConnectionState::NeedsLogin: state = "inactive"; break;
-        case cameras::ConnectionState::Offline: state = "offline"; break;
+        case cameras::ConnectionState::NeedsLogin:
+            ctx.err << serial << " is inactive. Use: camera login " << serial << std::endl;
+            return true;
+        case cameras::ConnectionState::Offline:
+            ctx.err << serial << " is offline. Use: camera login " << serial << std::endl;
+            return true;
+        case cameras::ConnectionState::Unplugged: ctx.err << serial << " is unplugged." << std::endl; return true;
         case cameras::ConnectionState::Connected:
         case cameras::ConnectionState::NotConnected: return false;
         }
-        if (state == nullptr) {
-            return false;
-        }
-        ctx.err << camera.getSerialNumber() << " is " << state << ". Use: camera login " << camera.getSerialNumber()
-                << std::endl;
-        return true;
+        return false;
     }
 
 } // namespace commands

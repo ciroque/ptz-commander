@@ -8,7 +8,7 @@
 #include <vector>
 
 namespace cameras {
-    enum class ConnectionState { Connected, NotConnected, NeedsLogin, Offline };
+    enum class ConnectionState { Connected, NotConnected, NeedsLogin, Offline, Unplugged };
 
     class Camera {
     protected:
@@ -29,6 +29,7 @@ namespace cameras {
         virtual bool isConnected() const = 0;
 
         // NeedsLogin has no password yet. Offline has one and is not connected.
+        // Unplugged is an OBSBOT that is in the setup but not plugged in.
         // The default is Connected or NotConnected from isConnected().
         virtual ConnectionState connectionState() const {
             return isConnected() ? ConnectionState::Connected : ConnectionState::NotConnected;

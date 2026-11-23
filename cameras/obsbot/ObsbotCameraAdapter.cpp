@@ -1,5 +1,6 @@
 #include "ObsbotCameraAdapter.h"
 #include "ObsbotCamera.h"
+#include "../AbsentObsbot.h"
 #include "../../include/obsbot/comm.hpp"
 #include "../../core/Application.h"
 #include "../../core/Logger.h"
@@ -128,11 +129,11 @@ namespace cameras::obsbot {
                     std::string mode = (dev->devMode() == Device::DevModeNet) ? "NETWORK" : "USB";
                     core::Logger::info("Adding " + mode + " device: " + dev->devName() + " (" + devSn + ")");
 
-                    adapter->manager_.addCamera(std::make_shared<ObsbotCamera>(dev));
+                    restoreObsbot(adapter->manager_, std::make_shared<ObsbotCamera>(dev));
                 }
             }
         } else {
-            adapter->manager_.removeCamera(devSn);
+            shelveObsbot(adapter->manager_, devSn);
         }
     }
 
@@ -141,7 +142,7 @@ namespace cameras::obsbot {
         for (const auto& dev : devList) {
             if (dev && (dev->devMode() == Device::DevModeUvc || dev->devMode() == Device::DevModeNet)) {
                 core::Logger::info("Pre-existing device found: " + dev->devName());
-                manager_.addCamera(std::make_shared<ObsbotCamera>(dev));
+                restoreObsbot(manager_, std::make_shared<ObsbotCamera>(dev));
             }
         }
     }
