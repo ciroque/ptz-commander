@@ -74,7 +74,12 @@ namespace cameras::onvif {
             return result;
         }
 
-        manager_.addCamera(std::make_shared<OnvifCamera>(endpoint));
+        auto camera = std::make_shared<OnvifCamera>(endpoint);
+        if (endpoint.passwordRejected) {
+            camera->noteAuthRejected();
+        }
+        endpoint.passwordRejected = false;
+        manager_.addCamera(camera);
         endpoints_.push_back(endpoint);
         result.status = OnvifAddStatus::Added;
         core::Logger::info("ONVIF camera " + endpoint.serial() + " left inactive");

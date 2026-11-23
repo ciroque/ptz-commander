@@ -31,6 +31,10 @@ namespace cameras::onvif {
         // Kind of the last failed probe or sign-in. None after a success.
         OnvifError lastError() const { return lastKind_; }
 
+        // The camera was kept with a stored password the camera rejected.
+        // It is not connected, and camera list shows Inactive.
+        void noteAuthRejected();
+
         bool setPosition(float pan, float tilt, int zoom) override;
         bool setZoom(int zoom, int speed) override;
         Ptz getCurrentPtz() const override;

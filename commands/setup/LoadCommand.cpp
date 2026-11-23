@@ -43,12 +43,13 @@ namespace commands::setup {
 
         // The camera did not come up, or it rejected a password already stored.
         // The password stays so the next save and a later login can use it.
-        SkipResult keepOnvif(data::Context& ctx, const cameras::onvif::OnvifEndpoint& endpoint,
-                             const std::string& why) {
+        SkipResult keepOnvif(data::Context& ctx, const cameras::onvif::OnvifEndpoint& endpoint, const std::string& why,
+                             bool passwordRejected) {
             auto stored = endpoint;
             if (!stored.password.empty()) {
                 stored.preservedPassword.clear();
             }
+            stored.passwordRejected = passwordRejected;
             return storeInactive(ctx, std::move(stored), why);
         }
 
@@ -165,7 +166,7 @@ namespace commands::setup {
                 if (added.status == cameras::onvif::OnvifAddStatus::Failed) {
                     const std::string why
                         = added.authRejected ? "the camera rejected the stored password" : added.detail;
-                    noteSkip(keepOnvif(ctx, ep, why), onvifMissing, onvifInactive);
+                    noteSkip(keepOnvif(ctx, ep, why, added.authRejected), onvifMissing, onvifInactive);
                 }
                 continue;
             }
@@ -188,7 +189,7 @@ namespace commands::setup {
                     break;
                 }
                 if (!added.authRejected) {
-                    noteSkip(keepOnvif(ctx, withPassword, added.detail), onvifMissing, onvifInactive);
+                    noteSkip(keepOnvif(ctx, withPassword, added.detail, false), onvifMissing, onvifInactive);
                     settled = true;
                     break;
                 }

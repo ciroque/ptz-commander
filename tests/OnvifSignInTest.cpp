@@ -6,10 +6,15 @@
 #include "SceneStore.h"
 #include "ConnectionLabel.h"
 #include "camera/LoginCommand.h"
+#include "setup/LoadCommand.h"
 
 #include "../data/Context.h"
 
+#include <filesystem>
+#include <fstream>
 #include <memory>
+#include <nlohmann/json.hpp>
+#include <optional>
 #include <sstream>
 #include <string>
 
@@ -46,6 +51,11 @@ namespace {
         bool haveRaw() const { return haveRaw_; }
         Ptz savedPtz() const { return lastPtz_; }
         double savedPanX() const { return lastRaw_.panX; }
+
+        void markNoAnswer() {
+            connected_ = false;
+            lastKind_ = OnvifError::NoAnswer;
+        }
 
         bool probe(std::string& error) override {
             if (!probeOk_) {
@@ -105,6 +115,8 @@ TEST(OnvifSignIn, RejectedLoginOnAnInactiveCameraStaysInactive) {
     EXPECT_FALSE(camera.isConnected());
     EXPECT_EQ(camera.endpoint().password, "kept");
     EXPECT_FALSE(camera.haveRaw());
+    EXPECT_EQ(camera.connectionState(), cameras::ConnectionState::NeedsLogin);
+    EXPECT_STREQ(commands::connectionLabel(camera), "Inactive");
 }
 
 TEST(OnvifSignIn, SuccessfulLoginStoresThePassword) {
@@ -196,6 +208,101 @@ TEST(OnvifSignIn, AddInactiveWithoutAPasswordNeedsLogin) {
     ASSERT_NE(camera, nullptr);
     EXPECT_EQ(camera->connectionState(), cameras::ConnectionState::NeedsLogin);
     EXPECT_STREQ(commands::connectionLabel(*camera), "Inactive");
+}
+
+TEST(OnvifSignIn, AddInactiveAfterAuthRejectedIsInactive) {
+    CameraManager mgr;
+    OnvifCameraAdapter adapter(mgr);
+    auto endpoint = OnvifEndpoint{"192.168.1.27", 80, "/onvif/device_service", "admin", "kept", false, ""};
+    endpoint.passwordRejected = true;
+    const auto result = adapter.addInactive(endpoint);
+    EXPECT_EQ(result.status, OnvifAddStatus::Added);
+    const auto camera
+        = std::dynamic_pointer_cast<cameras::onvif::OnvifCamera>(mgr.findBySerial("ONVIF:192.168.1.27:80"));
+    ASSERT_NE(camera, nullptr);
+    EXPECT_EQ(camera->lastError(), OnvifError::AuthRejected);
+    EXPECT_EQ(camera->connectionState(), cameras::ConnectionState::NeedsLogin);
+    EXPECT_STREQ(commands::connectionLabel(*camera), "Inactive");
+    EXPECT_EQ(camera->endpoint().password, "kept");
+    ASSERT_EQ(adapter.endpoints().size(), 1u);
+    EXPECT_FALSE(adapter.endpoints()[0].passwordRejected);
+}
+
+TEST(OnvifSignIn, NoAnswerStaysOfflineAndLoginMakesEitherYes) {
+    ScriptedOnvifCamera silent(endpoint("192.168.1.28", "kept"));
+    silent.markNoAnswer();
+    EXPECT_EQ(silent.connectionState(), cameras::ConnectionState::Offline);
+    EXPECT_STREQ(commands::connectionLabel(silent), "Offline");
+
+    silent.setProbeResult(true);
+    std::string error;
+    EXPECT_TRUE(silent.signIn("right", error));
+    EXPECT_EQ(silent.connectionState(), cameras::ConnectionState::Connected);
+    EXPECT_STREQ(commands::connectionLabel(silent), "Yes");
+
+    ScriptedOnvifCamera rejected(endpoint("192.168.1.29", "kept"));
+    rejected.noteAuthRejected();
+    EXPECT_STREQ(commands::connectionLabel(rejected), "Inactive");
+    rejected.setProbeResult(true);
+    EXPECT_TRUE(rejected.signIn("right", error));
+    EXPECT_STREQ(commands::connectionLabel(rejected), "Yes");
+}
+
+TEST(OnvifSignIn, LoadKeepsARejectedPasswordInactive) {
+    const std::string serial = "ONVIF:192.168.1.21:80";
+    nlohmann::json file = nlohmann::json::object();
+    file[serial] = {{"presets", {{"wide", {{"name", "wide"}, {"pan", 4.0}, {"tilt", 1.0}, {"zoom", 8}}}}}};
+    file["onvif"] = nlohmann::json::array({{{"host", "192.168.1.21"},
+                                            {"port", 80},
+                                            {"user", "admin"},
+                                            {"password", "kept-secret"},
+                                            {"path", "/onvif/device_service"}}});
+    const auto path = std::filesystem::temp_directory_path() / "ptz-rejected-inactive.ptzc";
+    {
+        std::ofstream out(path);
+        ASSERT_TRUE(out.is_open());
+        out << file.dump(2);
+    }
+    struct RemoveFile {
+        std::filesystem::path path;
+        ~RemoveFile() {
+            std::error_code ec;
+            std::filesystem::remove(path, ec);
+        }
+    } remove{path};
+
+    CameraManager mgr;
+    cameras::SceneStore scenes;
+    OnvifCameraAdapter adapter(mgr);
+    std::ostringstream out;
+    std::ostringstream err;
+    data::Context ctx(mgr, scenes, out, err);
+    ctx.addOnvif = [](const OnvifEndpoint&) {
+        OnvifAddResult result;
+        result.status = OnvifAddStatus::Failed;
+        result.authRejected = true;
+        result.detail = kAuthRejected;
+        return result;
+    };
+    ctx.addInactiveOnvif = [&](const OnvifEndpoint& ep) {
+        const auto result = adapter.addInactive(ep);
+        ctx.onvifEndpoints = adapter.endpoints();
+        return result;
+    };
+
+    commands::setup::LoadCommand command([](const OnvifEndpoint&) -> std::optional<std::string> {
+        ADD_FAILURE() << "password was requested";
+        return std::nullopt;
+    });
+    command.execute(ctx, path.string());
+
+    const auto camera = std::dynamic_pointer_cast<cameras::onvif::OnvifCamera>(mgr.findBySerial(serial));
+    ASSERT_NE(camera, nullptr);
+    EXPECT_EQ(camera->endpoint().password, "kept-secret");
+    EXPECT_EQ(camera->lastError(), OnvifError::AuthRejected);
+    EXPECT_STREQ(commands::connectionLabel(*camera), "Inactive");
+    EXPECT_NE(camera->getPresetByName("wide"), nullptr);
+    EXPECT_NE(err.str().find("rejected the stored password"), std::string::npos);
 }
 
 TEST(OnvifSignIn, RewordedAuthTextStillCountsAsRejected) {
