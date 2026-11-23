@@ -64,6 +64,8 @@ target_sources(ptz_commander PRIVATE
     scene/RemoveCommand.h
     scene/ShowCommand.cpp
     scene/ShowCommand.h
+    scene/StoreCommand.cpp
+    scene/StoreCommand.h
     scene/TourCommand.cpp
     scene/TourCommand.h
 )

@@ -29,6 +29,7 @@
 #include "scene/ListCommand.h"
 #include "scene/RemoveCommand.h"
 #include "scene/ShowCommand.h"
+#include "scene/StoreCommand.h"
 #include "scene/TourCommand.h"
 
 #include <algorithm>
@@ -60,6 +61,7 @@ namespace commands {
 
         addCommand(std::make_unique<scene::ListCommand>());
         addCommand(std::make_unique<scene::ShowCommand>());
+        addCommand(std::make_unique<scene::StoreCommand>());
         addCommand(std::make_unique<scene::AddCommand>());
         addCommand(std::make_unique<scene::RemoveCommand>());
         addCommand(std::make_unique<scene::DiscardCommand>());
@@ -154,6 +156,9 @@ namespace commands {
         const auto& cmds = familyCommands_.at(family);
         size_t width = 0;
         for (const auto* cmd : cmds) {
+            if (!cmd->listed()) {
+                continue;
+            }
             width = std::max(width, cmd->usage().size());
         }
 
@@ -161,6 +166,9 @@ namespace commands {
         title[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(title[0])));
         ctx.out << title << " commands:\n";
         for (const auto* cmd : cmds) {
+            if (!cmd->listed()) {
+                continue;
+            }
             ctx.out << "  " << cmd->usage() << std::string(width - cmd->usage().size() + 2, ' ') << cmd->summary()
                     << "\n";
         }

@@ -30,7 +30,7 @@ This ADR is only about scenes inside ptz-commander. OBS (`ProgramSceneChanged` �
 2. Bindings are **references**, resolved at apply time. They do not bake pan/tilt/zoom.
 3. Scenes live **in the same `.ptzc` file** as presets, under a reserved top-level key `"scenes"`. They load and save with `setup load` / `setup save` (replace, same as presets).
 4. In memory, scenes live in a **`SceneStore` independent of `Camera` objects**, so a scene still exists if a camera is unplugged.
-5. Composition is explicit (`scene add`), not capture (`scene store` of “whatever I’m on now”).
+5. Composition is explicit (`scene store` names each camera and preset). It does not capture where the cameras are now.
 6. `snapshot *` was left in place at v1 and is not extended. Scenes are the real cross-camera cue. The `snapshot` command family was later removed.
 
 ## Data model
@@ -91,7 +91,7 @@ New `scene` family, same verb register as presets:
 |---|---|
 | `scene list` | Scene names (and binding counts) |
 | `scene show <name>` | Bindings, alias + serial + preset |
-| `scene add <name> <id> <preset> [<id> <preset> ...]` | Upsert bindings (positional pairs); create the scene if needed |
+| `scene store <name> <id> <preset> [<id> <preset> ...]` | Upsert bindings (positional pairs); create the scene if needed |
 | `scene remove <name> <id>` | Drop one camera from the scene |
 | `scene discard <name>` | Delete the scene |
 | `scene apply <name>` | Resolve bindings and `setPosition` |
@@ -100,8 +100,8 @@ New `scene` family, same verb register as presets:
 Notes:
 
 - `<id>` is the same as everywhere else: alias, serial, or product name via `findById`. The stored binding is always the serial.
-- There is no `scene store`. Cameras do not know “which preset they are on”; inventing capture would mean fuzzy PTZ matching or last-apply tracking. Composition is the feature.
-- `scene add` on an unknown preset name is an error (fail that binding, do not record a dangling name). Unknown camera id is an error.
+- `scene store` writes the bindings you name. It does not capture current pan, tilt, and zoom. Cameras do not know which preset they are on; that capture would mean fuzzy PTZ matching or last-apply tracking. Composition is the feature.
+- `scene store` on an unknown preset name is an error (fail that binding, do not record a dangling name). Unknown camera id is an error.
 - Persistence is `setup save` / `load` / `list`. Scenes are part of the collection, not a second file type.
 
 ## Apply semantics
@@ -154,7 +154,7 @@ Reference resolution is **at apply time**. Edit `house-left`’s `close` PTZ, th
 | Bake PTZ into the scene | Stable for a locked show; hostile to rehearsal. References match “grouping presets.” |
 | Sidecar scene files | Drift from the `.ptzc` they name. |
 | Versioned envelope (`cameras` + `scenes`) now | Cleaner, but a needless format break while reserved `"scenes"` works. |
-| `scene store` from current PTZ | No “current preset” on `Camera`; would fake it. |
+| Capturing current PTZ into a scene | No “current preset” on `Camera`; `scene store` names bindings instead of inventing that capture. |
 | Hang scenes on `Camera` | A scene is cross-camera by definition; unplug would drop the grouping. |
 | Convert the app into an OBS plugin to get OBS scenes | Wrong layer. OBS should *call* `scene apply`, not own PTZ. |
 
@@ -162,7 +162,7 @@ Reference resolution is **at apply time**. Edit `house-left`’s `close` PTZ, th
 
 1. `Scene` + `SceneStore`; wire through `Context`.
 2. Reserved `"scenes"` key in `PresetStore` load/save (replace semantics, all-or-nothing parse).
-3. `scene add` / `remove` / `discard` / `list` / `show` / `help`.
+3. `scene store` / `remove` / `discard` / `list` / `show` / `help`.
 4. `scene apply` (skip missing members).
 5. README + `setup help` for save/load/list (presets and scenes).
 6. Leave `snapshot *` untouched (later removed once scenes covered the workflow).

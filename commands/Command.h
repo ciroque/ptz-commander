@@ -15,17 +15,20 @@ namespace commands {
         const std::string& verb() const { return verb_; }
         const std::string& usage() const { return usage_; }
         const std::string& summary() const { return summary_; }
+        // Hidden commands still run. Family help does not list them.
+        bool listed() const { return listed_; }
 
     protected:
-        Command(std::string family, std::string verb, std::string usage, std::string summary)
+        Command(std::string family, std::string verb, std::string usage, std::string summary, bool listed = true)
             : family_(std::move(family)), verb_(std::move(verb)), usage_(std::move(usage)),
-              summary_(std::move(summary)) {}
+              summary_(std::move(summary)), listed_(listed) {}
 
     private:
         std::string family_;
         std::string verb_;
         std::string usage_;
         std::string summary_;
+        bool listed_;
     };
 
 } // namespace commands
