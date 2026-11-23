@@ -12,6 +12,11 @@ namespace commands::scene {
         }
 
         const std::string& sceneName = tokens[0];
+        if (sceneName == "*") {
+            ctx.out << "use scene tour" << std::endl;
+            return;
+        }
+
         const auto* scene = ctx.sceneStore.find(sceneName);
         if (!scene) {
             ctx.err << "Scene not found: " << sceneName << std::endl;

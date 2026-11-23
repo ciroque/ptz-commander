@@ -6,7 +6,7 @@
 namespace commands::scene {
     class ShowCommand : public Command {
     public:
-        ShowCommand() : Command("scene", "show", "scene show <name>", "Show bindings in a scene") {}
+        ShowCommand() : Command("scene", "show", "scene show <name|*>", "Show bindings in one scene, or every scene") {}
         void execute(data::Context& ctx, const std::string& args) override;
     };
 } // namespace commands::scene

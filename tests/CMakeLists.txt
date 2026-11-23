@@ -29,6 +29,7 @@ add_executable(ptz_tests
     PresetShowCommandTest.cpp
     PresetTourCommandTest.cpp
     CameraDiscardTest.cpp
+    SceneStarCommandTest.cpp
     "${CMAKE_SOURCE_DIR}/commands/preset/StoreCommand.cpp"
     "${CMAKE_SOURCE_DIR}/commands/preset/ShowCommand.cpp"
     "${CMAKE_SOURCE_DIR}/commands/preset/ApplyCommand.cpp"
@@ -37,6 +38,8 @@ add_executable(ptz_tests
     "${CMAKE_SOURCE_DIR}/commands/scene/ApplyCommand.cpp"
     "${CMAKE_SOURCE_DIR}/commands/scene/StoreCommand.cpp"
     "${CMAKE_SOURCE_DIR}/commands/scene/AddCommand.cpp"
+    "${CMAKE_SOURCE_DIR}/commands/scene/ShowCommand.cpp"
+    "${CMAKE_SOURCE_DIR}/commands/scene/DiscardCommand.cpp"
     "${CMAKE_SOURCE_DIR}/commands/camera/LoginCommand.cpp"
     "${CMAKE_SOURCE_DIR}/commands/camera/DiscardCommand.cpp"
     "${CMAKE_SOURCE_DIR}/cameras/visca/ViscaCameraAdapterRecords.cpp"

@@ -63,6 +63,8 @@ target_sources(ptz_commander PRIVATE
     scene/AddCommand.h
     scene/ApplyCommand.cpp
     scene/ApplyCommand.h
+    scene/ConfirmPrompt.cpp
+    scene/ConfirmPrompt.h
     scene/DiscardCommand.cpp
     scene/DiscardCommand.h
     scene/ListCommand.cpp
