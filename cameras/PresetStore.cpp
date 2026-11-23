@@ -129,7 +129,9 @@ namespace cameras {
             if (!scenes.empty()) {
                 nlohmann::json scenesObj;
                 for (const auto& [name, scene] : scenes.all()) {
-                    nlohmann::json bindings;
+                    // An emptied scene stays, and the next load still has to
+                    // parse it. A default json value is null, not {}.
+                    nlohmann::json bindings = nlohmann::json::object();
                     for (const auto& [serial, presetName] : scene.bindings) {
                         bindings[serial] = presetName;
                     }

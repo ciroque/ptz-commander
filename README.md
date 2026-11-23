@@ -14,7 +14,7 @@ Installers built before the version stamp all reported `1.0.0.0`, which Windows 
 
 `ptz_commander.exe` starts the REPL, prints the build version, and waits at `> `. `exit` quits.
 
-OBSBOT cameras are added and removed as they are plugged in. `camera discard` refuses one that is still plugged in. VISCA and ONVIF cameras are not discovered at startup. Use `camera scan` and `camera add`.
+OBSBOT cameras show up when they are plugged in. One that is in the setup but not plugged in stays listed as Offline. `camera discard` refuses one that is still plugged in. VISCA and ONVIF cameras are not discovered at startup. Use `camera scan` and `camera add`.
 
 A camera id is a serial number, an alias, or a product name. `*` means every camera the command can reach.
 
@@ -44,7 +44,7 @@ The `id` argument can be the camera's alias, serial number, or name. These value
 | Command                        | Arguments                               | Description                                                                 |
 |--------------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
 | `camera alias`                 | `<id> <alias>`                          | Sets a unique friendly alias for a camera — e.g., ```camera alias RMOWTHF7211JGR "LeftCam"```. Rejected if the alias is `*` or is already used as another camera's alias, serial, or name. |
-| `camera list`                  | None                                    | Lists all available cameras. A VISCA camera shows as connected only if it answers a position inquiry right then; each one that doesn't adds up to 0.6 s. An ONVIF camera with no password shows Inactive. One whose stored password the camera rejected also shows Inactive. One with a stored password that is not connected for any other reason shows Offline, including one that was off when the setup loaded. A VISCA or OBSBOT camera that is not connected shows No. |
+| `camera list`                  | None                                    | Lists all available cameras. A VISCA camera shows as connected only if it answers a position inquiry right then; each one that doesn't adds up to 0.6 s. An ONVIF camera with no password shows Inactive. One whose stored password the camera rejected also shows Inactive. One with a stored password that is not connected for any other reason shows Offline, including one that was off when the setup loaded. A VISCA camera that is not connected shows No. An OBSBOT that is in the setup but not plugged in shows Offline. |
 | `camera add visca-ip`          | `<host> [port] [profile]`               | Adds a VISCA-over-IP camera if it answers a position inquiry. Default port 52381. The profile is `tenveo-30x` (the default) or `lumens-vc-a51p`. Survives `setup save` / `setup load`. |
 | `camera add serial`            | `<COMn> [baud] [address] [profile]`     | Adds a VISCA camera on a COM port if it answers a position inquiry. Defaults are 9600 baud, address 1, and profile `lumens-vc-a51p`. One camera per port. Survives `setup save` / `setup load`. |
 | `camera scan visca-ip`         | `[subnet] [port]`                       | Lists the VISCA-over-IP cameras that answer on the local networks (each narrowed to a /24), or on a subnet such as `192.168.1.0/24` (down to /16). Default port 52381. Only sends position inquiries: nothing is added or moved. Rows are numbered for `camera add scanned`. |
@@ -219,7 +219,7 @@ Example `.ptzc` file structure (per-camera):
 ## Tested on these cameras
 
 - Tenveo 30x over VISCA-IP. Position inquiries and absolute moves were checked on that camera, and the `tenveo-30x` profile comes from those measurements.
-- OBSBOT cameras over USB. They are added and removed as they are plugged in.
+- OBSBOT cameras over USB. They show up when they are plugged in. One that is in the setup but not plugged in stays listed as Offline.
 - The `lumens-vc-a51p` profile is taken from the Lumens VC-A51P manual and has been confirmed on that camera.
 
 ## Build

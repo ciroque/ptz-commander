@@ -1,4 +1,5 @@
 #include "LoadCommand.h"
+#include "../../cameras/AbsentObsbot.h"
 #include "../../cameras/PresetStore.h"
 #include "../../cameras/onvif/OnvifEndpoint.h"
 #include "../../cameras/visca/ViscaIpEndpoint.h"
@@ -204,6 +205,7 @@ namespace commands::setup {
             }
         }
         store.apply(ctx.cameraMgr, ctx.sceneStore, staged);
+        cameras::retainUnpluggedObsbot(ctx.cameraMgr, staged);
 
         ctx.notifySetupChanged();
         ctx.out << "Loaded setup from " << filename;
