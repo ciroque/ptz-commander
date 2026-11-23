@@ -14,6 +14,8 @@ target_sources(ptz_commander PRIVATE
     camera/AliasCommand.h
     camera/CalibrateCommand.cpp
     camera/CalibrateCommand.h
+    camera/DiscardCommand.cpp
+    camera/DiscardCommand.h
     camera/ListCommand.cpp
     camera/ListCommand.h
     camera/LoginCommand.cpp

@@ -14,7 +14,7 @@ Installers built before the version stamp all reported `1.0.0.0`, which Windows 
 
 `ptz_commander.exe` starts the REPL, prints the build version, and waits at `> `. `exit` quits.
 
-OBSBOT cameras are added and removed as they are plugged in. VISCA and ONVIF cameras are not discovered at startup. Use `camera scan` and `camera add`.
+OBSBOT cameras are added and removed as they are plugged in. `camera discard` refuses one that is still plugged in. VISCA and ONVIF cameras are not discovered at startup. Use `camera scan` and `camera add`.
 
 A camera id is a serial number, an alias, or a product name. `*` means every camera the command can reach.
 
@@ -56,6 +56,7 @@ The `id` argument can be the camera's alias, serial number, or name. These value
 | `camera move`                  | ```<id\|*> <pan> <tilt> <zoom>```            | Moves camera(s) to an absolute pan, tilt, and zoom. Asterisk moves all cameras. An inactive or offline ONVIF camera is refused until `camera login`. |
 | `camera push`                  | ```<id\|*> <zoom> [speed]```                 | Zooms gradually to a target zoom (speed 0–100, default 50). Does nothing if the camera is already there or closer. There is no separate pull command. |
 | `camera show`                  | ```<id\|*>```                                | Shows camera details.           |
+| `camera discard`               | `<id>`                                  | Discards that camera, its presets, and its scene bindings. An emptied scene stays. `*` is not accepted. An OBSBOT camera that is plugged in is refused until it is unplugged. |
 
 
 ### Preset

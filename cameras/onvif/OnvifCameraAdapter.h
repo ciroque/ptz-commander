@@ -26,6 +26,10 @@ namespace cameras::onvif {
 
         const std::vector<OnvifEndpoint>& endpoints() const { return endpoints_; }
 
+        // Drops the endpoint record and the camera. False when this adapter
+        // has no record for the serial.
+        bool discard(const std::string& serial);
+
     private:
         CameraManager& manager_;
         std::vector<OnvifEndpoint> endpoints_;

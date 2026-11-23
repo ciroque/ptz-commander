@@ -11,8 +11,6 @@
 
 namespace cameras::visca {
 
-    ViscaCameraAdapter::ViscaCameraAdapter(CameraManager& manager) : manager_(manager) {}
-
     namespace {
         std::string ipCameraId(const ViscaIpEndpoint& endpoint) {
             return "VISCA-IP:" + endpoint.host + ":" + std::to_string(endpoint.port);
